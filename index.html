@@ -69,11 +69,6 @@
             box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
         }
 
-        .menu-btn:hover, .lang-btn:hover {
-            background: #00f3ff;
-            color: #000;
-        }
-
         .coin-display {
             background: rgba(15, 15, 30, 0.9);
             border: 2px solid #ffd700;
@@ -154,18 +149,12 @@
             cursor: pointer;
             border-radius: 50%;
             z-index: 15;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-        }
-
-        .slider-arrow:hover {
-            background: #ff0055;
-            border-color: #ff0055;
         }
 
         .left-arrow { left: 4%; }
         .right-arrow { right: 4%; }
 
-        /* Bottom Bar: Left Modifications & Right Play */
+        /* Bottom Bar */
         .bottom-bar {
             display: flex;
             justify-content: space-between;
@@ -174,7 +163,6 @@
             gap: 15px;
         }
 
-        /* Left Side Modification & Upgrade Grid (8 Distinct Options) */
         .garage-menu-options {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -195,16 +183,12 @@
             text-transform: uppercase;
             text-align: center;
             box-shadow: 0 0 8px rgba(255, 0, 85, 0.4);
-            transition: 0.2s;
         }
 
         .action-btn:hover {
             background: #ff0055;
-            transform: translateY(-2px);
-            box-shadow: 0 0 15px #ff0055;
         }
 
-        /* Right Side Prominent Play Button */
         .play-btn {
             background: linear-gradient(45deg, #00f3ff, #00ff66);
             border: none;
@@ -216,15 +200,59 @@
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 0 25px rgba(0, 243, 255, 0.7);
-            transition: 0.2s;
         }
 
         .play-btn:hover {
             transform: scale(1.06);
-            box-shadow: 0 0 35px rgba(0, 255, 102, 0.9);
         }
 
-        /* Modal Popups */
+        /* Gameplay Canvas Screen (Hidden by default) */
+        #gameCanvasScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #111;
+            display: none;
+            z-index: 50;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            font-weight: bold;
+            font-size: 18px;
+            color: #00f3ff;
+            text-shadow: 0 0 10px #00f3ff;
+        }
+
+        .back-garage-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: #ff0055;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 60;
+        }
+
+        /* Modals */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -247,7 +275,6 @@
             width: 100%;
             max-width: 420px;
             text-align: center;
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
         }
 
         .modal-title {
@@ -263,8 +290,6 @@
             color: #ddd;
             line-height: 1.4;
             margin-bottom: 15px;
-            max-height: 200px;
-            overflow-y: auto;
         }
 
         .close-modal-btn {
@@ -276,138 +301,99 @@
             border-radius: 6px;
             cursor: pointer;
         }
-
-        .lang-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .lang-option {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(0,243,255,0.4);
-            color: #fff;
-            padding: 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 11px;
-        }
-
-        .lang-option:hover {
-            background: #00f3ff;
-            color: #000;
-        }
     </style>
 </head>
 <body>
 
-    <div class="game-screen">
-        <!-- Top Bar -->
+    <!-- Main Garage UI Screen -->
+    <div class="game-screen" id="garageScreen">
         <div class="top-bar">
             <div class="top-left-group">
                 <button class="menu-btn" onclick="openMenu()">☰ Menu</button>
-                <button class="lang-btn" onclick="openLanguageModal()">🌐 English</button>
+                <button class="lang-btn" onclick="openFeature('Languages', 'English, Hindi, Japanese, Korean, Spanish, German, French, Russian, Indonesian')">🌐 English</button>
             </div>
             <div class="coin-display">🪙 <span id="coinVal">2,500</span></div>
         </div>
 
-        <!-- Center Garage Showcase -->
         <div class="garage-section">
             <button class="slider-arrow left-arrow" onclick="prevCar()">❮</button>
-            
             <div class="car-display-box">
                 <div class="car-category" id="carCategory">Standard Class</div>
                 <div class="car-title" id="carName">Vortex X-1</div>
                 <div class="car-specs" id="carSpecs">Top Speed: 240 km/h | Power: 300 HP</div>
-                <div class="car-image-placeholder" id="carDesignBox">
-                    [ Original Custom Vehicle Design ]
-                </div>
+                <div class="car-image-placeholder">[ Original Custom Vehicle Design ]</div>
             </div>
-
             <button class="slider-arrow right-arrow" onclick="nextCar()">❯</button>
         </div>
 
-        <!-- Bottom Bar: Left Side Upgrade/Mod Options & Right Play Button -->
         <div class="bottom-bar">
             <div class="garage-menu-options">
-                <button class="action-btn" onclick="openFeature('Car Painting Studio', 'Change body paint color (Glossy, Matte, Neon), draw custom patterns, or write custom text on your car using game coins.')">🎨 Car Paint</button>
-                <button class="action-btn" onclick="openFeature('Body Modification', 'Upgrade bumpers, side skirts, trunk (diggi), hood, and doors with custom styling parts.')">🛠️ Modify Body</button>
-                <button class="action-btn" onclick="openFeature('Parts & Silencer Upgrade', 'Upgrade tires grip, braking response, suspension, and install high-performance racing silencers.')">⚙️ Parts & Silencer</button>
-                <button class="action-btn" onclick="openFeature('Engine Tuning Studio', 'Upgrade pistons, turbo boost systems, and scale top speed all the way up to 520 km/h!')">🔥 Engine Tuning</button>
-                <button class="action-btn" onclick="openFeature('Gear System Upgrade', 'Switch between Automatic (2 Gears) and Manual (5 to 7 Forward Gears + 1 Reverse Gear).')">⚙️ Gearbox Mod</button>
-                <button class="action-btn" onclick="openFeature('Steering & Control Setup', 'Choose Virtual Steering Wheel (Left/Right/Both sides), Arrow Buttons, or Gyroscope Tilt mode.')">🕹️ Steering Side</button>
-                <button class="action-btn" onclick="openFeature('Wheel Rims Customizer', 'Upgrade and change alloy rims, chrome wheels, and custom tire profiles.')">🛞 Wheel Rims</button>
-                <button class="action-btn" onclick="openFeature('Full Vehicle Repair', 'Complete engine tune-up, dent removal, and structural overhaul using coins.')">🔧 Full Repair</button>
+                <button class="action-btn" onclick="openFeature('Car Painting Studio', 'Change body paint colors, custom patterns, and write custom text.')">🎨 Paint</button>
+                <button class="action-btn" onclick="openFeature('Body Modification', 'Upgrade bumpers, side skirts, trunk (diggi), hood, and doors.')">🛠️ Modify</button>
+                <button class="action-btn" onclick="openFeature('Parts & Silencer', 'Upgrade tires grip, braking system, suspension, and racing silencers.')">⚙️ Parts</button>
+                <button class="action-btn" onclick="openFeature('Engine Tuning Studio', 'Upgrade pistons, turbo boost, and scale top speed up to 520 km/h.')">🔥 Engine</button>
+                <button class="action-btn" onclick="openFeature('Gearbox Mod', 'Switch between Automatic (2 Gears) and Manual (5-7 Forward + 1 Reverse).')">⚙️ Gearbox</button>
+                <button class="action-btn" onclick="openFeature('Steering Setup', 'Choose Virtual Steering Wheel, Arrow Buttons, or Gyroscope Tilt mode.')">🕹️ Steering</button>
+                <button class="action-btn" onclick="openFeature('Wheel Rims Customizer', 'Upgrade alloy wheels, rim designs, and custom tire profiles.')">🛞 Rims</button>
+                <button class="action-btn" onclick="openFeature('Full Vehicle Repair', 'Complete engine tune-up and body structural repair.')">🔧 Repair</button>
             </div>
-
-            <div class="play-btn-container">
-                <button class="play-btn" onclick="startGame()">PLAY</button>
-            </div>
+            <button class="play-btn" onclick="startGame()">PLAY</button>
         </div>
+    </div>
+
+    <!-- Gameplay Canvas Screen -->
+    <div id="gameCanvasScreen">
+        <div class="hud-overlay">
+            <div id="hudSpeed">SPEED: 0 km/h</div>
+            <div id="hudScore">SCORE: 0</div>
+        </div>
+        <canvas id="raceCanvas"></canvas>
+        <button class="back-garage-btn" onclick="returnToGarage()">EXIT TO GARAGE</button>
     </div>
 
     <!-- Modal Popup -->
     <div class="modal-overlay" id="customModal">
         <div class="modal-content">
             <div class="modal-title" id="modalTitle">Title</div>
-            <div class="modal-body" id="modalBody">Body text goes here...</div>
+            <div class="modal-body" id="modalBody">Body text...</div>
             <button class="close-modal-btn" onclick="closeModal()">OK / CLOSE</button>
         </div>
     </div>
 
-    <!-- Language Modal -->
-    <div class="modal-overlay" id="langModal">
-        <div class="modal-content">
-            <div class="modal-title">Select Language (भाषा चुनें)</div>
-            <div class="lang-grid">
-                <div class="lang-option" onclick="setLanguage('English')">🇬🇧 English</div>
-                <div class="lang-option" onclick="setLanguage('Hindi')">🇮🇳 हिन्दी</div>
-                <div class="lang-option" onclick="setLanguage('Japanese')">🇯🇵 日本語</div>
-                <div class="lang-option" onclick="setLanguage('Korean')">🇰🇷 한국어</div>
-                <div class="lang-option" onclick="setLanguage('Spanish')">🇪🇸 Español</div>
-                <div class="lang-option" onclick="setLanguage('German')">🇩🇪 Deutsch</div>
-            </div>
-            <button class="close-modal-btn" onclick="closeLangModal()">Close</button>
-        </div>
-    </div>
-
     <script>
-        // 32 100% Original Custom Cars Roster (Zero Copied Names/Designs)
         const cars = [
-            { name: "Vortex X-1", category: "Standard City Cruiser", speed: "240 km/h", power: "300 HP", price: "Free" },
-            { name: "Terrain Nomad S", category: "Heavy Offroad Utility", speed: "260 km/h", power: "350 HP", price: "🪙 5,000" },
-            { name: "Aero Stalker GT", category: "Sport Coupe", speed: "310 km/h", power: "550 HP", price: "🪙 12,000" },
-            { name: "Apex Predator V8", category: "Super Luxury Racer", speed: "380 km/h", power: "850 HP", price: "🪙 25,000" },
-            { name: "Titanium Blitz", category: "Turbo Supercar", speed: "440 km/h", power: "1150 HP", price: "🪙 50,000" },
-            { name: "Nebula Hyper-X", category: "Ultimate Turbo Hypercar", speed: "520 km/h", power: "1550 HP", price: "🪙 1,00,000" },
-            { name: "Quantum Storm", category: "Custom Track Monster", speed: "490 km/h", power: "1350 HP", price: "🪙 85,000" },
-            { name: "Shadow Strike", category: "Stealth Supercar", speed: "460 km/h", power: "1250 HP", price: "🪙 70,000" },
-            { name: "Blaze Runner", category: "Street Drifter", speed: "340 km/h", power: "620 HP", price: "🪙 18,000" },
-            { name: "Iron Mammoth", category: "Heavy Armor Utility", speed: "250 km/h", power: "400 HP", price: "🪙 8,000" },
-            { name: "Solaris GT-R", category: "Sport Coupe", speed: "330 km/h", power: "580 HP", price: "🪙 15,000" },
-            { name: "Cyber Pulsar", category: "Turbo Supercar", speed: "450 km/h", power: "1200 HP", price: "🪙 60,000" },
-            { name: "Venom Spark", category: "Street Drifter", speed: "350 km/h", power: "650 HP", price: "🪙 20,000" },
-            { name: "Alpha Titan Pro", category: "Heavy Offroad Utility", speed: "270 km/h", power: "380 HP", price: "🪙 9,000" },
-            { name: "Spectre V12", category: "Super Luxury Racer", speed: "400 km/h", power: "920 HP", price: "🪙 35,000" },
-            { name: "Eclipse Nova", category: "Ultimate Hypercar", speed: "510 km/h", power: "1500 HP", price: "🪙 95,000" },
-            { name: "Raging Bulltech", category: "Super Luxury Racer", speed: "420 km/h", power: "980 HP", price: "🪙 42,000" },
-            { name: "Stellar Phantom", category: "Stealth Supercar", speed: "470 km/h", power: "1280 HP", price: "🪙 75,000" },
-            { name: "Drift Master X", category: "Street Drifter", speed: "360 km/h", power: "690 HP", price: "🪙 22,000" },
-            { name: "Terra Crusher", category: "Heavy Offroad Utility", speed: "280 km/h", power: "420 HP", price: "🪙 11,000" },
-            { name: "Inferno Blitz", category: "Turbo Supercar", speed: "430 km/h", power: "1100 HP", price: "🪙 48,000" },
-            { name: "Zenith GT-X", category: "Sport Coupe", speed: "320 km/h", power: "560 HP", price: "🪙 14,000" },
-            { name: "Comet Striker", category: "Custom Track Monster", speed: "480 km/h", power: "1300 HP", price: "🪙 80,000" },
-            { name: "Giga Beast S11", category: "Heavy Offroad Utility", speed: "265 km/h", power: "370 HP", price: "🪙 7,500" },
-            { name: "Apex Fortunex", category: "Heavy Offroad Utility", speed: "275 km/h", power: "390 HP", price: "🪙 10,000" },
-            { name: "Hyperion Buggtar", category: "Ultimate Hypercar", speed: "520 km/h", power: "1550 HP", price: "🪙 1,10,000" },
-            { name: "Velocity Lambex", category: "Super Luxury Racer", speed: "410 km/h", power: "950 HP", price: "🪙 38,000" },
-            { name: "Ferrariova GT", category: "Sport Coupe", speed: "370 km/h", power: "800 HP", price: "🪙 28,000" },
-            { name: "Sonic Wave", category: "Street Drifter", speed: "345 km/h", power: "630 HP", price: "🪙 19,000" },
-            { name: "Midnight Shadow", category: "Stealth Supercar", speed: "465 km/h", power: "1260 HP", price: "🪙 72,000" },
-            { name: "Thunder Vortex", category: "Turbo Supercar", speed: "435 km/h", power: "1120 HP", price: "🪙 52,000" },
-            { name: "Supernova GT", category: "Custom Track Monster", speed: "495 km/h", power: "1380 HP", price: "🪙 90,000" }
+            { name: "Vortex X-1", category: "Standard City Cruiser", speed: 240, power: "300 HP", price: "Free" },
+            { name: "Terrain Nomad S", category: "Heavy Offroad Utility", speed: 260, power: "350 HP", price: "🪙 5,000" },
+            { name: "Aero Stalker GT", category: "Sport Coupe", speed: 310, power: "550 HP", price: "🪙 12,000" },
+            { name: "Apex Predator V8", category: "Super Luxury Racer", speed: 380, power: "850 HP", price: "🪙 25,000" },
+            { name: "Titanium Blitz", category: "Turbo Supercar", speed: 440, power: "1150 HP", price: "🪙 50,000" },
+            { name: "Nebula Hyper-X", category: "Ultimate Turbo Hypercar", speed: 520, power: "1550 HP", price: "🪙 1,00,000" },
+            { name: "Quantum Storm", category: "Custom Track Monster", speed: 490, power: "1350 HP", price: "🪙 85,000" },
+            { name: "Shadow Strike", category: "Stealth Supercar", speed: "460, power: 1250", price: "🪙 70,000" },
+            { name: "Blaze Runner", category: "Street Drifter", speed: 340, power: "620 HP", price: "🪙 18,000" },
+            { name: "Iron Mammoth", category: "Heavy Armor Utility", speed: 250, power: "400 HP", price: "🪙 8,000" },
+            { name: "Solaris GT-R", category: "Sport Coupe", speed: 330, power: "580 HP", price: "🪙 15,000" },
+            { name: "Cyber Pulsar", category: "Turbo Supercar", speed: 450, power: "1200 HP", price: "🪙 60,000" },
+            { name: "Venom Spark", category: "Street Drifter", speed: 350, power: "650 HP", price: "🪙 20,000" },
+            { name: "Alpha Titan Pro", category: "Heavy Offroad Utility", speed: 270, power: "380 HP", price: "🪙 9,000" },
+            { name: "Spectre V12", category: "Super Luxury Racer", speed: 400, power: "920 HP", price: "🪙 35,000" },
+            { name: "Eclipse Nova", category: "Ultimate Hypercar", speed: 510, power: "1500 HP", price: "🪙 95,000" },
+            { name: "Raging Bulltech", category: "Super Luxury Racer", speed: 420, power: "980 HP", price: "🪙 42,000" },
+            { name: "Stellar Phantom", category: "Stealth Supercar", speed: "470", power: "1280 HP", price: "🪙 75,000" },
+            { name: "Drift Master X", category: "Street Drifter", speed: 360, power: "690 HP", price: "🪙 22,000" },
+            { name: "Terra Crusher", category: "Heavy Offroad Utility", speed: 280, power: "420 HP", price: "🪙 11,000" },
+            { name: "Inferno Blitz", category: "Turbo Supercar", speed: 430, power: "1100 HP", price: "🪙 48,000" },
+            { name: "Zenith GT-X", category: "Sport Coupe", speed: 320, power: "560 HP", price: "🪙 14,000" },
+            { name: "Comet Striker", category: "Custom Track Monster", speed: 480, power: "1300 HP", price: "🪙 80,000" },
+            { name: "Giga Beast S11", category: "Heavy Offroad Utility", speed: 265, power: "370 HP", price: "🪙 7,500" },
+            { name: "Apex Fortunex", category: "Heavy Offroad Utility", speed: 275, power: "390 HP", price: "🪙 10,000" },
+            { name: "Hyperion Buggtar", category: "Ultimate Hypercar", speed: 520, power: "1550 HP", price: "🪙 1,10,000" },
+            { name: "Velocity Lambex", category: "Super Luxury Racer", speed: 410, power: "950 HP", price: "🪙 38,000" },
+            { name: "Ferrariova GT", category: "Sport Coupe", speed: 370, power: "800 HP", price: "🪙 28,000" },
+            { name: "Sonic Wave", category: "Street Drifter", speed: 345, power: "630 HP", price: "🪙 19,000" },
+            { name: "Midnight Shadow", category: "Stealth Supercar", speed: 465, power: "1260 HP", price: "🪙 72,000" },
+            { name: "Thunder Vortex", category: "Turbo Supercar", speed: "435", power: "1120 HP", price: "🪙 52,000" },
+            { name: "Supernova GT", category: "Custom Track Monster", speed: 495, power: "1380 HP", price: "🪙 90,000" }
         ];
 
         let currentCarIndex = 0;
@@ -416,7 +402,7 @@
             let car = cars[currentCarIndex];
             document.getElementById("carName").innerText = car.name;
             document.getElementById("carCategory").innerText = `Car ${currentCarIndex + 1} of ${cars.length} • ${car.category}`;
-            document.getElementById("carSpecs").innerText = `Top Speed: ${car.speed} | Power: ${car.power} | Price: ${car.price}`;
+            document.getElementById("carSpecs").innerText = `Top Speed: ${car.speed} km/h | Power: ${car.power} | Price: ${car.price}`;
         }
 
         function nextCar() {
@@ -429,7 +415,6 @@
             updateCarDisplay();
         }
 
-        // About / Menu Section with Developer Details as Requested
         function openMenu() {
             let info = `=== GAME INFORMATION ===\nGame: SpeedX Legend Racing Car\n\n=== DEVELOPER & FOUNDER ===\nName: Subhash Yadav\nInstagram: @iamsubhash177\nEmail: yahu9950@gmail.com`;
             openFeature("Developer About Section", info.replace(/\n/g, '<br>'));
@@ -445,22 +430,76 @@
             document.getElementById("customModal").style.display = "none";
         }
 
-        function openLanguageModal() {
-            document.getElementById("langModal").style.display = "flex";
-        }
-
-        function closeLangModal() {
-            document.getElementById("langModal").style.display = "none";
-        }
-
-        function setLanguage(lang) {
-            document.querySelector(".lang-btn").innerHTML = `🌐 ${lang}`;
-            closeLangModal();
-        }
+        // Gameplay Engine variables
+        let gameInterval;
+        let canvas, ctx;
+        let playerX = 0;
+        let roadSpeed = 0;
+        let score = 0;
 
         function startGame() {
-            openFeature("Loading Race Arena", "Initializing Game Modes (Endless Traffic, Time Attack) & Environments (City Neon Night, Snowfall, Desert Highway, Airport Runway)... Get Ready!");
+            document.getElementById("garageScreen").style.display = "none";
+            document.getElementById("gameCanvasScreen").style.display = "block";
+            
+            canvas = document.getElementById("raceCanvas");
+            ctx = canvas.getContext("2d");
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            playerX = canvas.width / 2;
+            roadSpeed = 0;
+            score = 0;
+
+            // Start game loop
+            if(gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(updateGame, 20);
         }
+
+        function returnToGarage() {
+            clearInterval(gameInterval);
+            document.getElementById("gameCanvasScreen").style.display = "none";
+            document.getElementById("garageScreen").style.display = "flex";
+        }
+
+        function updateGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Road
+            ctx.fillStyle = "#222";
+            ctx.fillRect(canvas.width / 2 - 150, 0, 300, canvas.height);
+
+            // Draw Road Lines
+            ctx.strokeStyle = "#fff";
+            ctx.setLineDash([20, 20]);
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+
+            // Draw Player Car
+            ctx.fillStyle = "#ff0055";
+            ctx.fillRect(playerX - 25, canvas.height - 120, 50, 90);
+
+            // Update HUD
+            roadSpeed += 1;
+            score += 1;
+            document.getElementById("hudSpeed").innerText = `SPEED: ${Math.min(cars[currentCarIndex].speed, 120 + roadSpeed)} km/h`;
+            document.getElementById("hudScore").innerText = `SCORE: ${score}`;
+        }
+
+        // Handle Steering Movement via Touch / Mouse
+        window.addEventListener('mousemove', (e) => {
+            if(document.getElementById("gameCanvasScreen").style.display === "block") {
+                playerX = e.clientX;
+            }
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if(document.getElementById("gameCanvasScreen").style.display === "block") {
+                playerX = e.touches[0].clientX;
+            }
+        });
 
         updateCarDisplay();
     </script>
