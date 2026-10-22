@@ -30,7 +30,7 @@
             flex-direction: column;
             justify-content: space-between;
             padding: 20px;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.8)), url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1920') no-repeat center center/cover;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.85)), url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=1920') no-repeat center center/cover;
         }
 
         /* Top Bar */
@@ -122,7 +122,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 20px;
+            font-size: 18px;
             color: #aaa;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             position: relative;
@@ -207,7 +207,7 @@
 <body>
 
     <div class="game-container">
-        <!-- Top Bar: Menu, Language, Coins -->
+        <!-- Top Bar -->
         <div class="top-bar">
             <button class="menu-btn" onclick="openMenu()">☰ Menu</button>
             <div class="top-right-info">
@@ -216,22 +216,22 @@
             </div>
         </div>
 
-        <!-- Center Garage Showcase -->
+        <!-- Center Garage Showcase (Original Custom Names & Stats) -->
         <div class="garage-section">
             <button class="slider-arrow left-arrow" onclick="prevCar()">❮</button>
             
             <div class="car-display-box">
-                <div class="car-title" id="carName">SpeedX GT - V8</div>
-                <div class="car-specs" id="carSpecs">Top Speed: 320 km/h | Power: 650 HP</div>
-                <div class="car-image-placeholder">
-                    [ 3D / 2D Car Model Preview ]
+                <div class="car-title" id="carName">Vortex X-1 (Starter)</div>
+                <div class="car-specs" id="carSpecs">Top Speed: 240 km/h | Power: 300 HP</div>
+                <div class="car-image-placeholder" id="carDesignBox">
+                    [ Original Custom Arcade Car Design ]
                 </div>
             </div>
 
             <button class="slider-arrow right-arrow" onclick="nextCar()">❯</button>
         </div>
 
-        <!-- Bottom Bar: Modification Tools & Play Button -->
+        <!-- Bottom Bar -->
         <div class="bottom-bar">
             <div class="garage-menu-options">
                 <button class="action-btn" onclick="openModify()">🛠️ Modify</button>
@@ -244,20 +244,20 @@
     </div>
 
     <script>
-        // Car Data Array (20-30 cars structure)
+        // 100% Original Custom Car Roster (No Copyright Names/Designs)
         const cars = [
-            { name: "SpeedX GT - V8", speed: "320 km/h", power: "650 HP" },
-            { name: "Scorpio S11 Beast", speed: "240 km/h", power: "280 HP" },
-            { name: "Fortuner Legend", speed: "260 km/h", power: "300 HP" },
-            { name: "Hyperion Bugg-X", speed: "520 km/h", power: "1500 HP" },
-            { name: "Lambor V12 Storm", speed: "480 km/h", power: "1200 HP" }
+            { name: "Vortex X-1", speed: "240 km/h", power: "300 HP", type: "Standard City Cruiser" },
+            { name: "Terrain Beast Pro", speed: "280 km/h", power: "420 HP", type: "Heavy Offroad Utility" },
+            { name: "Apex Phantom GT", speed: "360 km/h", power: "750 HP", type: "Sport Coupe" },
+            { name: "Thunderbolt V12", speed: "440 km/h", power: "1050 HP", type: "Super Hypercar" },
+            { name: "Nebula Hyper-X", speed: "520 km/h", power: "1400 HP", type: "Ultimate Speed Legend" }
         ];
 
         let currentCarIndex = 0;
 
         function updateCarDisplay() {
             document.getElementById("carName").innerText = cars[currentCarIndex].name;
-            document.getElementById("carSpecs").innerText = `Top Speed: ${cars[currentCarIndex].speed} | Power: ${cars[currentCarIndex].power}`;
+            document.getElementById("carSpecs").innerText = `Top Speed: ${cars[currentCarIndex].speed} | Power: ${cars[currentCarIndex].power} (${cars[currentCarIndex].type})`;
         }
 
         function nextCar() {
@@ -271,29 +271,28 @@
         }
 
         function openMenu() {
-            alert("Developer & Credits:\nFounder: Subhash Yadav\nInstagram: @iamsubhash177\nEmail: yahu9950@gmail.com");
+            alert("Developer & About:\nGame: SpeedX Legend Racing Car\nFounder: Subhash Yadav\nInstagram: @iamsubhash177\nEmail: yahu9950@gmail.com");
         }
 
         function changeLanguage() {
-            alert("Language Switcher: Multi-language support coming soon!");
+            alert("Multi-language switcher: English, Hindi, Spanish, Japanese, German & more!");
         }
 
         function openModify() {
-            alert("Opening Modification Studio (Parts, Engine, Tires, Muffler)...");
+            alert("Opening Modification Studio: Customize body parts, wheels, and performance engines!");
         }
 
         function openPaint() {
-            alert("Opening Paint & Custom Text Shop...");
+            alert("Opening Paint & Custom Text Shop: Change paint color and add custom text/decals!");
         }
 
         function openRepair() {
-            alert("Repair Shop: Your car is in top condition!");
+            alert("Repair Shop: Vehicle body and engine diagnostics normal.");
         }
 
         function startGame() {
-            alert("Loading Game Modes, Maps & Weather Environments... Let's Race!");
+            alert("Loading Game Modes, Maps (Snow, Desert, Runway), and Weather Systems...");
         }
     </script>
 </body>
-  </html>
-              
+</html>
