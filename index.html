@@ -16,7 +16,7 @@
         html, body {
             width: 100vw;
             height: 100vh;
-            background: #050510;
+            background: #030308;
             color: #ffffff;
             overflow: hidden;
             display: flex;
@@ -24,16 +24,24 @@
             align-items: center;
         }
 
-        /* Main Game Screen Wrapper */
+        /* Full Screen Colorful Arcade Container */
         .game-screen {
             width: 100vw;
             height: 100vh;
             background: linear-gradient(135deg, #2b0b3d 0%, #09091a 50%, #001f3f 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 10s ease infinite;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 15px 25px;
+            padding: 12px 20px;
             position: relative;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         /* Top Bar */
@@ -46,30 +54,35 @@
 
         .top-left-group {
             display: flex;
-            gap: 12px;
+            gap: 10px;
         }
 
         .menu-btn, .lang-btn {
-            background: rgba(20, 20, 40, 0.95);
+            background: rgba(15, 15, 30, 0.9);
             border: 2px solid #00f3ff;
             color: #00f3ff;
-            padding: 8px 18px;
-            font-size: 14px;
+            padding: 6px 14px;
+            font-size: 13px;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 0 12px rgba(0, 243, 255, 0.4);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
+        }
+
+        .menu-btn:hover, .lang-btn:hover {
+            background: #00f3ff;
+            color: #000;
         }
 
         .coin-display {
-            background: rgba(20, 20, 40, 0.95);
+            background: rgba(15, 15, 30, 0.9);
             border: 2px solid #ffd700;
-            padding: 8px 20px;
+            padding: 6px 16px;
             border-radius: 20px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             color: #ffd700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
         }
 
         /* Center Garage Showcase */
@@ -84,64 +97,64 @@
 
         .car-display-box {
             text-align: center;
-            width: 75%;
-            max-width: 500px;
+            width: 80%;
+            max-width: 450px;
         }
 
         .car-category {
-            font-size: 12px;
+            font-size: 11px;
             color: #ffd700;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             font-weight: bold;
         }
 
         .car-title {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 2px;
             color: #ff0055;
             text-shadow: 0 0 15px rgba(255, 0, 85, 0.8);
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
 
         .car-specs {
-            font-size: 14px;
+            font-size: 12px;
             color: #00f3ff;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             font-weight: 600;
         }
 
         .car-image-placeholder {
             width: 100%;
-            height: 160px;
+            height: 130px;
             background: rgba(10, 10, 25, 0.85);
             border: 2px solid rgba(0, 243, 255, 0.5);
             border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 16px;
+            font-size: 14px;
             color: #fff;
             text-shadow: 0 0 10px #00f3ff;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
         }
 
         .slider-arrow {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(20, 20, 40, 0.95);
+            background: rgba(15, 15, 30, 0.9);
             border: 2px solid #fff;
             color: #fff;
-            font-size: 22px;
-            padding: 12px 18px;
+            font-size: 18px;
+            padding: 10px 14px;
             cursor: pointer;
             border-radius: 50%;
             z-index: 15;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
 
         .slider-arrow:hover {
@@ -149,35 +162,35 @@
             border-color: #ff0055;
         }
 
-        .left-arrow { left: 5%; }
-        .right-arrow { right: 5%; }
+        .left-arrow { left: 4%; }
+        .right-arrow { right: 4%; }
 
         /* Bottom Bar: Left Modifications & Right Play */
         .bottom-bar {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-end;
             z-index: 10;
             gap: 15px;
         }
 
-        /* Left Side Modification Buttons Grid */
+        /* Left Side Modification & Upgrade Grid (8 Distinct Options) */
         .garage-menu-options {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            gap: 6px;
             flex-grow: 1;
-            max-width: 550px;
+            max-width: 500px;
         }
 
         .action-btn {
-            background: linear-gradient(135deg, rgba(255, 0, 85, 0.25), rgba(20, 20, 40, 0.9));
+            background: linear-gradient(135deg, rgba(255, 0, 85, 0.25), rgba(15, 15, 30, 0.9));
             border: 2px solid #ff0055;
             color: #fff;
-            padding: 10px 6px;
-            font-size: 11px;
+            padding: 8px 4px;
+            font-size: 10px;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 7px;
             cursor: pointer;
             text-transform: uppercase;
             text-align: center;
@@ -188,17 +201,18 @@
         .action-btn:hover {
             background: #ff0055;
             transform: translateY(-2px);
+            box-shadow: 0 0 15px #ff0055;
         }
 
-        /* Right Side Play Button */
+        /* Right Side Prominent Play Button */
         .play-btn {
             background: linear-gradient(45deg, #00f3ff, #00ff66);
             border: none;
             color: #030308;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 900;
-            padding: 15px 40px;
-            border-radius: 35px;
+            padding: 14px 35px;
+            border-radius: 30px;
             cursor: pointer;
             text-transform: uppercase;
             box-shadow: 0 0 25px rgba(0, 243, 255, 0.7);
@@ -206,7 +220,8 @@
         }
 
         .play-btn:hover {
-            transform: scale(1.05);
+            transform: scale(1.06);
+            box-shadow: 0 0 35px rgba(0, 255, 102, 0.9);
         }
 
         /* Modal Popups */
@@ -216,18 +231,18 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(3, 3, 8, 0.9);
+            background: rgba(3, 3, 8, 0.88);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 100;
-            padding: 20px;
+            padding: 15px;
         }
 
         .modal-content {
             background: #12122c;
             border: 2px solid #00f3ff;
-            padding: 25px;
+            padding: 20px;
             border-radius: 15px;
             width: 100%;
             max-width: 420px;
@@ -236,46 +251,48 @@
         }
 
         .modal-title {
-            font-size: 18px;
+            font-size: 17px;
             color: #00f3ff;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             font-weight: 900;
             text-transform: uppercase;
         }
 
         .modal-body {
-            font-size: 13px;
+            font-size: 12px;
             color: #ddd;
-            line-height: 1.5;
-            margin-bottom: 20px;
+            line-height: 1.4;
+            margin-bottom: 15px;
+            max-height: 200px;
+            overflow-y: auto;
         }
 
         .close-modal-btn {
             background: #ff0055;
             border: none;
             color: #fff;
-            padding: 10px 25px;
+            padding: 8px 20px;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
         }
 
         .lang-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
         .lang-option {
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(0,243,255,0.4);
             color: #fff;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         .lang-option:hover {
@@ -312,17 +329,17 @@
             <button class="slider-arrow right-arrow" onclick="nextCar()">❯</button>
         </div>
 
-        <!-- Bottom Bar: Left Side Upgrade/Mod Options & Right Play -->
+        <!-- Bottom Bar: Left Side Upgrade/Mod Options & Right Play Button -->
         <div class="bottom-bar">
             <div class="garage-menu-options">
-                <button class="action-btn" onclick="openFeature('Car Painting Studio', 'Change body paint colors, apply custom drawings, or write custom text on your car.')">🎨 Paint</button>
-                <button class="action-btn" onclick="openFeature('Body Modification', 'Upgrade bumpers, side skirts, trunk (diggi), hood, and doors.')">🛠️ Modify</button>
-                <button class="action-btn" onclick="openFeature('Parts Repair & Upgrade', 'Upgrade tires grip, braking system, suspension, and exhaust silencers.')">⚙️ Parts</button>
-                <button class="action-btn" onclick="openFeature('Engine Tuning Studio', 'Upgrade pistons, turbo boost, and scale top speed up to 520 km/h!')">🔥 Engine</button>
-                <button class="action-btn" onclick="openFeature('Gear System Mod', 'Switch between Automatic (2 Gears) and Manual (5 to 7 Forward + 1 Reverse).')">⚙️ Gearbox</button>
-                <button class="action-btn" onclick="openFeature('Steering & Control Setup', 'Choose Virtual Steering, Arrow Buttons, or Gyroscope Tilt mode.')">🕹️ Steering</button>
-                <button class="action-btn" onclick="openFeature('Wheel Rims Customizer', 'Upgrade and change alloy wheels and rim designs.')">🛞 Rims</button>
-                <button class="action-btn" onclick="openFeature('Full Vehicle Repair', 'Complete engine tune-up and body repair executed successfully.')">🔧 Repair</button>
+                <button class="action-btn" onclick="openFeature('Car Painting Studio', 'Change body paint color (Glossy, Matte, Neon), draw custom patterns, or write custom text on your car using game coins.')">🎨 Car Paint</button>
+                <button class="action-btn" onclick="openFeature('Body Modification', 'Upgrade bumpers, side skirts, trunk (diggi), hood, and doors with custom styling parts.')">🛠️ Modify Body</button>
+                <button class="action-btn" onclick="openFeature('Parts & Silencer Upgrade', 'Upgrade tires grip, braking response, suspension, and install high-performance racing silencers.')">⚙️ Parts & Silencer</button>
+                <button class="action-btn" onclick="openFeature('Engine Tuning Studio', 'Upgrade pistons, turbo boost systems, and scale top speed all the way up to 520 km/h!')">🔥 Engine Tuning</button>
+                <button class="action-btn" onclick="openFeature('Gear System Upgrade', 'Switch between Automatic (2 Gears) and Manual (5 to 7 Forward Gears + 1 Reverse Gear).')">⚙️ Gearbox Mod</button>
+                <button class="action-btn" onclick="openFeature('Steering & Control Setup', 'Choose Virtual Steering Wheel (Left/Right/Both sides), Arrow Buttons, or Gyroscope Tilt mode.')">🕹️ Steering Side</button>
+                <button class="action-btn" onclick="openFeature('Wheel Rims Customizer', 'Upgrade and change alloy rims, chrome wheels, and custom tire profiles.')">🛞 Wheel Rims</button>
+                <button class="action-btn" onclick="openFeature('Full Vehicle Repair', 'Complete engine tune-up, dent removal, and structural overhaul using coins.')">🔧 Full Repair</button>
             </div>
 
             <div class="play-btn-container">
@@ -357,6 +374,7 @@
     </div>
 
     <script>
+        // 32 100% Original Custom Cars Roster (Zero Copied Names/Designs)
         const cars = [
             { name: "Vortex X-1", category: "Standard City Cruiser", speed: "240 km/h", power: "300 HP", price: "Free" },
             { name: "Terrain Nomad S", category: "Heavy Offroad Utility", speed: "260 km/h", power: "350 HP", price: "🪙 5,000" },
@@ -389,10 +407,7 @@
             { name: "Sonic Wave", category: "Street Drifter", speed: "345 km/h", power: "630 HP", price: "🪙 19,000" },
             { name: "Midnight Shadow", category: "Stealth Supercar", speed: "465 km/h", power: "1260 HP", price: "🪙 72,000" },
             { name: "Thunder Vortex", category: "Turbo Supercar", speed: "435 km/h", power: "1120 HP", price: "🪙 52,000" },
-            { name: "Supernova GT", category: "Custom Track Monster", speed: "495 km/h", power: "1380 HP", price: "🪙 90,000" },
-            { name: "Omega Prime", category: "Ultimate Hypercar", speed: "520 km/h", power: "1600 HP", price: "🪙 1,20,000" },
-            { name: "Blizzard Runner", category: "Standard City Cruiser", speed: "245 km/h", power: "310 HP", price: "🪙 2,000" },
-            { name: "Desert Stalker", category: "Heavy Offroad Utility", speed: "285 km/h", power: "430 HP", price: "🪙 12,500" }
+            { name: "Supernova GT", category: "Custom Track Monster", speed: "495 km/h", power: "1380 HP", price: "🪙 90,000" }
         ];
 
         let currentCarIndex = 0;
@@ -414,6 +429,7 @@
             updateCarDisplay();
         }
 
+        // About / Menu Section with Developer Details as Requested
         function openMenu() {
             let info = `=== GAME INFORMATION ===\nGame: SpeedX Legend Racing Car\n\n=== DEVELOPER & FOUNDER ===\nName: Subhash Yadav\nInstagram: @iamsubhash177\nEmail: yahu9950@gmail.com`;
             openFeature("Developer About Section", info.replace(/\n/g, '<br>'));
@@ -443,11 +459,10 @@
         }
 
         function startGame() {
-            openFeature("Loading Race Arena", "Initializing Game Modes & Environments... Get Ready!");
+            openFeature("Loading Race Arena", "Initializing Game Modes (Endless Traffic, Time Attack) & Environments (City Neon Night, Snowfall, Desert Highway, Airport Runway)... Get Ready!");
         }
 
         updateCarDisplay();
     </script>
 </body>
 </html>
-
