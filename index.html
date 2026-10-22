@@ -1109,6 +1109,122 @@ input[type="range"] { padding:0; accent-color:var(--purple); }
   drawScene(0);
 })();
 </script>
+  
+<!-- SPEEDX LEGEND TEMPORARY CAR GARAGE -->
+<section id="sx-car-garage" style="background:#090710;color:white;padding:22px 12px;font-family:Arial,sans-serif;border-radius:18px;margin:16px 0;">
+  <h2 style="text-align:center;color:#c084fc;margin:0 0 6px;">SPEEDX LEGEND</h2>
+  <p style="text-align:center;color:#aaa;font-size:13px;">SELECT YOUR SUPERCAR</p>
+
+  <div id="sx-car-display" style="text-align:center;padding:18px 6px;background:radial-gradient(ellipse,#33204b,#100c19 65%,#090710);border-radius:14px;">
+    <svg viewBox="0 0 360 170" style="width:100%;max-width:440px;" role="img" aria-label="Sports car illustration">
+      <defs>
+        <linearGradient id="sxPaint" x1="0" y1="0" x2="0" y2="1">
+          <stop id="sxPaintTop" offset="0%" stop-color="#c084fc"/>
+          <stop id="sxPaintBottom" offset="100%" stop-color="#6b21a8"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="180" cy="142" rx="142" ry="12" fill="#000" opacity=".65"/>
+      <path d="M35 111 L48 91 Q57 83 92 79 L130 47 Q142 37 169 37 L226 43 Q246 47 270 77 L310 91 Q327 97 330 112 L321 128 L39 128Z" fill="url(#sxPaint)" stroke="#e9d5ff" stroke-width="1.5"/>
+      <path d="M111 78 L143 48 Q153 42 171 43 L194 45 L208 78Z" fill="#171827" stroke="#a78bfa" stroke-width="2"/>
+      <path d="M215 47 L227 49 Q245 53 263 78 L216 78Z" fill="#171827" stroke="#a78bfa" stroke-width="2"/>
+      <path d="M51 93 L100 85 L118 91 L91 99 L48 101Z" fill="#ddd6fe"/>
+      <path d="M273 89 L310 99 L320 107 L282 103Z" fill="#fb7185"/>
+      <path d="M105 121 L260 121 L246 132 L112 132Z" fill="#20132c"/>
+      <circle cx="94" cy="124" r="25" fill="#08080d" stroke="#777" stroke-width="3"/>
+      <circle cx="94" cy="124" r="13" fill="#b8b8c7" stroke="#444" stroke-width="3"/>
+      <circle cx="94" cy="124" r="4" fill="#30283b"/>
+      <circle cx="270" cy="124" r="25" fill="#08080d" stroke="#777" stroke-width="3"/>
+      <circle cx="270" cy="124" r="13" fill="#b8b8c7" stroke="#444" stroke-width="3"/>
+      <circle cx="270" cy="124" r="4" fill="#30283b"/>
+      <path d="M145 87 L224 87" stroke="#e9d5ff" opacity=".7" stroke-width="2"/>
+      <path d="M146 105 L224 105" stroke="#090710" stroke-width="3"/>
+    </svg>
+    <h3 id="sx-car-name" style="margin:8px 0 4px;font-size:22px;">SHADOW GT</h3>
+    <p id="sx-car-desc" style="margin:0;color:#c4b5fd;">Starter Supercar · Unlocked</p>
+  </div>
+
+  <div id="sx-car-list" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px;">
+    <button data-sx-car="0" style="padding:12px 3px;border:1px solid #a855f7;border-radius:10px;background:#241332;color:white;">SHADOW GT<br><small>FREE</small></button>
+    <button data-sx-car="1" style="padding:12px 3px;border:1px solid #51445f;border-radius:10px;background:#17121f;color:white;">VORTEX R<br><small>25,000 🪙</small></button>
+    <button data-sx-car="2" style="padding:12px 3px;border:1px solid #51445f;border-radius:10px;background:#17121f;color:white;">PHANTOM X<br><small>100,000 🪙</small></button>
+  </div>
+
+  <div style="margin-top:16px;background:#17121f;padding:14px;border-radius:12px;">
+    <div style="display:flex;justify-content:space-between;margin:7px 0;"><span>Top Speed</span><b id="sx-speed">280 km/h</b></div>
+    <div style="height:6px;background:#33283d;border-radius:8px;"><div id="sx-speed-bar" style="height:6px;width:54%;background:#c084fc;border-radius:8px;"></div></div>
+    <div style="display:flex;justify-content:space-between;margin:12px 0 7px;"><span>Acceleration</span><b id="sx-accel">7.2 s</b></div>
+    <div style="height:6px;background:#33283d;border-radius:8px;"><div id="sx-accel-bar" style="height:6px;width:60%;background:#c084fc;border-radius:8px;"></div></div>
+    <div style="display:flex;justify-content:space-between;margin:12px 0 7px;"><span>Handling</span><b id="sx-handling">72 / 100</b></div>
+    <div style="height:6px;background:#33283d;border-radius:8px;"><div id="sx-handling-bar" style="height:6px;width:72%;background:#c084fc;border-radius:8px;"></div></div>
+  </div>
+
+  <h3 style="margin:18px 0 10px;">PAINT COLOR</h3>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <button data-sx-color="#a855f7" aria-label="Purple" style="background:#a855f7;width:36px;height:36px;border-radius:50%;border:2px solid white;"></button>
+    <button data-sx-color="#ef4444" aria-label="Red" style="background:#ef4444;width:36px;height:36px;border-radius:50%;border:2px solid white;"></button>
+    <button data-sx-color="#e5e7eb" aria-label="Silver" style="background:#e5e7eb;width:36px;height:36px;border-radius:50%;border:2px solid white;"></button>
+    <button data-sx-color="#111827" aria-label="Black" style="background:#111827;width:36px;height:36px;border-radius:50%;border:2px solid white;"></button>
+    <button data-sx-color="#06b6d4" aria-label="Cyan" style="background:#06b6d4;width:36px;height:36px;border-radius:50%;border:2px solid white;"></button>
+  </div>
+  <p style="color:#999;font-size:12px;margin-top:16px;">Temporary 2D preview. Real 3D models will be added later.</p>
+</section>
+
+<script>
+(function () {
+  const cars = [
+    {name:"SHADOW GT", desc:"Starter Supercar · Unlocked", speed:280, accel:7.2, handling:72, color:"#a855f7", price:0},
+    {name:"VORTEX R", desc:"Track Racer · 25,000 coins", speed:360, accel:4.8, handling:84, color:"#ef4444", price:25000},
+    {name:"PHANTOM X", desc:"Premium Hypercar · 100,000 coins", speed:440, accel:3.1, handling:91, color:"#e5e7eb", price:100000}
+  ];
+  let selected = 0;
+  let paint = cars[0].color;
+  const unlocked = JSON.parse(localStorage.getItem("sxUnlockedCars") || "[0]");
+  const $ = id => document.getElementById(id);
+
+  function updateCar() {
+    const c = cars[selected];
+    $("sx-car-name").textContent = c.name;
+    $("sx-car-desc").textContent = unlocked.includes(selected) ? "Unlocked · Ready to drive" : c.desc;
+    $("sx-speed").textContent = c.speed + " km/h";
+    $("sx-accel").textContent = c.accel + " s";
+    $("sx-handling").textContent = c.handling + " / 100";
+    $("sx-speed-bar").style.width = Math.min(100, c.speed / 5.2) + "%";
+    $("sx-accel-bar").style.width = Math.max(10, 100 - c.accel * 10) + "%";
+    $("sx-handling-bar").style.width = c.handling + "%";
+    paint = c.color;
+    $("sxPaintTop").setAttribute("stop-color", paint);
+    $("sxPaintBottom").setAttribute("stop-color", paint);
+    document.querySelectorAll("[data-sx-car]").forEach(b => {
+      const active = Number(b.dataset.sxCar) === selected;
+      b.style.borderColor = active ? "#c084fc" : "#51445f";
+    });
+  }
+
+  document.querySelectorAll("[data-sx-car]").forEach(b => {
+    b.addEventListener("click", () => {
+      const i = Number(b.dataset.sxCar);
+      if (!unlocked.includes(i)) {
+        alert(cars[i].name + " अभी लॉक है। इसे खरीदने की सुविधा गेम के कॉइन्स सिस्टम से जोड़नी बाकी है।");
+        return;
+      }
+      selected = i;
+      updateCar();
+    });
+  });
+
+  document.querySelectorAll("[data-sx-color]").forEach(b => {
+    b.addEventListener("click", () => {
+      paint = b.dataset.sxColor;
+      $("sxPaintTop").setAttribute("stop-color", paint);
+      $("sxPaintBottom").setAttribute("stop-color", paint);
+    });
+  });
+
+  updateCar();
+})();
+</script>
+<!-- END SPEEDX LEGEND TEMPORARY CAR GARAGE -->
+  
 </body>
 </html>
 
