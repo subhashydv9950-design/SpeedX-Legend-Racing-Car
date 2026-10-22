@@ -14,24 +14,24 @@
         }
 
         body, html {
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
             background: #030308;
             color: #ffffff;
         }
 
-        /* Colorful Animated Background */
+        /* Fixed Layout Container so nothing goes outside screen */
         .game-container {
             width: 100vw;
             height: 100vh;
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 15px 30px;
+            padding: 10px 20px;
             background: linear-gradient(135deg, #2b0b3d 0%, #09091a 50%, #001f3f 100%);
             background-size: 400% 400%;
             animation: gradientBG 12s ease infinite;
@@ -54,7 +54,7 @@
 
         .top-left-group {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
         }
 
@@ -62,23 +62,23 @@
             background: rgba(20, 20, 40, 0.9);
             border: 2px solid #00f3ff;
             color: #00f3ff;
-            padding: 8px 18px;
-            font-size: 14px;
+            padding: 6px 14px;
+            font-size: 13px;
             font-weight: bold;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 0 12px rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
         }
 
         .coin-display {
             background: rgba(20, 20, 40, 0.9);
             border: 2px solid #ffd700;
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-size: 16px;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
             font-weight: bold;
             color: #ffd700;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.35);
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.35);
         }
 
         /* Center Garage Showcase */
@@ -87,9 +87,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex-grow: 1;
             position: relative;
             z-index: 10;
+            margin: auto 0;
         }
 
         .car-display-box {
@@ -97,43 +97,44 @@
         }
 
         .car-category {
-            font-size: 12px;
+            font-size: 11px;
             color: #ffd700;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             font-weight: 700;
         }
 
         .car-title {
-            font-size: 32px;
+            font-size: 26px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 2px;
             color: #ff0055;
-            text-shadow: 0 0 18px rgba(255, 0, 85, 0.7);
+            text-shadow: 0 0 15px rgba(255, 0, 85, 0.7);
             margin-bottom: 2px;
         }
 
         .car-specs {
-            font-size: 13px;
+            font-size: 12px;
             color: #00f3ff;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .car-image-placeholder {
-            width: 460px;
-            height: 185px;
+            width: 380px;
+            max-width: 90vw;
+            height: 140px;
             background: rgba(10, 10, 25, 0.8);
             border: 2px solid rgba(0, 243, 255, 0.4);
-            border-radius: 18px;
+            border-radius: 15px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 17px;
+            font-size: 15px;
             color: #fff;
-            text-shadow: 0 0 12px #00f3ff;
-            box-shadow: 0 12px 35px rgba(0,0,0,0.85);
+            text-shadow: 0 0 10px #00f3ff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.85);
         }
 
         /* Slider Arrows */
@@ -144,15 +145,15 @@
             background: rgba(20, 20, 40, 0.9);
             border: 2px solid #fff;
             color: #fff;
-            font-size: 22px;
-            padding: 12px 18px;
+            font-size: 18px;
+            padding: 10px 14px;
             cursor: pointer;
             border-radius: 50%;
             z-index: 15;
         }
 
-        .left-arrow { left: 8%; }
-        .right-arrow { right: 8%; }
+        .left-arrow { left: 2%; }
+        .right-arrow { right: 2%; }
 
         /* Bottom Bar: Left Side Upgrade/Mod Options & Right Play */
         .bottom-bar {
@@ -160,33 +161,34 @@
             justify-content: space-between;
             align-items: flex-end;
             z-index: 10;
+            padding-bottom: 5px;
         }
 
         /* Left Side Stylish Modification & Upgrade Tools Panel */
         .garage-menu-options {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            max-width: 520px;
+            gap: 6px;
+            max-width: 480px;
         }
 
         .action-btn {
             background: linear-gradient(135deg, rgba(255, 0, 85, 0.25), rgba(20, 20, 40, 0.9));
             border: 2px solid #ff0055;
             color: #fff;
-            padding: 8px 10px;
-            font-size: 10px;
+            padding: 7px 8px;
+            font-size: 9px;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
             text-transform: uppercase;
             text-align: center;
-            box-shadow: 0 0 8px rgba(255, 0, 85, 0.3);
+            box-shadow: 0 0 6px rgba(255, 0, 85, 0.3);
         }
 
         .action-btn:hover {
             background: #ff0055;
-            box-shadow: 0 0 18px #ff0055;
+            box-shadow: 0 0 15px #ff0055;
         }
 
         /* Right Side Play Button */
@@ -194,17 +196,17 @@
             background: linear-gradient(45deg, #00f3ff, #00ff66);
             border: none;
             color: #030308;
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 900;
-            padding: 15px 48px;
-            border-radius: 40px;
+            padding: 12px 35px;
+            border-radius: 30px;
             cursor: pointer;
             text-transform: uppercase;
-            box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.6);
         }
 
         .play-btn:hover {
-            transform: scale(1.07);
+            transform: scale(1.05);
         }
 
         /* Modal Popups */
@@ -224,54 +226,55 @@
         .modal-content {
             background: #12122c;
             border: 2px solid #00f3ff;
-            padding: 25px;
-            border-radius: 20px;
-            width: 480px;
+            padding: 20px;
+            border-radius: 15px;
+            width: 420px;
             max-width: 90%;
             text-align: center;
-            box-shadow: 0 0 35px rgba(0, 243, 255, 0.4);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
         }
 
         .modal-title {
-            font-size: 20px;
+            font-size: 18px;
             color: #00f3ff;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             font-weight: 900;
             text-transform: uppercase;
         }
 
         .modal-body {
-            font-size: 13px;
+            font-size: 12px;
             color: #ddd;
-            line-height: 1.5;
-            margin-bottom: 20px;
+            line-height: 1.4;
+            margin-bottom: 15px;
         }
 
         .close-modal-btn {
             background: #ff0055;
             border: none;
             color: #fff;
-            padding: 10px 25px;
+            padding: 8px 20px;
             font-weight: bold;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
         }
 
         .lang-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 12px;
         }
 
         .lang-option {
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(0,243,255,0.3);
             color: #fff;
-            padding: 9px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -303,7 +306,7 @@
             <button class="slider-arrow right-arrow" onclick="nextCar()">❯</button>
         </div>
 
-        <!-- Bottom Bar: Left Side Upgrade & Mod Options & Right Play -->
+        <!-- Bottom Bar: Left Side Upgrade/Mod Options & Right Play -->
         <div class="bottom-bar">
             <div class="garage-menu-options">
                 <button class="action-btn" onclick="openFeature('Car Painting Studio', 'Change body paint colors, apply custom drawings, or write custom text on your car.')">🎨 Car Paint</button>
@@ -333,7 +336,7 @@
 
     <!-- Language Modal -->
     <div class="modal-overlay" id="langModal">
-        <div class="modal-content" style="width: 500px;">
+        <div class="modal-content" style="width: 450px;">
             <div class="modal-title">Select Language (भाषा चुनें)</div>
             <div class="lang-grid">
                 <div class="lang-option" onclick="setLanguage('English')">🇬🇧 English</div>
@@ -356,7 +359,7 @@
             { name: "Titanium Blitz", category: "Turbo Supercar", speed: "440 km/h", power: "1150 HP", price: "🪙 50,000" },
             { name: "Nebula Hyper-X", category: "Ultimate Turbo Hypercar", speed: "520 km/h", power: "1550 HP", price: "🪙 1,00,000" },
             { name: "Quantum Storm", category: "Custom Track Monster", speed: "490 km/h", power: "1350 HP", price: "🪙 85,000" },
-            { name: "Shadow Strike", category: "Stealth Supercar", speed: "460 km/h", power: "1250 HP", price: "🪙 70,000" },
+            { name: "Shadow Strike", code: "hyper", category: "Stealth Supercar", speed: "460 km/h", power: "1250 HP", price: "🪙 70,000" },
             { name: "Blaze Runner", category: "Street Drifter", speed: "340 km/h", power: "620 HP", price: "🪙 18,000" },
             { name: "Iron Mammoth", category: "Heavy Armor Utility", speed: "250 km/h", power: "400 HP", price: "🪙 8,000" },
             { name: "Solaris GT-R", category: "Sport Coupe", speed: "330 km/h", power: "580 HP", price: "🪙 15,000" },
@@ -421,3 +424,4 @@
     </script>
 </body>
 </html>
+
