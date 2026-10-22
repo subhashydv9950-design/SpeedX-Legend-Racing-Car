@@ -2,877 +2,528 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080711">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090710">
+<title>SPEEDX LEGEND</title>
 
-  <title>SPEEDX LEGEND</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --bg: #080711;
-      --panel: #151124;
-      --purple: #a855f7;
-      --pink: #ed4bff;
-      --text: #ffffff;
-      --muted: #aaa4bf;
-    }
-
-    body {
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-      overflow-x: hidden;
-    }
-
-    button {
-      font: inherit;
-      cursor: pointer;
-    }
-
-    button:focus-visible {
-      outline: 2px solid white;
-      outline-offset: 4px;
-    }
-
-    .screen {
-      display: none;
-      min-height: 100vh;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .screen.active {
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* MAIN MENU */
-
-    #home {
-      background:
-        radial-gradient(ellipse at 50% 55%,
-          #39205f 0%, #171027 35%,
-          #080711 75%);
-    }
-
-    .topbar {
-      width: 100%;
-      padding: 20px 5%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      position: relative;
-      z-index: 5;
-    }
-
-    .brand {
-      font-size: clamp(19px, 4vw, 29px);
-      font-weight: 900;
-      letter-spacing: 2px;
-    }
-
-    .brand span {
-      color: var(--pink);
-    }
-
-    .top-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .small-button {
-      border: 1px solid #4c386a;
-      border-radius: 10px;
-      background: #171124;
-      color: white;
-      padding: 10px 13px;
-    }
-
-    .coin-box {
-      background: #21162f;
-      border: 1px solid #68438c;
-      border-radius: 12px;
-      padding: 10px 13px;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-
-    .coin-icon {
-      color: #ffd66b;
-    }
-
-    .hero {
-      width: 100%;
-      max-width: 1100px;
-      margin: auto;
-      padding: 15px 5% 30px;
-      display: grid;
-      grid-template-columns: 1fr;
-      text-align: center;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .eyebrow {
-      color: #d9a4ff;
-      font-size: 12px;
-      letter-spacing: 4px;
-      font-weight: bold;
-    }
-
-    .hero h1 {
-      font-size: clamp(36px, 9vw, 76px);
-      line-height: 1.05;
-      font-weight: 900;
-      letter-spacing: -2px;
-      margin-top: 12px;
-    }
-
-    .hero h1 span {
-      display: block;
-      color: var(--pink);
-      text-shadow: 0 0 30px #a855f755;
-    }
-
-    .subtitle {
-      color: var(--muted);
-      margin-top: 13px;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    /* The 3D car will be added in Part 2 */
-
-    .car-stage {
-      width: 100%;
-      height: clamp(210px, 42vh, 390px);
-      min-height: 210px;
-      position: relative;
-      margin: 0 auto;
-      border-radius: 22px;
-      overflow: hidden;
-      border: 1px solid #ffffff0c;
-      background:
-        radial-gradient(ellipse at center bottom,
-          #9238d833, transparent 65%);
-    }
-
-    #carCanvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    .car-placeholder {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      color: #d8b3ff;
-      font-size: 13px;
-      letter-spacing: 2px;
-      pointer-events: none;
-    }
-
-    .car-controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      margin-top: 10px;
-    }
-
-    .arrow-button {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      border: 1px solid #79509e;
-      background: #1c1230;
-      color: white;
-      font-size: 22px;
-    }
-
-    .car-name {
-      min-width: 155px;
-    }
-
-    .car-name h2 {
-      font-size: 19px;
-      letter-spacing: 1px;
-    }
-
-    .car-name p {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 5px;
-    }
-
-    .car-stats {
-      display: flex;
-      justify-content: center;
-      gap: 25px;
-      margin-top: 18px;
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 19px;
-    }
-
-    .stat span {
-      display: block;
-      color: var(--muted);
-      font-size: 10px;
-      margin-top: 5px;
-      letter-spacing: 1px;
-    }
-
-    .primary-button {
-      border: none;
-      border-radius: 12px;
-      padding: 16px 24px;
-      background: linear-gradient(100deg, #8b35ed, #d044ff);
-      color: white;
-      font-weight: 900;
-      letter-spacing: 2px;
-      box-shadow: 0 8px 28px #a855f733;
-    }
-
-    .secondary-button {
-      border: 1px solid #68438c;
-      border-radius: 12px;
-      padding: 14px 22px;
-      background: #171124;
-      color: white;
-      font-weight: bold;
-    }
-
-    .main-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 22px;
-    }
-
-    .bottom-note {
-      text-align: center;
-      padding: 0 15px 18px;
-      color: #777087;
-      font-size: 10px;
-      letter-spacing: 2px;
-    }
-
-    /* OTHER SCREENS: BUILT IN LATER PARTS */
-
-    .subscreen {
-      padding: 20px 5%;
-      flex: 1;
-    }
-
-    .screen-heading {
-      font-size: 30px;
-      margin: 25px 0 10px;
-    }
-
-    .screen-description {
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .notice {
-      margin-top: 20px;
-      padding: 15px;
-      border-radius: 12px;
-      background: var(--panel);
-      color: #d7c5ee;
-      line-height: 1.6;
-      font-size: 13px;
-    }
-
-    @media (min-width: 760px) {
-      .hero {
-        grid-template-columns: 0.85fr 1.15fr;
-        text-align: left;
-        gap: 35px;
-      }
-
-      .hero-copy {
-        grid-column: 1;
-        grid-row: 1;
-      }
-
-      .car-area {
-        grid-column: 2;
-        grid-row: 1;
-      }
-
-      .car-controls,
-      .car-stats,
-      .main-buttons {
-        justify-content: flex-start;
-      }
-
-      .hero h1 {
-        font-size: clamp(42px, 5vw, 68px);
-      }
-
-      .car-stage {
-        height: 380px;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .topbar {
-        padding: 14px 3%;
-      }
-
-      .brand {
-        font-size: 16px;
-        letter-spacing: 1px;
-      }
-
-      .small-button,
-      .coin-box {
-        padding: 9px 8px;
-        font-size: 12px;
-      }
-
-      .car-stats {
-        gap: 18px;
-      }
-    }
-  </style>
+<style>
+:root {
+  --bg: #090710;
+  --panel: #151120;
+  --purple: #9b5cff;
+  --pink: #e04cff;
+  --text: #ffffff;
+  --muted: #aaa3bd;
+  --line: #30243f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+}
+button, select, input { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, select:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+header {
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  border-bottom: 1px solid var(--line);
+  background: #0d0a15;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.logo {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+.logo span { color: var(--purple); }
+.header-right { display: flex; gap: 9px; align-items: center; }
+.coin {
+  background: #21172f;
+  border: 1px solid #594079;
+  border-radius: 20px;
+  padding: 9px 11px;
+  font-weight: bold;
+  font-size: 13px;
+}
+.icon-btn, .secondary {
+  background: var(--panel);
+  color: white;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 13px;
+}
+main { max-width: 1000px; margin: auto; padding: 18px 15px 105px; }
+.screen { display: none; }
+.screen.active { display: block; }
+.eyebrow {
+  color: #c49cff;
+  font-size: 11px;
+  letter-spacing: 3px;
+  font-weight: bold;
+}
+h1 { font-size: clamp(30px, 8vw, 54px); margin: 12px 0; }
+h2 { font-size: 25px; margin: 12px 0; }
+p { color: var(--muted); line-height: 1.6; }
+.hero {
+  margin-top: 8px;
+  min-height: 350px;
+  padding: 27px 20px;
+  border: 1px solid #342247;
+  border-radius: 22px;
+  overflow: hidden;
+  position: relative;
+  background:
+    radial-gradient(ellipse at 75% 65%, #55237d 0%, transparent 45%),
+    linear-gradient(145deg, #20152f, #0c0a14 72%);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  height: 2px;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  background: linear-gradient(90deg, transparent, #b66aff, transparent);
+}
+.hero-copy { position: relative; z-index: 1; max-width: 440px; }
+.hero-art {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 68px;
+  filter: drop-shadow(0 0 24px #a13cff);
+  margin-top: 5px;
+}
+.primary {
+  border: 0;
+  border-radius: 11px;
+  padding: 14px 20px;
+  color: white;
+  font-weight: 800;
+  background: linear-gradient(110deg, #813aff, #c347ed);
+  box-shadow: 0 7px 25px #832dba38;
+}
+.secondary { font-weight: bold; }
+.wide { width: 100%; margin-top: 10px; }
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.tile {
+  min-width: 0;
+  text-align: left;
+  color: white;
+  background: linear-gradient(145deg, #21182f, #100d18);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 17px 13px;
+  min-height: 125px;
+}
+.tile:active { transform: scale(.98); }
+.tile .emoji { font-size: 28px; display: block; margin-bottom: 12px; }
+.tile strong { font-size: 15px; }
+.tile small { color: var(--muted); display: block; margin-top: 7px; line-height: 1.4; }
+.card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 17px;
+  margin: 12px 0;
+}
+label { display: block; color: var(--muted); font-size: 13px; margin: 13px 0 7px; }
+select, input {
+  width: 100%;
+  background: #0d0a15;
+  border: 1px solid #473257;
+  border-radius: 10px;
+  color: white;
+  padding: 13px;
+}
+.back { margin-bottom: 20px; }
+.bottom-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 15px calc(12px + env(safe-area-inset-bottom));
+  background: #0b0812f5;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  z-index: 4;
+}
+.bottom-actions button { width: 50%; }
+.note { font-size: 12px; color: var(--muted); }
+.hidden { display: none !important; }
+footer { color: #777084; text-align: center; font-size: 12px; padding: 20px 0; }
+@media (min-width: 650px) {
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hero { min-height: 390px; padding: 40px; }
+  .hero-art { font-size: 100px; height: 160px; }
+}
+</style>
 </head>
 
 <body>
+<header>
+  <button class="icon-btn" id="menuButton" aria-label="Open menu">☰</button>
+  <div class="logo">SPEEDX <span>LEGEND</span></div>
+  <div class="header-right">
+    <div class="coin">🪙 <span id="coinCount">2500</span></div>
+  </div>
+</header>
 
-  <!-- SCREEN 1: MAIN MENU -->
-  <section id="home" class="screen active">
-
-    <header class="topbar">
-      <div class="brand">SPEEDX <span>LEGEND</span></div>
-
-      <div class="top-actions">
-        <button class="small-button" id="menuButton"
-          aria-label="Open menu">☰</button>
-
-        <div class="coin-box">
-          <span class="coin-icon">●</span>
-          <span id="coinBalance">2500</span>
-        </div>
-      </div>
-    </header>
-
-    <main class="hero">
-
+<main>
+  <!-- HOME -->
+  <section class="screen active" id="home">
+    <div class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">NEXT GENERATION RACING</p>
-
-        <h1>RULE THE <span>ROAD.</span></h1>
-
-        <p class="subtitle">
-          Choose your machine. Build your legend.
-          Own every road in SPEEDX LEGEND.
-        </p>
+        <div class="eyebrow">YOUR WORLD. YOUR SPEED.</div>
+        <h1>SPEEDX<br>LEGEND</h1>
+        <p>Build your legend. Explore new roads. Own the drive.</p>
+        <button class="primary" data-go="activities">START YOUR JOURNEY →</button>
       </div>
+      <div class="hero-art" aria-label="Car artwork">🏎️</div>
+      <div class="note">3D SHOWROOM AND DRIVING ENGINE — COMING IN DEVELOPMENT</div>
+    </div>
 
-      <div class="car-area">
-        <div class="car-stage">
-          <canvas id="carCanvas"></canvas>
-          <div class="car-placeholder" id="carPlaceholder">
-            YOUR CAR AWAITS
-          </div>
-        </div>
+    <div class="section-head">
+      <h2>Welcome, Driver</h2>
+      <span class="eyebrow">SEASON 01</span>
+    </div>
+    <div class="grid">
+      <button class="tile" data-go="activities">
+        <span class="emoji">🏁</span><strong>Career</strong>
+        <small>Progress through world levels</small>
+      </button>
+      <button class="tile" data-go="worlds">
+        <span class="emoji">🌎</span><strong>Free Drive</strong>
+        <small>Explore the connected world</small>
+      </button>
+      <button class="tile" data-go="garage">
+        <span class="emoji">🚘</span><strong>My Garage</strong>
+        <small>View your vehicle collection</small>
+      </button>
+    </div>
+  </section>
 
-        <div class="car-controls">
-          <button class="arrow-button" id="prevCar"
-            aria-label="Previous car">‹</button>
+  <!-- ACTIVITY TYPE -->
+  <section class="screen" id="activities">
+    <button class="secondary back" data-go="home">← Back</button>
+    <div class="eyebrow">CHOOSE YOUR EXPERIENCE</div>
+    <h1>Game Modes</h1>
+    <p>Choose how you want to drive.</p>
+    <div class="grid">
+      <button class="tile" data-go="worlds" data-activity="career">
+        <span class="emoji">🏆</span><strong>Career Mode</strong>
+        <small>100 sequential levels per world</small>
+      </button>
+      <button class="tile" data-go="worlds" data-activity="race">
+        <span class="emoji">🏁</span><strong>Race Events</strong>
+        <small>Race challenges and time trials</small>
+      </button>
+      <button class="tile" data-go="worlds" data-activity="free">
+        <span class="emoji">🌎</span><strong>Free Drive</strong>
+        <small>One connected open world, no level required</small>
+      </button>
+    </div>
+  </section>
 
-          <div class="car-name">
-            <h2 id="carName">NOVA X1</h2>
-            <p id="carStatus">STARTER CAR • UNLOCKED</p>
-          </div>
+  <!-- WORLDS -->
+  <section class="screen" id="worlds">
+    <button class="secondary back" data-go="activities">← Back</button>
+    <div class="eyebrow" id="worldEyebrow">EXPLORE THE WORLD</div>
+    <h1 id="worldHeading">Choose a World</h1>
+    <p id="worldDescription">In Free Drive, roads connect the different regions of the world.</p>
+    <div class="grid" id="worldGrid">
+      <button class="tile" data-world="Village"><span class="emoji">🏡</span><strong>Village</strong><small>Fields and country roads</small></button>
+      <button class="tile" data-world="City"><span class="emoji">🌆</span><strong>City</strong><small>Urban roads and highways</small></button>
+      <button class="tile" data-world="Mountain"><span class="emoji">⛰️</span><strong>Mountain</strong><small>Winding mountain roads</small></button>
+      <button class="tile" data-world="Hills"><span class="emoji">🌄</span><strong>Hills</strong><small>Highlands and valleys</small></button>
+      <button class="tile" data-world="Snow"><span class="emoji">❄️</span><strong>Snow</strong><small>Snow-covered landscapes</small></button>
+      <button class="tile" data-world="Desert"><span class="emoji">🏜️</span><strong>Desert</strong><small>Open desert highways</small></button>
+      <button class="tile" data-world="Forest"><span class="emoji">🌲</span><strong>Forest</strong><small>Woodland roads</small></button>
+      <button class="tile" data-world="Coastal"><span class="emoji">🌊</span><strong>Coastal</strong><small>Ocean roads and beaches</small></button>
+    </div>
+    <p class="note" id="worldNote">World selection is a menu prototype; connected 3D roads will be built next.</p>
+  </section>
 
-          <button class="arrow-button" id="nextCar"
-            aria-label="Next car">›</button>
-        </div>
+  <!-- LEVELS -->
+  <section class="screen" id="levels">
+    <button class="secondary back" data-go="worlds">← Worlds</button>
+    <div class="eyebrow">CAREER PROGRESSION</div>
+    <h1 id="levelHeading">Village Levels</h1>
+    <p>Complete a level to unlock the next level in that world.</p>
+    <div class="grid" id="levelGrid"></div>
+  </section>
 
-        <div class="car-stats">
-          <div class="stat">
-            <strong id="carSpeed">220</strong>
-            <span>TOP SPEED KM/H</span>
-          </div>
-
-          <div class="stat">
-            <strong id="carPower">350</strong>
-            <span>HORSEPOWER</span>
-          </div>
-
-          <div class="stat">
-            <strong id="carGears">5 + R</strong>
-            <span>GEARS</span>
-          </div>
-        </div>
-
-        <div class="main-buttons">
-          <button class="primary-button" id="playButton">
-            PLAY NOW →
-          </button>
-
-          <button class="secondary-button" id="garageButton">
-            GARAGE
-          </button>
-        </div>
+  <!-- GARAGE -->
+  <section class="screen" id="garage">
+    <button class="secondary back" data-go="home">← Back</button>
+    <div class="eyebrow">YOUR COLLECTION</div>
+    <h1>My Garage</h1>
+    <div class="card">
+      <div class="hero-art">🏎️</div>
+      <h2>Starter Vehicle</h2>
+      <p>Your first car is ready for its future 3D showroom.</p>
+      <div class="grid">
+        <div><span class="note">CLASS</span><h3>Street</h3></div>
+        <div><span class="note">STATUS</span><h3>Unlocked</h3></div>
       </div>
-
-    </main>
-
-    <footer class="bottom-note">
-      SPEEDX LEGEND • ORIGINAL RACING WORLD
-    </footer>
-
+      <button class="primary wide" data-go="shop">EXPLORE CAR SHOP</button>
+    </div>
   </section>
 
-  <!-- PART 3 WILL ADD WORKING GAME MODE NAVIGATION -->
-
-  <section id="modes" class="screen">
-    <header class="topbar">
-      <div class="brand">SPEEDX <span>LEGEND</span></div>
-      <button class="small-button" data-back="home">← BACK</button>
-    </header>
-
-    <main class="subscreen">
-      <h1 class="screen-heading">GAME MODES</h1>
-      <p class="screen-description">
-        Choose how you want to drive.
-      </p>
-      <div class="notice">
-        Game modes will be connected in the next development part.
-      </div>
-    </main>
+  <!-- CAR SHOP -->
+  <section class="screen" id="shop">
+    <button class="secondary back" data-go="garage">← Garage</button>
+    <div class="eyebrow">BUILD YOUR COLLECTION</div>
+    <h1>Car Shop</h1>
+    <p>Vehicle purchases and performance upgrades will be connected to the coin system in a later step.</p>
+    <div class="card">
+      <h2>Legend Series</h2>
+      <p>Original fictional vehicle designs are planned for this collection.</p>
+      <p>Balance: 🪙 <span id="shopCoins">2500</span></p>
+    </div>
   </section>
 
-  <!-- PART 3 WILL ADD THE MAP SELECTION SCREEN -->
+  <!-- SETTINGS -->
+  <section class="screen" id="settings">
+    <button class="secondary back" data-go="home">← Back</button>
+    <div class="eyebrow">PERSONALISE YOUR GAME</div>
+    <h1>Settings</h1>
+    <div class="card">
+      <label for="languageSelect">Interface Language / भाषा</label>
+      <select id="languageSelect"></select>
+      <p class="note">The language list is available now. Complete translations for every screen will be added in a dedicated step.</p>
 
-  <section id="maps" class="screen">
-    <header class="topbar">
-      <div class="brand">SPEEDX <span>LEGEND</span></div>
-      <button class="small-button" data-back="modes">← BACK</button>
-    </header>
+      <label for="qualitySelect">Graphics Quality</label>
+      <select id="qualitySelect">
+        <option>Auto</option>
+        <option>Low — Mobile</option>
+        <option>Medium</option>
+        <option>High</option>
+      </select>
 
-    <main class="subscreen">
-      <h1 class="screen-heading">SELECT YOUR MAP</h1>
-      <p class="screen-description">
-        Choose your next destination.
-      </p>
-    </main>
+      <label for="soundSelect">Sound</label>
+      <select id="soundSelect">
+        <option value="on">On</option>
+        <option value="off">Off</option>
+      </select>
+
+      <button class="primary wide" id="saveSettings">SAVE SETTINGS</button>
+      <p id="settingsMessage" class="note"></p>
+    </div>
   </section>
 
-  <!-- PART 3 WILL ADD THE ACTUAL THREE.JS DRIVING SCENE -->
-
-  <section id="gameplay" class="screen">
-    <header class="topbar">
-      <div class="brand">SPEEDX <span>LEGEND</span></div>
-      <button class="small-button" data-back="maps">← BACK</button>
-    </header>
-
-    <main class="subscreen">
-      <h1 class="screen-heading">DRIVING MODE</h1>
-      <p class="screen-description">
-        The playable 3D driving system will be added in a later part.
-      </p>
-    </main>
+  <!-- ABOUT -->
+  <section class="screen" id="about">
+    <button class="secondary back" data-go="home">← Back</button>
+    <div class="eyebrow">THE STORY BEHIND THE GAME</div>
+    <h1>About SPEEDX LEGEND</h1>
+    <div class="card">
+      <h2>Our Vision</h2>
+      <p>SPEEDX LEGEND is an independent racing game project focused on original fictional cars, connected open-world environments, driving challenges and player progression.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">FOUNDER & DEVELOPER</div>
+      <h2>Subhash Yadav</h2>
+      <p>Creator and developer of the SPEEDX LEGEND project.</p>
+      <p class="note">This project is being developed step by step for the web, with mobile devices as an important target.</p>
+    </div>
+    <div class="card">
+      <h2>Planned Features</h2>
+      <p>• Connected open-world driving</p>
+      <p>• Sequential career levels across different worlds</p>
+      <p>• Original fictional cars and upgrades</p>
+      <p>• Multiple interface languages</p>
+      <p>• Mobile-friendly driving controls</p>
+    </div>
   </section>
 
-  <!-- PART 2 WILL ADD THE GARAGE SCREEN -->
+  <footer>SPEEDX LEGEND · INDEPENDENT GAME PROJECT</footer>
+</main>
 
-  <section id="garage" class="screen">
-    <header class="topbar">
-      <div class="brand">SPEEDX <span>LEGEND</span></div>
-      <button class="small-button" data-back="home">← BACK</button>
-    </header>
-
-    <main class="subscreen">
-      <h1 class="screen-heading">YOUR GARAGE</h1>
-      <p class="screen-description">
-        Your cars and customisation will appear here.
-      </p>
-    </main>
-  </section>
-
-  <!-- JavaScript will be added in the next part -->
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- MAIN MENU CORNER BUTTONS -->
+<div class="bottom-actions" id="homeActions">
+  <button class="secondary" data-go="garage">🚘 GARAGE</button>
+  <button class="primary" data-go="activities">▶ PLAY</button>
+</div>
 
 <script>
-(() => {
-  "use strict";
+const $ = (id) => document.getElementById(id);
 
-  const canvas = document.getElementById("carCanvas");
-  const placeholder = document.getElementById("carPlaceholder");
+const languageNames = [
+  ["en","English"],["hi","Hindi — हिन्दी"],["ko","Korean — 한국어"],
+  ["ja","Japanese — 日本語"],["zh-CN","Chinese (Simplified) — 简体中文"],
+  ["zh-TW","Chinese (Traditional) — 繁體中文"],["fr","French — Français"],
+  ["fr-CA","Canadian French — Français canadien"],["de","German — Deutsch"],
+  ["it","Italian — Italiano"],["nl","Dutch — Nederlands"],
+  ["ru","Russian — Русский"],["vi","Vietnamese — Tiếng Việt"],
+  ["id","Indonesian — Bahasa Indonesia"],["fil","Filipino"],
+  ["kk","Kazakh — Қазақша"],["uk","Ukrainian — Українська"],
+  ["es","Spanish — Español"],["pt-BR","Brazilian Portuguese — Português do Brasil"],
+  ["pt-PT","European Portuguese — Português europeu"],["ms","Malay — Bahasa Melayu"],
+  ["ar","Arabic — العربية"],["tr","Turkish — Türkçe"],
+  ["pl","Polish — Polski"],["cs","Czech — Čeština"],
+  ["sk","Slovak — Slovenčina"],["hu","Hungarian — Magyar"],
+  ["ro","Romanian — Română"],["bg","Bulgarian — Български"],
+  ["el","Greek — Ελληνικά"],["sv","Swedish — Svenska"],
+  ["no","Norwegian — Norsk"],["da","Danish — Dansk"],
+  ["fi","Finnish — Suomi"],["is","Icelandic — Íslenska"],
+  ["et","Estonian — Eesti"],["lv","Latvian — Latviešu"],
+  ["lt","Lithuanian — Lietuvių"],["hr","Croatian — Hrvatski"],
+  ["sr","Serbian — Српски"],["sl","Slovenian — Slovenščina"],
+  ["bs","Bosnian — Bosanski"],["mk","Macedonian — Македонски"],
+  ["sq","Albanian — Shqip"],["ga","Irish — Gaeilge"],
+  ["cy","Welsh — Cymraeg"],["mt","Maltese"],
+  ["he","Hebrew — עברית"],["th","Thai — ไทย"],
+  ["lo","Lao — ລາວ"],["km","Khmer — ខ្មែរ"],
+  ["my","Burmese — မြန်မာ"],["ne","Nepali — नेपाली"],
+  ["bn","Bengali — বাংলা"],["pa","Punjabi — ਪੰਜਾਬੀ"],
+  ["ta","Tamil — தமிழ்"],["te","Telugu — తెలుగు"],
+  ["ur","Urdu — اردو"],["fa","Persian — فارسی"],
+  ["uz","Uzbek — Oʻzbekcha"],["ky","Kyrgyz — Кыргызча"],
+  ["sw","Swahili — Kiswahili"],["af","Afrikaans"],
+  ["am","Amharic"],["az","Azerbaijani — Azərbaycanca"],
+  ["hy","Armenian — Հայերեն"],["ka","Georgian — ქართული"],
+  ["ca","Catalan — Català"],["eu","Basque — Euskara"],
+  ["gl","Galician — Galego"],["es-MX","Mexican Spanish — Español mexicano"]
+];
 
-  if (!canvas || !window.THREE) {
-    if (placeholder) {
-      placeholder.textContent = "3D ENGINE COULD NOT LOAD";
+const languageSelect = $("languageSelect");
+languageNames.forEach(([code,name]) => {
+  const option = document.createElement("option");
+  option.value = code;
+  option.textContent = name;
+  languageSelect.appendChild(option);
+});
+
+let currentActivity = "career";
+let currentWorld = "Village";
+
+function goTo(screenId) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  const target = $(screenId);
+  if (target) target.classList.add("active");
+  $("homeActions").classList.toggle("hidden", screenId !== "home");
+  window.scrollTo({top: 0, behavior: "smooth"});
+}
+
+document.querySelectorAll("[data-go]").forEach(button => {
+  button.addEventListener("click", () => {
+    if (button.dataset.activity) currentActivity = button.dataset.activity;
+    goTo(button.dataset.go);
+    if (button.dataset.go === "worlds") updateWorldPage();
+  });
+});
+
+$("menuButton").addEventListener("click", () => {
+  const choice = prompt("Enter page: settings, about, garage, home");
+  if (!choice) return;
+  const page = choice.trim().toLowerCase();
+  if (["settings","about","garage","home"].includes(page)) goTo(page);
+  else alert("Available pages: settings, about, garage, home");
+});
+
+function updateWorldPage() {
+  const free = currentActivity === "free";
+  $("worldHeading").textContent = free ? "Explore Open World" : "Choose a World";
+  $("worldEyebrow").textContent = free ? "FREE DRIVE · OPEN WORLD" : "CAREER · WORLD SELECT";
+  $("worldDescription").textContent = free
+    ? "Choose a starting region. The planned Free Drive map will connect all regions."
+    : "Each world has 100 career levels. The first level starts unlocked.";
+  $("worldNote").textContent = free
+    ? "Connected 3D roads are planned; the map is not playable yet."
+    : "Worlds are selectable. Level progression is a prototype until gameplay is added.";
+}
+
+document.querySelectorAll("[data-world]").forEach(button => {
+  button.addEventListener("click", () => {
+    currentWorld = button.dataset.world;
+    if (currentActivity === "free") {
+      alert(currentWorld + " selected as your Free Drive starting region. Actual driving is coming in the 3D gameplay stage.");
+    } else {
+      showLevels();
     }
-    return;
-  }
+  });
+});
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color("#100a20");
-  scene.fog = new THREE.Fog("#100a20", 12, 30);
-
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  camera.position.set(5, 3.1, 7);
-  camera.lookAt(0, 0.5, 0);
-
-  let renderer;
-
+function getProgress() {
   try {
-    renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: false
-    });
-  } catch (error) {
-    placeholder.textContent = "3D GRAPHICS NOT AVAILABLE";
-    return;
+    return JSON.parse(localStorage.getItem("speedxProgress") || "{}");
+  } catch {
+    return {};
   }
+}
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.outputEncoding = THREE.sRGBEncoding;
+function showLevels() {
+  $("levelHeading").textContent = currentWorld + " Levels";
+  const progress = getProgress();
+  const unlocked = progress[currentWorld] || 1;
+  const grid = $("levelGrid");
+  grid.replaceChildren();
 
-  scene.add(new THREE.HemisphereLight("#d9c7ff", "#21122f", 2));
-
-  const keyLight = new THREE.DirectionalLight("#ffffff", 3);
-  keyLight.position.set(4, 8, 5);
-  keyLight.castShadow = true;
-  scene.add(keyLight);
-
-  const purpleLight = new THREE.PointLight("#a855f7", 20, 15);
-  purpleLight.position.set(-4, 2, 1);
-  scene.add(purpleLight);
-
-  const pinkLight = new THREE.PointLight("#ed4bff", 12, 12);
-  pinkLight.position.set(3, 1, -4);
-  scene.add(pinkLight);
-
-  // Showroom floor
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshStandardMaterial({
-      color: "#151020",
-      roughness: 0.35,
-      metalness: 0.45
-    })
-  );
-
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -0.12;
-  floor.receiveShadow = true;
-  scene.add(floor);
-
-  // Purple circular showroom platform
-  const platform = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.9, 3.05, 0.12, 64),
-    new THREE.MeshStandardMaterial({
-      color: "#241337",
-      metalness: 0.7,
-      roughness: 0.3
-    })
-  );
-
-  platform.position.y = -0.04;
-  platform.receiveShadow = true;
-  scene.add(platform);
-
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(2.72, 0.025, 8, 100),
-    new THREE.MeshBasicMaterial({ color: "#c04cff" })
-  );
-
-  ring.rotation.x = Math.PI / 2;
-  ring.position.y = 0.035;
-  scene.add(ring);
-
-  // Original fictional sports car
-  const car = new THREE.Group();
-  scene.add(car);
-
-  function material(color, metalness = 0.4, roughness = 0.28) {
-    return new THREE.MeshStandardMaterial({
-      color,
-      metalness,
-      roughness
-    });
-  }
-
-  function addBox(parent, width, height, depth, mat, x, y, z) {
-    const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(width, height, depth),
-      mat
-    );
-
-    mesh.position.set(x, y, z);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    parent.add(mesh);
-    return mesh;
-  }
-
-  const bodyMat = material("#8b28e8", 0.75, 0.22);
-  const darkMat = material("#17151e", 0.55, 0.24);
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: "#15243e",
-    metalness: 0.8,
-    roughness: 0.12,
-    transparent: true,
-    opacity: 0.92
-  });
-
-  // Main body and front/rear sections
-  addBox(car, 1.75, 0.38, 3.5, bodyMat, 0, 0.48, 0);
-  addBox(car, 1.66, 0.22, 1.0, bodyMat, 0, 0.63, 1.05);
-  addBox(car, 1.7, 0.20, 0.55, darkMat, 0, 0.35, 1.65);
-  addBox(car, 1.68, 0.19, 0.5, bodyMat, 0, 0.35, -1.65);
-
-  // Low, angular cabin
-  const cabin = new THREE.Mesh(
-    new THREE.BoxGeometry(1.18, 0.47, 1.65),
-    glassMat
-  );
-
-  cabin.position.set(0, 0.84, -0.1);
-  cabin.castShadow = true;
-  car.add(cabin);
-
-  // Roof
-  addBox(car, 0.95, 0.08, 0.88, darkMat, 0, 1.10, -0.17);
-
-  // Rear spoiler
-  addBox(car, 1.45, 0.08, 0.20, darkMat, 0, 0.91, -1.65);
-  addBox(car, 0.12, 0.24, 0.12, bodyMat, -0.48, 0.79, -1.62);
-  addBox(car, 0.12, 0.24, 0.12, bodyMat, 0.48, 0.79, -1.62);
-
-  // Side skirts
-  addBox(car, 0.10, 0.12, 2.5, darkMat, -0.88, 0.30, 0);
-  addBox(car, 0.10, 0.12, 2.5, darkMat, 0.88, 0.30, 0);
-
-  // Neon headlight and tail-light strips
-  const headlightMat = new THREE.MeshBasicMaterial({ color: "#b8f7ff" });
-  const tailLightMat = new THREE.MeshBasicMaterial({ color: "#ff225f" });
-
-  addBox(car, 1.15, 0.06, 0.045, headlightMat, 0, 0.53, 1.77);
-  addBox(car, 1.15, 0.06, 0.045, tailLightMat, 0, 0.53, -1.77);
-
-  // Four wheels
-  const wheelMat = material("#08080c", 0.25, 0.65);
-  const rimMat = material("#c8c4d5", 0.85, 0.25);
-  const wheels = [];
-
-  for (const x of [-0.91, 0.91]) {
-    for (const z of [-1.12, 1.12]) {
-      const wheel = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.37, 0.37, 0.22, 24),
-        wheelMat
-      );
-
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(x, 0.29, z);
-      wheel.castShadow = true;
-      car.add(wheel);
-      wheels.push(wheel);
-
-      const rim = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.20, 0.20, 0.235, 16),
-        rimMat
-      );
-
-      rim.rotation.z = Math.PI / 2;
-      rim.position.set(x * 1.005, 0.29, z);
-      car.add(rim);
-
-      // Wheel hub
-      const hub = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.07, 0.07, 0.245, 12),
-        darkMat
-      );
-
-      hub.rotation.z = Math.PI / 2;
-      hub.position.set(x * 1.01, 0.29, z);
-      car.add(hub);
-    }
-  }
-
-  // Soft showroom glow beneath the car
-  const glow = new THREE.Mesh(
-    new THREE.CircleGeometry(1.8, 48),
-    new THREE.MeshBasicMaterial({
-      color: "#9a31ff",
-      transparent: true,
-      opacity: 0.15,
-      depthWrite: false
-    })
-  );
-
-  glow.rotation.x = -Math.PI / 2;
-  glow.position.y = 0.015;
-  scene.add(glow);
-
-  // Car selection data: fictional vehicles
-  const cars = [
-    { name: "NOVA X1", speed: 220, hp: 350, gears: "5 + R", price: 0, color: "#8b28e8" },
-    { name: "VORTEX S2", speed: 255, hp: 480, gears: "5 + R", price: 5000, color: "#ed354f" },
-    { name: "PHANTOM GT", speed: 290, hp: 620, gears: "6 + R", price: 12000, color: "#19a7d8" },
-    { name: "NEBULA R", speed: 320, hp: 800, gears: "6 + R", price: 30000, color: "#e8e8ee" },
-    { name: "TITAN V8", speed: 360, hp: 1100, gears: "6 + R", price: 85000, color: "#e69c29" },
-    { name: "APEX Z", speed: 400, hp: 1600, gears: "7 + R", price: 250000, color: "#4ae0b4" },
-    { name: "INFERNO X", speed: 450, hp: 2800, gears: "7 + R", price: 1000000, color: "#ff542e" },
-    { name: "LEGEND ONE", speed: 520, hp: 6000, gears: "7 + R", price: 10000000, color: "#f5d76e" }
-  ];
-
-  let selectedIndex = 0;
-  let coins = 2500;
-  const owned = new Set([0]);
-
-  const nameEl = document.getElementById("carName");
-  const statusEl = document.getElementById("carStatus");
-  const speedEl = document.getElementById("carSpeed");
-  const powerEl = document.getElementById("carPower");
-  const gearsEl = document.getElementById("carGears");
-  const balanceEl = document.getElementById("coinBalance");
-  const playButton = document.getElementById("playButton");
-
-  function showCar(index) {
-    selectedIndex = (index + cars.length) % cars.length;
-    const data = cars[selectedIndex];
-    const isOwned = owned.has(selectedIndex);
-
-    nameEl.textContent = data.name;
-    speedEl.textContent = data.speed;
-    powerEl.textContent = data.hp;
-    gearsEl.textContent = data.gears;
-
-    statusEl.textContent = isOwned
-      ? (selectedIndex === 0 ? "STARTER CAR • UNLOCKED" : "OWNED • READY")
-      : "LOCKED • " + data.price.toLocaleString("en-IN") + " COINS";
-
-    playButton.textContent = isOwned
-      ? "PLAY NOW →"
-      : "BUY • " + data.price.toLocaleString("en-IN") + " COINS";
-
-    bodyMat.color.set(data.color);
-  }
-
-  function updateCoins() {
-    balanceEl.textContent = coins.toLocaleString("en-IN");
-  }
-
-  document.getElementById("prevCar").addEventListener("click", () => {
-    showCar(selectedIndex - 1);
-  });
-
-  document.getElementById("nextCar").addEventListener("click", () => {
-    showCar(selectedIndex + 1);
-  });
-
-  playButton.addEventListener("click", () => {
-    const data = cars[selectedIndex];
-
-    if (!owned.has(selectedIndex)) {
-      if (coins < data.price) {
-        alert("Not enough coins! Earn more coins as you progress.");
-        return;
-      }
-
-      coins -= data.price;
-      owned.add(selectedIndex);
-      updateCoins();
-      showCar(selectedIndex);
-      alert(data.name + " purchased!");
-      return;
-    }
-
-    document.querySelectorAll(".screen").forEach(screen => {
-      screen.classList.remove("active");
-    });
-
-    document.getElementById("modes").classList.add("active");
-  });
-
-  document.getElementById("garageButton").addEventListener("click", () => {
-    document.querySelectorAll(".screen").forEach(screen => {
-      screen.classList.remove("active");
-    });
-
-    document.getElementById("garage").classList.add("active");
-  });
-
-  document.getElementById("menuButton").addEventListener("click", () => {
-    alert("SPEEDX LEGEND menu and settings will be added in a later part.");
-  });
-
-  document.querySelectorAll("[data-back]").forEach(button => {
+  for (let i = 1; i <= 100; i++) {
+    const button = document.createElement("button");
+    button.className = "tile";
+    button.disabled = i > unlocked;
+    button.style.opacity = i > unlocked ? ".45" : "1";
+    button.innerHTML = `<span class="emoji">${i > unlocked ? "🔒" : "🏁"}</span><strong>Level ${String(i).padStart(2,"0")}</strong><small>${i > unlocked ? "Complete the previous level first" : "Available"}</small>`;
     button.addEventListener("click", () => {
-      document.querySelectorAll(".screen").forEach(screen => {
-        screen.classList.remove("active");
-      });
-
-      document.getElementById(button.dataset.back).classList.add("active");
+      if (i !== unlocked) return;
+      const confirmed = confirm("This is a progression preview. Real racing gameplay is not connected yet. Mark Level " + i + " as completed for testing?");
+      if (!confirmed) return;
+      if (i < 100) progress[currentWorld] = i + 1;
+      localStorage.setItem("speedxProgress", JSON.stringify(progress));
+      alert("Prototype progress saved. The next level is now unlocked.");
+      showLevels();
     });
-  });
-
-  // Responsive canvas
-  function resizeRenderer() {
-    const width = Math.max(canvas.clientWidth, 1);
-    const height = Math.max(canvas.clientHeight, 1);
-
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
+    grid.appendChild(button);
   }
+  goTo("levels");
+}
 
-  if (window.ResizeObserver) {
-    new ResizeObserver(resizeRenderer).observe(canvas.parentElement);
-  } else {
-    window.addEventListener("resize", resizeRenderer);
+$("saveSettings").addEventListener("click", () => {
+  try {
+    localStorage.setItem("speedxLanguage", languageSelect.value);
+    localStorage.setItem("speedxQuality", $("qualitySelect").value);
+    localStorage.setItem("speedxSound", $("soundSelect").value);
+    $("settingsMessage").textContent = "Settings saved on this device.";
+  } catch {
+    $("settingsMessage").textContent = "Unable to save settings in this browser.";
   }
+});
 
-  resizeRenderer();
-  showCar(0);
-  updateCoins();
-  placeholder.style.display = "none";
+try {
+  languageSelect.value = localStorage.getItem("speedxLanguage") || "en";
+  $("qualitySelect").value = localStorage.getItem("speedxQuality") || "Auto";
+  $("soundSelect").value = localStorage.getItem("speedxSound") || "on";
+} catch {}
 
-  // Smooth showroom animation
-  function animate() {
-    requestAnimationFrame(animate);
-
-    car.rotation.y += 0.004;
-
-    const t = performance.now() * 0.001;
-    car.position.y = Math.sin(t * 1.5) * 0.025;
-
-    renderer.render(scene, camera);
-  }
-
-  animate();
-})();
 </script>
-</body>
-</html>
-
 </body>
 </html>
