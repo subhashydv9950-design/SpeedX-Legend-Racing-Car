@@ -643,6 +643,43 @@ button:disabled {
 </div>
 
 <!-- JAVASCRIPT WILL BE ADDED IN A LATER PART -->
+   
+<script>
+/* SUPERX LEGEND — SCREEN NAVIGATION */
+
+function openSection(screenId) {
+  const currentScreens = document.querySelectorAll(".screen");
+
+  currentScreens.forEach(function(screen) {
+    screen.classList.remove("active");
+  });
+
+  const target = document.getElementById(screenId);
+
+  if (target) {
+    target.classList.add("active");
+    window.scrollTo(0, 0);
+  }
+
+  const drawer = document.getElementById("menuDrawer");
+  if (drawer) {
+    drawer.classList.add("hidden");
+  }
+}
+
+function toggleMenu() {
+  const drawer = document.getElementById("menuDrawer");
+
+  if (drawer) {
+    drawer.classList.toggle("hidden");
+  }
+}
+
+function showNotice(sectionName) {
+  alert(sectionName + " screen will be added in the next development step.");
+}
+</script>
+   
 
 </body>
 </html>
