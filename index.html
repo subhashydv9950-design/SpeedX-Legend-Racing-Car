@@ -5785,6 +5785,182 @@ button:disabled {
 })();
 
 /* PART 04-I END */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-J: ONLINE MENU & ROOM SETUP
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame =
+    window.SuperXGame || {};
+
+  function get(id) {
+    return document.getElementById(id);
+  }
+
+  function message(title, text, icon) {
+    if (game.showMessage) {
+      game.showMessage(title, text, icon || "🌐");
+    }
+  }
+
+  function getSelectedText(id, fallback) {
+    const field = get(id);
+
+    if (!field) return fallback;
+
+    if (field.tagName === "SELECT") {
+      return field.options[field.selectedIndex]?.text || fallback;
+    }
+
+    return field.value || fallback;
+  }
+
+  function updateRoomPreview() {
+    const roomName =
+      get("roomNameInput")?.value.trim() || "SUPERX RACE ROOM";
+
+    const mode =
+      getSelectedText("roomRaceMode", "Village Racing");
+
+    const map =
+      get("roomMapNumber")?.value || "1";
+
+    const players =
+      get("roomPlayerLimit")?.value || "8";
+
+    const privacy =
+      getSelectedText("roomPrivacy", "Public");
+
+    if (get("roomPreviewName")) {
+      get("roomPreviewName").textContent = roomName;
+    }
+
+    if (get("roomPreviewMode")) {
+      get("roomPreviewMode").textContent = mode;
+    }
+
+    if (get("roomPreviewMap")) {
+      get("roomPreviewMap").textContent = "MAP " + map;
+    }
+
+    if (get("roomPreviewPlayers")) {
+      get("roomPreviewPlayers").textContent =
+        players + " PLAYERS";
+    }
+
+    if (get("roomPreviewStatus")) {
+      get("roomPreviewStatus").textContent =
+        privacy + " ROOM · PREVIEW ONLY";
+    }
+  }
+
+  [
+    "roomNameInput",
+    "roomRaceMode",
+    "roomMapNumber",
+    "roomPlayerLimit",
+    "roomPrivacy"
+  ].forEach(function (id) {
+    const field = get(id);
+
+    if (field) {
+      field.addEventListener("input", updateRoomPreview);
+      field.addEventListener("change", updateRoomPreview);
+    }
+  });
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    if (button.id === "quickJoinButton") {
+      message(
+        "QUICK JOIN",
+        "Online matchmaking needs a connected multiplayer server. It is not connected yet.",
+        "🌐"
+      );
+    }
+
+    if (button.id === "friendsRaceButton") {
+      message(
+        "FRIENDS RACE",
+        "Friend invitations and player connections will work after multiplayer networking is added.",
+        "👥"
+      );
+    }
+
+    if (button.id === "teamRaceButton") {
+      message(
+        "TEAM RACE",
+        "Team matchmaking requires the online game server.",
+        "🏆"
+      );
+    }
+
+    if (button.id === "confirmCreateRoomButton") {
+      const roomName =
+        get("roomNameInput")?.value.trim() || "SUPERX RACE ROOM";
+
+      const mapNumber =
+        Number(get("roomMapNumber")?.value || 1);
+
+      const playerLimit =
+        Number(get("roomPlayerLimit")?.value || 8);
+
+      if (roomName.length > 40) {
+        message(
+          "ROOM NAME TOO LONG",
+          "Please keep the room name within 40 characters."
+        );
+        return;
+      }
+
+      if (mapNumber < 1 || mapNumber > 100) {
+        message(
+          "INVALID MAP",
+          "Choose a map number between 1 and 100."
+        );
+        return;
+      }
+
+      if (playerLimit < 2 || playerLimit > 12) {
+        message(
+          "INVALID PLAYER LIMIT",
+          "Choose a room size between 2 and 12 players."
+        );
+        return;
+      }
+
+      game.roomSettings = {
+        name: roomName,
+        mode: get("roomRaceMode")?.value || "village",
+        map: mapNumber,
+        playerLimit: playerLimit,
+        privacy: get("roomPrivacy")?.value || "public"
+      };
+
+      message(
+        "ROOM PREVIEW READY",
+        "Your room settings are prepared. A real room code and player joining require the multiplayer server.",
+        "🏁"
+      );
+    }
+  });
+
+  updateRoomPreview();
+
+  game.updateRoomPreview = updateRoomPreview;
+
+  console.log("SUPERX: Online menu and room setup initialized.");
+
+})();
+
+/* PART 04-J END */
+   
                            
    
        
