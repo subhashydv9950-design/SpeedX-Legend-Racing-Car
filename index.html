@@ -639,6 +639,112 @@ button:disabled {
   <button class="drawer-item" onclick="openSection('aboutScreen')">ℹ About</button>
 </div>
    
+<!-- CAREER SCREEN -->
+<section id="careerScreen" class="screen">
+  <header class="home-header">
+    <button class="btn" onclick="openSection('homeScreen')">← HOME</button>
+    <div class="coin-pill">🪙 <span id="careerCoins">5000</span></div>
+  </header>
+
+  <div style="padding:18px 16px 30px">
+    <p class="brand-small">YOUR JOURNEY STARTS HERE</p>
+    <h1 class="section-title">CAREER <span class="accent">MODE</span></h1>
+    <p class="muted" style="margin-top:8px">
+      Choose your racing world and unlock new tracks.
+    </p>
+
+    <div class="panel" style="margin-top:20px">
+      <div style="display:flex;justify-content:space-between;gap:10px">
+        <div>
+          <p class="muted" style="font-size:11px">CAREER PROGRESS</p>
+          <h2 style="margin-top:6px">LEVEL 1</h2>
+        </div>
+        <div style="text-align:right">
+          <p class="muted" style="font-size:11px">TRACKS</p>
+          <h2>800</h2>
+        </div>
+      </div>
+      <div style="height:7px;background:#30283d;border-radius:9px;margin-top:16px;overflow:hidden">
+        <div style="width:2%;height:100%;background:#c084fc"></div>
+      </div>
+      <p class="muted" style="font-size:11px;margin-top:9px">Complete races to progress.</p>
+    </div>
+
+    <h2 style="font-size:18px;margin:25px 0 13px">SELECT YOUR WORLD</h2>
+
+    <div class="career-modes">
+      <button class="mode-card" onclick="openMaps('Village Racing')">
+        <span class="mode-art">🌾</span>
+        <strong>VILLAGE RACING</strong>
+        <small>Country roads · 100 maps</small>
+      </button>
+
+      <button class="mode-card" onclick="openMaps('City Racing')">
+        <span class="mode-art">🌆</span>
+        <strong>CITY RACING</strong>
+        <small>Urban streets · 100 maps</small>
+      </button>
+
+      <button class="mode-card" onclick="openMaps('Mountain Racing')">
+        <span class="mode-art">⛰️</span>
+        <strong>MOUNTAIN RACING</strong>
+        <small>High-altitude roads · 100 maps</small>
+      </button>
+
+      <button class="mode-card" onclick="openMaps('Poison of Crows')">
+        <span class="mode-art">🌑</span>
+        <strong>POISON OF CROWS</strong>
+        <small>Dark challenge · 100 maps</small>
+      </button>
+
+      <button class="mode-card" onclick="openMaps('Coastal Racing')">
+        <span class="mode-art">🌊</span>
+        <strong>COASTAL RACING</strong>
+        <small>Ocean-side roads · 100 maps</small>
+      </button>
+
+      <button class="mode-card" onclick="openMaps('Snow & Ice Racing')">
+        <span class="mode-art">❄️</span>
+        <strong>SNOW & ICE</strong>
+        <small>Frozen tracks · 100 maps</small>
+      </button>
+
+      <button class="mode-card" onclick="openMaps('Stunt Racing')">
+        <span class="mode-art">🤸</span>
+        <strong>STUNT RACING</strong>
+        <small>Jumps and ramps · 100 maps</small>
+      </button>
+
+      <button class="mode-card" onclick="openMaps('Offline AI Racing')">
+        <span class="mode-art">🏁</span>
+        <strong>OFFLINE AI RACING</strong>
+        <small>Race against AI · 100 maps</small>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- MAP SELECTION SCREEN -->
+<section id="mapsScreen" class="screen">
+  <header class="home-header">
+    <button class="btn" onclick="openSection('careerScreen')">← MODES</button>
+  </header>
+
+  <div style="padding:18px 16px 30px">
+    <p class="brand-small">CAREER TRACK SELECTION</p>
+    <h1 id="selectedModeTitle" class="section-title">SELECT MAP</h1>
+    <p class="muted" style="margin-top:8px">
+      Map 1 is available first. Progress to unlock more tracks.
+    </p>
+
+    <div id="mapGrid" class="map-grid"></div>
+
+    <button class="btn btn-primary btn-block" style="margin-top:20px"
+      onclick="startSelectedRace()">🏁 START SELECTED RACE</button>
+    <p id="mapMessage" class="muted" style="margin-top:12px;font-size:12px"></p>
+  </div>
+</section>
+   
 
 </div>
 
