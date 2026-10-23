@@ -1728,6 +1728,207 @@ button:disabled {
 
 /* PART 02-F END */
    
+/* =====================================================
+   PART 02-G: REWARDS, TASKS & COINS
+===================================================== */
+
+.rewardsSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto 22px;
+}
+
+.rewardSummaryCard {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: linear-gradient(145deg, #241832, #100e18);
+}
+
+.rewardSummaryCard span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.rewardSummaryCard strong {
+  display: block;
+  margin-top: 10px;
+  font-size: clamp(21px, 4vw, 32px);
+  font-weight: 950;
+}
+
+.rewardSummaryCard .coinText {
+  color: #f8d477;
+}
+
+.dailyTaskList {
+  display: grid;
+  gap: 12px;
+  max-width: 1400px;
+  margin: 18px auto 25px;
+}
+
+.dailyTaskCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-card);
+}
+
+.dailyTaskIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  background: rgba(109, 40, 217, 0.2);
+  color: var(--accent-bright);
+  font-size: 23px;
+}
+
+.dailyTaskDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.dailyTaskDetails h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.dailyTaskDetails p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.dailyTaskReward {
+  flex-shrink: 0;
+  color: #f8d477;
+  font-size: 12px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.taskProgressTrack {
+  height: 5px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.taskProgressFill {
+  height: 100%;
+  width: 0%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7c3aed, #d8b4fe);
+  transition: width 0.3s ease;
+}
+
+.dailyTaskCard.completed {
+  border-color: rgba(84, 230, 165, 0.45);
+}
+
+.dailyTaskCard.completed .dailyTaskIcon {
+  background: rgba(84, 230, 165, 0.12);
+  color: var(--success);
+}
+
+.taskClaimButton {
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(109, 40, 217, 0.22);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.taskClaimButton:disabled {
+  opacity: 0.4;
+}
+
+.achievementGrid {
+  margin-top: 18px;
+}
+
+.achievementCard {
+  min-height: 145px;
+}
+
+.achievementCard.locked {
+  opacity: 0.55;
+}
+
+.achievementStatus {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--accent-bright);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+#dailyTaskProgress {
+  color: var(--accent-bright);
+  font-weight: 900;
+}
+
+@media (max-width: 600px) {
+  .rewardsSummary {
+    gap: 7px;
+  }
+
+  .rewardSummaryCard {
+    padding: 12px 9px;
+  }
+
+  .rewardSummaryCard span {
+    font-size: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .dailyTaskCard {
+    gap: 9px;
+    padding: 11px;
+  }
+
+  .dailyTaskIcon {
+    width: 38px;
+    height: 38px;
+    font-size: 19px;
+  }
+
+  .dailyTaskDetails h3 {
+    font-size: 11px;
+  }
+
+  .dailyTaskReward {
+    font-size: 10px;
+  }
+
+  .taskClaimButton {
+    padding: 7px 8px;
+    font-size: 9px;
+  }
+}
+
+/* PART 02-G END */
+ 
    
    
    
