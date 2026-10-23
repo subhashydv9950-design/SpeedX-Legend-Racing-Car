@@ -76,6 +76,332 @@
       <section id="homeScreen" aria-label="Main Menu">
 
         <!-- PART 01-B WILL ADD THE HOME SCREEN UI HERE -->
+       
+<!-- =====================================================
+ SUPERX LEGEND RACING CAR GAME
+ PART 01-B: CLASSIC HOME SCREEN UI
+ ORDER: PASTE INSIDE #homeScreen
+===================================================== -->
+
+<!-- ===== PART 01-B.1: CINEMATIC BACKGROUND START ===== -->
+
+<div class="homeBackground" aria-hidden="true">
+  <div class="backgroundGlow glowLeft"></div>
+  <div class="backgroundGlow glowRight"></div>
+  <div class="roadHorizon"></div>
+  <div class="roadSurface"></div>
+  <div class="roadLight roadLightOne"></div>
+  <div class="roadLight roadLightTwo"></div>
+</div>
+
+<!-- ===== PART 01-B.1: CINEMATIC BACKGROUND END ===== -->
+
+
+<!-- ===== PART 01-B.2: TOP NAVIGATION START ===== -->
+
+<header class="homeTopBar">
+
+  <button
+    type="button"
+    id="menuButton"
+    class="iconButton menuButton"
+    aria-label="Open menu"
+  >
+    <span class="menuLines">
+      <span></span>
+      <span></span>
+      <span></span>
+    </span>
+    <span class="buttonCaption">MENU</span>
+  </button>
+
+  <div class="gameBrand">
+    <span class="brandSmall">SUPERX</span>
+    <span class="brandLarge">LEGEND</span>
+    <span class="brandSubtitle">RACING CAR GAME</span>
+  </div>
+
+  <div class="playerQuickInfo">
+
+    <button
+      type="button"
+      id="coinsButton"
+      class="quickInfoButton"
+      aria-label="Coins"
+    >
+      <span class="quickInfoIcon coinIcon">◆</span>
+      <span class="quickInfoText">
+        <span class="quickInfoLabel">COINS</span>
+        <strong id="coinBalance">500</strong>
+      </span>
+      <span class="quickInfoPlus">+</span>
+    </button>
+
+    <button
+      type="button"
+      id="profileButton"
+      class="profileButton"
+      aria-label="Player profile"
+    >
+      <span class="profileAvatar">R</span>
+    </button>
+
+  </div>
+
+</header>
+
+<!-- ===== PART 01-B.2: TOP NAVIGATION END ===== -->
+
+
+<!-- ===== PART 01-B.3: HERO TITLE START ===== -->
+
+<div class="homeHeroText">
+  <div class="heroEyebrow">
+    <span class="heroEyebrowLine"></span>
+    <span>THE ROAD IS YOURS</span>
+    <span class="heroEyebrowLine"></span>
+  </div>
+
+  <h1>
+    RULE THE
+    <span>ROAD.</span>
+  </h1>
+
+  <p>PURE SPEED. NO LIMITS.</p>
+</div>
+
+<!-- ===== PART 01-B.3: HERO TITLE END ===== -->
+
+
+<!-- ===== PART 01-B.4: 3D CAR DISPLAY AREA START ===== -->
+
+<div id="carDisplayArea" class="carDisplayArea">
+
+  <!-- The 3D car will be rendered here in a later JavaScript part. -->
+  <div class="carShadow"></div>
+
+  <div class="carLoadingLabel" id="carLoadingLabel">
+    <span class="loadingDot"></span>
+    <span>SUPERX PERFORMANCE</span>
+  </div>
+
+</div>
+
+<!-- ===== PART 01-B.4: 3D CAR DISPLAY AREA END ===== -->
+
+
+<!-- ===== PART 01-B.5: CAR INFORMATION START ===== -->
+
+<div class="carInfoPanel">
+
+  <div class="carInfoTop">
+    <span class="carCategory">PERFORMANCE SERIES</span>
+    <span class="carStatus">
+      <span class="statusDot"></span>
+      READY TO DRIVE
+    </span>
+  </div>
+
+  <div class="carNameRow">
+    <div>
+      <h2 id="homeCarName">STREET BEAST</h2>
+      <p id="homeCarClass">SPORT CLASS · S-01</p>
+    </div>
+
+    <div class="carTopSpeed">
+      <strong id="homeTopSpeed">240</strong>
+      <span>KM/H</span>
+    </div>
+  </div>
+
+  <div class="carStats">
+    <div class="carStat">
+      <div class="statLabel">
+        <span>ACCELERATION</span>
+        <span>72</span>
+      </div>
+      <div class="statTrack">
+        <span style="width:72%"></span>
+      </div>
+    </div>
+
+    <div class="carStat">
+      <div class="statLabel">
+        <span>HANDLING</span>
+        <span>78</span>
+      </div>
+      <div class="statTrack">
+        <span style="width:78%"></span>
+      </div>
+    </div>
+
+    <div class="carStat">
+      <div class="statLabel">
+        <span>BRAKING</span>
+        <span>68</span>
+      </div>
+      <div class="statTrack">
+        <span style="width:68%"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== PART 01-B.5: CAR INFORMATION END ===== -->
+
+
+<!-- ===== PART 01-B.6: MAIN GAME BUTTONS START ===== -->
+
+<nav class="mainGameNavigation" aria-label="Main game modes">
+
+  <button
+    type="button"
+    id="careerButton"
+    class="mainModeButton careerModeButton"
+  >
+    <span class="modeNumber">01</span>
+    <span class="modeIcon">🏁</span>
+    <span class="modeText">
+      <strong>CAREER</strong>
+      <small>OFFLINE RACING</small>
+    </span>
+    <span class="modeArrow">↗</span>
+  </button>
+
+  <button
+    type="button"
+    id="onlineButton"
+    class="mainModeButton"
+  >
+    <span class="modeNumber">02</span>
+    <span class="modeIcon">◎</span>
+    <span class="modeText">
+      <strong>ONLINE</strong>
+      <small>RACE TOGETHER</small>
+    </span>
+    <span class="modeArrow">↗</span>
+  </button>
+
+  <button
+    type="button"
+    id="garageButton"
+    class="mainModeButton"
+  >
+    <span class="modeNumber">03</span>
+    <span class="modeIcon">🚘</span>
+    <span class="modeText">
+      <strong>GARAGE</strong>
+      <small>YOUR COLLECTION</small>
+    </span>
+    <span class="modeArrow">↗</span>
+  </button>
+
+  <button
+    type="button"
+    id="rewardsButton"
+    class="mainModeButton"
+  >
+    <span class="modeNumber">04</span>
+    <span class="modeIcon">✦</span>
+    <span class="modeText">
+      <strong>TASKS &amp; REWARDS</strong>
+      <small>COMPLETE &amp; EARN</small>
+    </span>
+    <span class="modeArrow">↗</span>
+  </button>
+
+</nav>
+
+<!-- ===== PART 01-B.6: MAIN GAME BUTTONS END ===== -->
+
+
+<!-- ===== PART 01-B.7: BOTTOM INFORMATION BAR START ===== -->
+
+<footer class="homeBottomBar">
+
+  <div class="bottomGameVersion">
+    <span class="versionDot"></span>
+    <span>SUPERX RACING</span>
+    <span class="versionNumber">EARLY BUILD</span>
+  </div>
+
+  <button
+    type="button"
+    id="homeMusicButton"
+    class="musicToggleButton"
+    aria-pressed="false"
+  >
+    <span class="musicIcon">♫</span>
+    <span id="homeMusicLabel">MUSIC OFF</span>
+  </button>
+
+  <button
+    type="button"
+    id="tasksShortcutButton"
+    class="dailyRewardShortcut"
+  >
+    <span class="rewardShortcutIcon">✦</span>
+    <span>DAILY REWARD</span>
+    <span class="rewardShortcutArrow">→</span>
+  </button>
+
+</footer>
+
+<!-- ===== PART 01-B.7: BOTTOM INFORMATION BAR END ===== -->
+
+
+<!-- ===== PART 01-B.8: MENU PANEL START ===== -->
+
+<div id="menuOverlay" class="menuOverlay" hidden>
+
+  <div class="menuPanel">
+
+    <div class="menuPanelHeader">
+      <div>
+        <span class="panelEyebrow">SUPERX LEGEND</span>
+        <h2>GAME MENU</h2>
+      </div>
+
+      <button
+        type="button"
+        id="closeMenuButton"
+        class="closePanelButton"
+        aria-label="Close menu"
+      >×</button>
+    </div>
+
+    <button type="button" class="menuOptionButton" id="settingsButton">
+      <span>⚙</span>
+      <span>SETTINGS</span>
+      <span>→</span>
+    </button>
+
+    <button type="button" class="menuOptionButton" id="controlsMenuButton">
+      <span>⌘</span>
+      <span>DRIVING CONTROLS</span>
+      <span>→</span>
+    </button>
+
+    <button type="button" class="menuOptionButton" id="aboutButton">
+      <span>ⓘ</span>
+      <span>ABOUT THE GAME</span>
+      <span>→</span>
+    </button>
+
+    <div class="menuPanelFooter">
+      BUILT FOR THE LOVE OF RACING
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ===== PART 01-B.8: MENU PANEL END ===== -->
+
+
+<!-- ===== PART 01-B.9: HOME SCREEN UI END ===== -->
+       
 
       </section>
 
