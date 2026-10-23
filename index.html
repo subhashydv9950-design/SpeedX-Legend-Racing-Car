@@ -5129,6 +5129,269 @@ button:disabled {
 })();
 
 /* PART 04-F END */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-G: DRIVING CONTROLS & SPEEDOMETER
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame =
+    window.SuperXGame || {};
+
+  const drive = {
+    accelerating: false,
+    braking: false,
+    left: false,
+    right: false,
+    handbrake: false,
+    paused: false,
+    speed: 0,
+    distance: 0,
+    gear: 1,
+    mode: "village",
+    map: 1,
+    lastTime: 0
+  };
+
+  function element(id) {
+    return document.getElementById(id);
+  }
+
+  function setText(id, value) {
+    const node = element(id);
+    if (node) node.textContent = value;
+  }
+
+  function updateHUD() {
+    setText("raceCurrentSpeed", Math.round(drive.speed));
+    setText("raceCurrentGear", drive.speed < 1 ? "N" : drive.gear);
+    setText("raceCurrentRPM", Math.round(900 + drive.speed * 25));
+
+    const rpmFill = element("raceRPMFill");
+    if (rpmFill) {
+      rpmFill.style.width =
+        Math.min(100, (900 + drive.speed * 25) / 9000 * 100) + "%";
+    }
+
+    setText("raceDistanceCovered", Math.round(drive.distance) + " m");
+    setText("raceDistanceRemaining",
+      Math.max(0, 2000 - Math.round(drive.distance)) + " m");
+
+    const progress = element("raceProgressFill");
+    if (progress) {
+      progress.style.width =
+        Math.min(100, drive.distance / 2000 * 100) + "%";
+    }
+
+    const world = game.threeDWorld;
+    if (world && world.playerCar) {
+      world.state.speed = drive.speed;
+      world.state.steering =
+        drive.left ? 1 : drive.right ? -1 : 0;
+    }
+  }
+
+  function setDrivingInput(name, pressed) {
+    if (drive.paused) return;
+
+    if (name === "accelerator") drive.accelerating = pressed;
+    if (name === "brake") drive.braking = pressed;
+    if (name === "left") drive.left = pressed;
+    if (name === "right") drive.right = pressed;
+    if (name === "handbrake") drive.handbrake = pressed;
+  }
+
+  function bindHoldButton(id, inputName) {
+    const button = element(id);
+    if (!button) return;
+
+    button.addEventListener("pointerdown", function (event) {
+      event.preventDefault();
+      button.setPointerCapture?.(event.pointerId);
+      setDrivingInput(inputName, true);
+    });
+
+    ["pointerup", "pointercancel", "lostpointercapture"].forEach(
+      function (eventName) {
+        button.addEventListener(eventName, function () {
+          setDrivingInput(inputName, false);
+        });
+      }
+    );
+
+    button.addEventListener("contextmenu", function (event) {
+      event.preventDefault();
+    });
+  }
+
+  bindHoldButton("acceleratorButton", "accelerator");
+  bindHoldButton("brakeButton", "brake");
+  bindHoldButton("steerLeftButton", "left");
+  bindHoldButton("steerRightButton", "right");
+  bindHoldButton("handbrakeButton", "handbrake");
+
+  function gameLoop(now) {
+    requestAnimationFrame(gameLoop);
+
+    if (!drive.lastTime) drive.lastTime = now;
+
+    const delta = Math.min((now - drive.lastTime) / 1000, 0.05);
+    drive.lastTime = now;
+
+    if (!drive.paused && game.currentScreen === "race") {
+      if (drive.accelerating) {
+        drive.speed += 42 * delta;
+      } else {
+        drive.speed -= 9 * delta;
+      }
+
+      if (drive.braking) {
+        drive.speed -= 85 * delta;
+      }
+
+      if (drive.handbrake) {
+        drive.speed -= 65 * delta;
+      }
+
+      drive.speed = Math.max(0, Math.min(520, drive.speed));
+
+      const car = game.threeDWorld &&
+        game.threeDWorld.playerCar;
+
+      if (car) {
+        if (drive.left) car.position.x -= 3.5 * delta;
+        if (drive.right) car.position.x += 3.5 * delta;
+
+        car.position.x = Math.max(-4.8, Math.min(4.8, car.position.x));
+      }
+
+      drive.distance += drive.speed / 3.6 * delta;
+
+      drive.gear = drive.speed < 1
+        ? 0
+        : Math.min(7, Math.max(1, Math.ceil(drive.speed / 65)));
+
+      updateHUD();
+
+      if (drive.distance >= 2000) {
+        finishRace();
+      }
+    }
+  }
+
+  function finishRace() {
+    drive.speed = 0;
+    drive.accelerating = false;
+    drive.braking = false;
+
+    drive.paused = true;
+
+    setText("raceResultTitle", "RACE COMPLETE!");
+    setText("raceResultPosition", "FINISH");
+    setText("raceResultCoins", "100");
+
+    const result = element("raceResultOverlay");
+    if (result) result.hidden = false;
+  }
+
+  game.startRace = function (mode, mapNumber) {
+    drive.mode = mode || "village";
+    drive.map = mapNumber || 1;
+    drive.speed = 0;
+    drive.distance = 0;
+    drive.gear = 1;
+    drive.paused = false;
+    drive.lastTime = performance.now();
+
+    const pause = element("racePauseOverlay");
+    const result = element("raceResultOverlay");
+
+    if (pause) pause.hidden = true;
+    if (result) result.hidden = true;
+
+    setText("raceLoadingText", "RACE READY");
+    game.showScreen("raceScreen");
+    updateHUD();
+  };
+
+  function stopInputs() {
+    drive.accelerating = false;
+    drive.braking = false;
+    drive.left = false;
+    drive.right = false;
+    drive.handbrake = false;
+  }
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    if (button.id === "pauseRaceButton") {
+      drive.paused = true;
+      stopInputs();
+      const overlay = element("racePauseOverlay");
+      if (overlay) overlay.hidden = false;
+    }
+
+    if (button.id === "resumeRaceButton") {
+      drive.paused = false;
+      drive.lastTime = performance.now();
+      const overlay = element("racePauseOverlay");
+      if (overlay) overlay.hidden = true;
+    }
+
+    if (button.id === "restartRaceButton") {
+      game.startRace(drive.mode, drive.map);
+    }
+
+    if (button.id === "quitRaceButton") {
+      drive.paused = true;
+      stopInputs();
+      game.showScreen("homeScreen");
+
+      const overlay = element("racePauseOverlay");
+      if (overlay) overlay.hidden = true;
+    }
+
+    if (button.id === "raceResultContinueButton") {
+      const overlay = element("raceResultOverlay");
+      if (overlay) overlay.hidden = true;
+      game.showScreen("careerScreen");
+    }
+
+    if (button.id === "changeCameraButton") {
+      if (game.showMessage) {
+        game.showMessage(
+          "CAMERA OPTIONS",
+          "Camera switching will be added in a later update.",
+          "📷"
+        );
+      }
+    }
+
+    if (
+      button.id === "hornButton" ||
+      button.id === "headlightButton" ||
+      button.id === "leftIndicatorButton" ||
+      button.id === "rightIndicatorButton"
+    ) {
+      button.classList.toggle("active");
+    }
+  });
+
+  game.drivingState = drive;
+
+  requestAnimationFrame(gameLoop);
+
+  console.log("SUPERX: Driving controls initialized.");
+
+})();
+
+/* PART 04-G END */
+   
        
      
    
