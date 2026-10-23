@@ -12168,6 +12168,353 @@ button:disabled {
 
 /* ===== PART 06-F: SUPERX GAME REPAIR PATCH END ===== */
    
+/* ===== PART 06-G: SUPERX FIXED UI REDESIGN ===== */
+
+(function () {
+  "use strict";
+
+  const styleId = "superx-part-06-g-styles";
+
+  if (document.getElementById(styleId)) return;
+
+  const css = document.createElement("style");
+  css.id = styleId;
+
+  css.textContent = `
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden !important;
+      overscroll-behavior: none;
+    }
+
+    #gameApp, #gameScene {
+      width: 100%;
+      height: 100dvh;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
+
+    .gameScreen, #homeScreen {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      max-height: 100dvh !important;
+      overflow: hidden !important;
+    }
+
+    .gameScreen[hidden], #homeScreen[hidden] {
+      display: none !important;
+    }
+
+    /* Premium fixed home screen */
+    #homeScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      background:
+        radial-gradient(ellipse at 50% 43%, #38205c 0%, transparent 48%),
+        linear-gradient(155deg, #11101c, #08080d 75%);
+    }
+
+    #homeScreen .homeTopBar {
+      flex: 0 0 auto;
+      min-height: 54px;
+      padding: 8px 12px;
+      gap: 8px;
+    }
+
+    #homeScreen .homeHeroText {
+      flex: 0 0 auto;
+      padding: 12px 10px 0;
+    }
+
+    #homeScreen .homeHeroText h1 {
+      font-size: clamp(25px, 7vw, 48px);
+      letter-spacing: 1.5px;
+      line-height: 1.05;
+    }
+
+    #homeScreen .homeHeroText p {
+      margin-top: 7px;
+      font-size: 9px;
+      letter-spacing: 1.5px;
+    }
+
+    #carDisplayArea {
+      flex: 1 1 auto;
+      width: 100%;
+      height: auto !important;
+      min-height: 100px;
+      max-height: 30dvh;
+      margin: 0 auto;
+    }
+
+    .homeCarInfo {
+      flex: 0 0 auto;
+      width: calc(100% - 24px);
+      max-width: 520px;
+      margin: 0 auto 10px !important;
+      padding: 10px 13px;
+    }
+
+    .homeCarStats {
+      gap: 9px;
+      margin-top: 9px;
+    }
+
+    .homeMainNavigation {
+      flex: 0 0 auto;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px;
+      width: calc(100% - 24px);
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .homeNavButton {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      min-width: 0;
+      min-height: 54px;
+      padding: 9px 12px;
+      border: 1px solid rgba(192, 132, 252, .28);
+      border-radius: 12px;
+      background: linear-gradient(140deg, #21162f, #100e18);
+      text-align: left;
+    }
+
+    .homeNavIcon {
+      flex: 0 0 auto;
+      font-size: 20px;
+    }
+
+    .homeNavTitle {
+      font-size: 10px;
+      letter-spacing: .5px;
+    }
+
+    .homeNavSubtitle {
+      display: none;
+    }
+
+    .homeBottomBar {
+      flex: 0 0 auto;
+      width: calc(100% - 24px);
+      margin: 8px auto 0;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      gap: 7px;
+    }
+
+    .homeBottomBar button {
+      min-width: 0;
+      min-height: 34px;
+      padding: 7px;
+      font-size: 9px;
+    }
+
+    /* All menu screens stay inside one viewport */
+    .gameScreen:not(#raceScreen) {
+      display: flex;
+      flex-direction: column;
+      padding: 10px 12px !important;
+    }
+
+    .gameScreen:not(#raceScreen)[hidden] {
+      display: none !important;
+    }
+
+    .subScreenHeader, .screenHeader {
+      flex: 0 0 auto;
+      width: 100%;
+      gap: 8px;
+      margin: 0 auto 10px;
+      padding: 5px 0 10px;
+    }
+
+    .subScreenContent {
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 0;
+      overflow: hidden !important;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .subScreenTitle {
+      flex: 0 0 auto;
+      margin-bottom: 12px;
+    }
+
+    .subScreenTitle h1 {
+      font-size: clamp(22px, 5vw, 34px);
+      margin: 4px 0;
+    }
+
+    .subScreenTitle p {
+      margin: 4px 0;
+      font-size: 11px;
+    }
+
+    .careerModeGrid, .onlineModeGrid {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      grid-template-rows: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      overflow: hidden !important;
+    }
+
+    .careerModeGrid .modeCard,
+    .onlineModeGrid .onlineModeCard {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 4px;
+      min-width: 0;
+      min-height: 0 !important;
+      padding: 9px;
+      border-radius: 12px;
+    }
+
+    .careerModeGrid .modeCardIcon,
+    .onlineModeGrid .onlineModeIcon {
+      font-size: 19px;
+    }
+
+    .careerModeGrid .modeCard strong,
+    .onlineModeGrid .onlineModeCard strong {
+      font-size: 10px;
+      line-height: 1.2;
+    }
+
+    .careerModeGrid .modeCard small,
+    .onlineModeGrid .onlineModeCard small {
+      font-size: 9px;
+      line-height: 1.2;
+    }
+
+    .careerModeGrid .modeCardFooter,
+    .onlineModeGrid .modeCardFooter {
+      font-size: 8px;
+      line-height: 1.2;
+    }
+
+    /* Race buttons stay anchored in their own screen */
+    #raceScreen {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100dvh !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+    }
+
+    #raceDrivingControls.raceDrivingControls {
+      position: absolute !important;
+      left: 10px !important;
+      right: 10px !important;
+      bottom: max(12px, env(safe-area-inset-bottom)) !important;
+      display: flex !important;
+      align-items: flex-end !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+      z-index: 30 !important;
+    }
+
+    #raceSteeringControls, .racePedalControls {
+      display: flex !important;
+      align-items: flex-end !important;
+      gap: 7px !important;
+    }
+
+    .driveControlButton {
+      min-width: 48px;
+      min-height: 48px;
+      touch-action: none;
+    }
+
+    .raceUtilityControls {
+      position: absolute !important;
+      top: 85px !important;
+      right: 8px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 6px !important;
+      z-index: 31 !important;
+    }
+
+    .raceUtilityButton {
+      min-width: 42px;
+      min-height: 42px;
+    }
+
+    @media (max-height: 650px) {
+      #homeScreen .homeHeroText {
+        padding-top: 5px;
+      }
+
+      #carDisplayArea {
+        max-height: 22dvh;
+      }
+
+      .homeCarInfo {
+        padding: 7px 10px;
+      }
+
+      .careerModeGrid .modeCard,
+      .onlineModeGrid .onlineModeCard {
+        padding: 5px 8px;
+      }
+
+      .careerModeGrid .modeCard small,
+      .onlineModeGrid .onlineModeCard small {
+        display: none;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .homeNavButton {
+        gap: 6px;
+        padding: 8px;
+      }
+
+      .homeNavTitle {
+        font-size: 9px;
+      }
+
+      .driveControlButton {
+        min-width: 42px;
+        min-height: 44px;
+      }
+    }
+  `;
+
+  document.head.appendChild(css);
+
+  /* Stop unwanted touch scrolling */
+  document.addEventListener("touchmove", function (event) {
+    if (!event.target.closest(
+      "input, select, textarea, .allowScroll"
+    )) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  console.log("SUPERX PART 06-G: Fixed UI layout applied.");
+})();
+
+/* ===== PART 06-G END ===== */
+   
    
        
      
