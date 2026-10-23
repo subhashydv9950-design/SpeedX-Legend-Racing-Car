@@ -4186,6 +4186,105 @@ button:disabled {
        Do not paste JavaScript outside this script section.
     ===================================================== */
 
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-B: SCREEN NAVIGATION
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame =
+    window.SuperXGame || {};
+
+  game.currentScreen = "home";
+
+  game.showScreen = function (screenId) {
+    const screens = [
+      "homeScreen",
+      "careerScreen",
+      "onlineScreen",
+      "garageScreen",
+      "rewardsScreen",
+      "raceScreen",
+      "customizationScreen",
+      "raceSettingsScreen",
+      "roomSetupScreen"
+    ];
+
+    const target = document.getElementById(screenId);
+
+    if (!target) {
+      console.warn("Screen not found:", screenId);
+      return;
+    }
+
+    screens.forEach(function (id) {
+      const screen = document.getElementById(id);
+
+      if (screen) {
+        screen.hidden = id !== screenId;
+      }
+    });
+
+    game.currentScreen = screenId.replace("Screen", "");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  };
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+
+    if (!button) return;
+
+    const navigation = {
+      careerButton: "careerScreen",
+      onlineButton: "onlineScreen",
+      garageButton: "garageScreen",
+      rewardsButton: "rewardsScreen",
+      backToGarageButton: "garageScreen",
+      backFromRoomSetupButton: "onlineScreen",
+      backFromRaceSettingsButton: "raceScreen"
+    };
+
+    if (navigation[button.id]) {
+      game.showScreen(navigation[button.id]);
+      return;
+    }
+
+    if (button.hasAttribute("data-go-home")) {
+      game.showScreen("homeScreen");
+      return;
+    }
+
+    if (button.id === "customizeCarButton") {
+      game.showScreen("customizationScreen");
+      return;
+    }
+
+    if (button.id === "createRoomButton") {
+      game.showScreen("roomSetupScreen");
+      return;
+    }
+
+    if (
+      button.id === "raceCameraSettingsButton" ||
+      button.id === "raceControlSettingsButton"
+    ) {
+      game.showScreen("raceSettingsScreen");
+      return;
+    }
+  });
+
+  console.log("SUPERX: Navigation initialized.");
+
+})();
+
+/* PART 04-B END */
+   
   </script>
 
   <!-- ===== PART 01-A.8: JAVASCRIPT PLACEHOLDER END ===== -->
