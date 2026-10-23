@@ -1928,6 +1928,108 @@
 ===================================================== -->
  
      
+<!-- PART 01-G: CONTROL & CAMERA SETTINGS START -->
+
+<section id="raceSettingsScreen" class="gameScreen raceSettingsScreen" hidden>
+  <header class="screenHeader">
+    <button class="iconButton" id="backFromRaceSettingsButton" type="button">← Back</button>
+    <div class="screenBrand">
+      <span class="brandEyebrow">SUPERX LEGEND</span>
+      <h2>RACE SETTINGS</h2>
+    </div>
+  </header>
+
+  <div class="settingsPageContent">
+    <section class="settingsCard">
+      <h3>DRIVING CONTROLS</h3>
+      <p>Choose how you want to steer your car.</p>
+
+      <label class="fieldLabel" for="raceSteeringType">Steering Method</label>
+      <select id="raceSteeringType" class="gameSelect">
+        <option value="buttons">Left / Right Buttons</option>
+        <option value="wheel">Virtual Steering Wheel</option>
+        <option value="tilt">Tilt Sensor</option>
+      </select>
+
+      <label class="fieldLabel" for="raceControlSize">Control Button Size</label>
+      <div class="rangeSetting">
+        <input id="raceControlSize" type="range" min="70" max="140" value="100">
+        <output id="raceControlSizeValue">100%</output>
+      </div>
+
+      <label class="fieldLabel" for="raceSteeringSensitivity">Steering Sensitivity</label>
+      <div class="rangeSetting">
+        <input id="raceSteeringSensitivity" type="range" min="1" max="10" value="5">
+        <output id="raceSteeringSensitivityValue">5</output>
+      </div>
+
+      <label class="fieldLabel" for="raceControlSide">Accelerator Position</label>
+      <select id="raceControlSide" class="gameSelect">
+        <option value="right">Right Side</option>
+        <option value="left">Left Side</option>
+      </select>
+
+      <label class="fieldLabel" for="raceBrakePosition">Brake Position</label>
+      <select id="raceBrakePosition" class="gameSelect">
+        <option value="left">Left Side</option>
+        <option value="right">Right Side</option>
+      </select>
+    </section>
+
+    <section class="settingsCard">
+      <h3>CAMERA SETTINGS</h3>
+      <p>Choose your preferred racing view.</p>
+
+      <label class="fieldLabel" for="raceCameraMode">Default Camera</label>
+      <select id="raceCameraMode" class="gameSelect">
+        <option value="chase">Rear Chase Camera</option>
+        <option value="far">Far Chase Camera</option>
+        <option value="hood">Hood Camera</option>
+        <option value="cockpit">Cockpit Camera</option>
+      </select>
+
+      <label class="fieldLabel" for="raceCameraDistance">Camera Distance</label>
+      <div class="rangeSetting">
+        <input id="raceCameraDistance" type="range" min="3" max="15" value="8">
+        <output id="raceCameraDistanceValue">8</output>
+      </div>
+
+      <label class="fieldLabel" for="raceCameraShakeSetting">Camera Shake</label>
+      <select id="raceCameraShakeSetting" class="gameSelect">
+        <option value="on">Enabled</option>
+        <option value="off">Disabled</option>
+      </select>
+    </section>
+
+    <section class="settingsCard">
+      <h3>DISPLAY & PERFORMANCE</h3>
+
+      <label class="fieldLabel" for="raceGraphicsMode">Graphics Quality</label>
+      <select id="raceGraphicsMode" class="gameSelect">
+        <option value="low">Performance</option>
+        <option value="medium" selected>Balanced</option>
+        <option value="high">High Quality</option>
+      </select>
+
+      <label class="fieldLabel" for="raceShowMinimap">Race Minimap</label>
+      <select id="raceShowMinimap" class="gameSelect">
+        <option value="on">Show Minimap</option>
+        <option value="off">Hide Minimap</option>
+      </select>
+
+      <button id="saveRaceSettingsButton" class="primaryActionButton" type="button">
+        SAVE SETTINGS
+      </button>
+
+      <p class="settingsFootnote">
+        Settings will take effect when the corresponding driving features are connected.
+      </p>
+    </section>
+  </div>
+</section>
+
+<!-- PART 01-G: CONTROL & CAMERA SETTINGS END -->
+     
 
     </main>
 
