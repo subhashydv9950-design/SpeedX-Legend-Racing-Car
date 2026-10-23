@@ -4831,6 +4831,305 @@ button:disabled {
 
 /* PART 04-E END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-F: THREE.JS 3D RACING WORLD
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame =
+    window.SuperXGame || {};
+
+  let scene = null;
+  let camera = null;
+  let renderer = null;
+  let playerCar = null;
+  let animationId = null;
+
+  const world = {
+    ready: false,
+    speed: 0,
+    steering: 0,
+    distance: 0,
+    lastTime: 0
+  };
+
+  function makeMaterial(color, metalness, roughness) {
+    return new THREE.MeshStandardMaterial({
+      color: color,
+      metalness: metalness || 0,
+      roughness: roughness === undefined ? 0.7 : roughness
+    });
+  }
+
+  function addBox(parent, width, height, depth, material, x, y, z) {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(width, height, depth),
+      material
+    );
+
+    mesh.position.set(x || 0, y || 0, z || 0);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+
+    return mesh;
+  }
+
+  function buildCar(color) {
+    const car = new THREE.Group();
+
+    const bodyMaterial = makeMaterial(color, 0.55, 0.28);
+    const glassMaterial = makeMaterial(0x171b2a, 0.3, 0.2);
+    const tyreMaterial = makeMaterial(0x101014, 0, 0.95);
+    const rimMaterial = makeMaterial(0xb9bdca, 0.8, 0.25);
+
+    addBox(
+      car, 1.8, 0.48, 3.7,
+      bodyMaterial, 0, 0.62, 0
+    );
+
+    addBox(
+      car, 1.35, 0.55, 1.7,
+      glassMaterial, 0, 1.08, -0.35
+    );
+
+    addBox(
+      car, 1.52, 0.12, 0.38,
+      bodyMaterial, 0, 0.92, 1.55
+    );
+
+    addBox(
+      car, 1.55, 0.1, 0.28,
+      bodyMaterial, 0, 0.94, -1.78
+    );
+
+    const wheelPositions = [
+      [-0.94, 0.35, -1.15],
+      [0.94, 0.35, -1.15],
+      [-0.94, 0.35, 1.15],
+      [0.94, 0.35, 1.15]
+    ];
+
+    wheelPositions.forEach(function (position) {
+      const wheel = new THREE.Group();
+
+      const tyre = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.35, 0.22, 20),
+        tyreMaterial
+      );
+
+      tyre.rotation.z = Math.PI / 2;
+      wheel.add(tyre);
+
+      const rim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.19, 0.19, 0.235, 16),
+        rimMaterial
+      );
+
+      rim.rotation.z = Math.PI / 2;
+      wheel.add(rim);
+
+      wheel.position.set(
+        position[0],
+        position[1],
+        position[2]
+      );
+
+      car.add(wheel);
+    });
+
+    car.userData.wheels = car.children.filter(function (child) {
+      return child.type === "Group";
+    });
+
+    return car;
+  }
+
+  function buildRoad() {
+    const roadMaterial = makeMaterial(0x25252e, 0, 0.92);
+    const grassMaterial = makeMaterial(0x172b25, 0, 1);
+    const lineMaterial = makeMaterial(0xe7e4d7, 0, 0.7);
+
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(220, 1000),
+      grassMaterial
+    );
+
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.08;
+    ground.position.z = -400;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    const road = new THREE.Mesh(
+      new THREE.PlaneGeometry(13, 1000),
+      roadMaterial
+    );
+
+    road.rotation.x = -Math.PI / 2;
+    road.position.y = 0;
+    road.position.z = -400;
+    road.receiveShadow = true;
+    scene.add(road);
+
+    for (let z = -900; z < 100; z += 12) {
+      addBox(
+        scene, 0.16, 0.025, 5,
+        lineMaterial, 0, 0.025, z
+      );
+    }
+
+    const railMaterial = makeMaterial(0x777985, 0.65, 0.35);
+
+    [-7, 7].forEach(function (x) {
+      addBox(
+        scene, 0.16, 0.5, 1000,
+        railMaterial, x, 0.25, -400
+      );
+    });
+  }
+
+  function buildWorld() {
+    if (typeof THREE === "undefined") {
+      showLoadingMessage(
+        "3D engine could not load. Check your internet connection and reload."
+      );
+      return;
+    }
+
+    const container = document.getElementById("threeDContainer");
+
+    if (!container) return;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x090611);
+    scene.fog = new THREE.Fog(0x090611, 100, 550);
+
+    camera = new THREE.PerspectiveCamera(
+      65,
+      Math.max(container.clientWidth, 1) /
+        Math.max(container.clientHeight, 1),
+      0.1,
+      1200
+    );
+
+    camera.position.set(0, 4.5, 9);
+    camera.lookAt(0, 0.8, -8);
+
+    renderer = new THREE.WebGLRenderer({
+      canvas: document.getElementById("gameCanvas"),
+      antialias: true,
+      powerPreference: "high-performance"
+    });
+
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio || 1, 1.5)
+    );
+
+    renderer.setSize(
+      Math.max(container.clientWidth, 1),
+      Math.max(container.clientHeight, 1),
+      false
+    );
+
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    scene.add(new THREE.HemisphereLight(0xa9b4ff, 0x1c1826, 2));
+
+    const sun = new THREE.DirectionalLight(0xffffff, 2.4);
+    sun.position.set(-15, 30, 20);
+    sun.castShadow = true;
+    scene.add(sun);
+
+    buildRoad();
+
+    playerCar = buildCar(0x7d28e8);
+    playerCar.position.set(0, 0, 2);
+    scene.add(playerCar);
+
+    world.ready = true;
+
+    const loading = document.getElementById("carLoadingLabel");
+    if (loading) loading.textContent = "3D CAR READY";
+
+    const raceLoading = document.getElementById("raceLoadingText");
+    if (raceLoading) raceLoading.textContent = "3D WORLD READY";
+
+    if (animationId) cancelAnimationFrame(animationId);
+
+    world.lastTime = performance.now();
+    animate();
+  }
+
+  function showLoadingMessage(message) {
+    const label = document.getElementById("carLoadingLabel");
+    if (label) label.textContent = message;
+
+    const raceLabel = document.getElementById("raceLoadingText");
+    if (raceLabel) raceLabel.textContent = message;
+  }
+
+  function animate() {
+    animationId = requestAnimationFrame(animate);
+
+    if (!renderer || !scene || !camera) return;
+
+    const now = performance.now();
+    const delta = Math.min((now - world.lastTime) / 1000, 0.05);
+    world.lastTime = now;
+
+    if (playerCar) {
+      playerCar.rotation.y +=
+        (world.steering * 0.12 - playerCar.rotation.y) *
+        Math.min(delta * 5, 1);
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  function resizeRenderer() {
+    const container = document.getElementById("threeDContainer");
+    if (!container || !renderer || !camera) return;
+
+    const width = Math.max(container.clientWidth, 1);
+    const height = Math.max(container.clientHeight, 1);
+
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height, false);
+  }
+
+  window.addEventListener("resize", resizeRenderer);
+
+  game.threeDWorld = {
+    get scene() { return scene; },
+    get camera() { return camera; },
+    get playerCar() { return playerCar; },
+    get ready() { return world.ready; },
+    state: world,
+    buildCar: buildCar
+  };
+
+  game.initialize3DWorld = buildWorld;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", buildWorld, {
+      once: true
+    });
+  } else {
+    buildWorld();
+  }
+
+  console.log("SUPERX: 3D world module loaded.");
+
+})();
+
+/* PART 04-F END */
+       
      
    
   </script>
