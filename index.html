@@ -6699,6 +6699,111 @@ button:disabled {
 
 /* PART 04-O: CAMERA & VEHICLE SYSTEM END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-P: PLAYER STATS & RECORDS START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  const STATS_KEY = "superxLegendPlayerStatsV1";
+
+  const defaults = {
+    totalRaces: 0,
+    totalWins: 0,
+    totalDistance: 0,
+    bestSpeed: 0
+  };
+
+  let stats = { ...defaults };
+
+  function loadStats() {
+    try {
+      const saved = localStorage.getItem(STATS_KEY);
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        Object.keys(defaults).forEach(key => {
+          if (Number.isFinite(Number(parsed[key]))) {
+            stats[key] = Math.max(0, Number(parsed[key]));
+          }
+        });
+      }
+    } catch (error) {
+      console.warn("SUPERX: Could not load player stats.", error);
+    }
+
+    updateProfile();
+  }
+
+  function saveStats() {
+    try {
+      localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+    } catch (error) {
+      console.warn("SUPERX: Could not save player stats.", error);
+    }
+  }
+
+  function updateProfile() {
+    const profile = document.getElementById("profileOverlay");
+    if (!profile) return;
+
+    const cards = profile.querySelectorAll(".profileStatCard");
+
+    if (cards.length >= 3) {
+      cards[0].querySelector("*")?.replaceChildren(
+        document.createTextNode(String(stats.totalRaces))
+      );
+
+      cards[1].querySelector("*")?.replaceChildren(
+        document.createTextNode(String(stats.totalWins))
+      );
+
+      cards[2].querySelector("*")?.replaceChildren(
+        document.createTextNode(
+          (stats.totalDistance / 1000).toFixed(1) + " km"
+        )
+      );
+    }
+  }
+
+  function recordRace(distance, speed, won) {
+    stats.totalRaces += 1;
+    stats.totalDistance += Math.max(0, Number(distance) || 0);
+    stats.bestSpeed = Math.max(
+      stats.bestSpeed,
+      Number(speed) || 0
+    );
+
+    if (won) stats.totalWins += 1;
+
+    saveStats();
+    updateProfile();
+
+    if (typeof game.saveGame === "function") {
+      game.saveGame(false);
+    }
+
+    return { ...stats };
+  }
+
+  loadStats();
+
+  game.playerStats = {
+    get: () => ({ ...stats }),
+    recordRace,
+    save: saveStats
+  };
+
+  console.log("SUPERX PART 04-P loaded.");
+
+})();
+
+/* PART 04-P: PLAYER STATS & RECORDS END */
+   
    
        
      
