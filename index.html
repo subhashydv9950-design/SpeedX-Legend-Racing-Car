@@ -7273,6 +7273,72 @@ button:disabled {
 
 /* PART 04-S: KEYBOARD & FULLSCREEN END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-T: RACE STATS & ACHIEVEMENTS CONNECTION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+
+  if (!game) return;
+
+  let currentRaceRecorded = false;
+
+  const originalStartRace = game.startRace;
+
+  if (typeof originalStartRace === "function") {
+    game.startRace = function () {
+      currentRaceRecorded = false;
+
+      return originalStartRace.apply(this, arguments);
+    };
+  }
+
+  const originalRecordRaceFinished = game.recordRaceFinished;
+
+  if (typeof originalRecordRaceFinished === "function") {
+    game.recordRaceFinished = function (distance) {
+      if (currentRaceRecorded) return;
+
+      currentRaceRecorded = true;
+
+      const result = originalRecordRaceFinished.apply(this, arguments);
+
+      const speedElement = document.getElementById("raceCurrentSpeed");
+      const speed = speedElement
+        ? Number(speedElement.textContent) || 0
+        : 0;
+
+      if (game.playerStats?.recordRace) {
+        game.playerStats.recordRace(
+          Number(distance) || 0,
+          speed,
+          false
+        );
+      }
+
+      if (game.achievements?.check) {
+        game.achievements.check();
+      }
+
+      if (game.saveGame) {
+        game.saveGame(false);
+      }
+
+      return result;
+    };
+  }
+
+  console.log("SUPERX PART 04-T loaded.");
+
+})();
+
+/* PART 04-T: RACE STATS & ACHIEVEMENTS CONNECTION END */
+   
+   
    
    
        
