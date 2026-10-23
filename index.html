@@ -4983,54 +4983,106 @@ button:disabled {
 
   game.unlockedMaps = unlockedMaps;
 
-function renderMaps(modeId) {
+function renderMaps(mode) {
   const grid = document.getElementById("careerMapGrid");
   if (!grid) return;
 
-  // Every mode starts with only Map 01 unlocked.
-  unlockedMaps[modeId] = 1;
+  const modeId = typeof mode === "string" ? mode : mode.id;
+  if (!modeId) return;
+
+  const storageKey = "superx_unlocked_maps_v1";
+  let saved = {};
+
+  try {
+    saved = JSON.parse(localStorage.getItem(storageKey) || "{}") || {};
+  } catch (error) {
+    saved = {};
+  }
+
+  if (!saved[modeId]) saved[modeId] = [1];
+
+  // Map 01 is always free.
+  if (!saved[modeId].includes(1)) saved[modeId].push(1);
+
   grid.replaceChildren();
 
+  const coinBalance = () =>
+    Math.max(0, Number(game.coins) || 0);
+
   for (let number = 1; number <= 100; number++) {
-    const unlocked = number === 1;
+    const cost = number * 100;
+    const unlocked = saved[modeId].includes(number);
     const button = document.createElement("button");
 
     button.type = "button";
     button.className = "careerMapCard mapCard";
-    button.disabled = !unlocked;
-    button.setAttribute("aria-pressed", "false");
-
     button.style.cssText =
-      "padding:12px;border:1px solid #45305f;" +
-      "border-radius:10px;background:#171020;color:white;" +
-      "min-height:66px;font-weight:800;";
-
-    button.textContent = unlocked
-      ? "🔓 MAP 01 · FREE"
-      : "🔒 MAP " + String(number).padStart(2, "0");
+      "padding:12px 6px;border:1px solid #45305f;" +
+      "border-radius:12px;background:#171020;color:white;" +
+      "min-height:76px;font-weight:800;";
 
     if (unlocked) {
+      button.textContent = number === 1
+        ? "🔓 MAP 01 · FREE"
+        : "🔓 MAP " + String(number).padStart(2, "0");
+
       button.style.borderColor = "#c084fc";
-      button.style.background =
-        "linear-gradient(145deg,#49216b,#171020)";
-      button.setAttribute("aria-pressed", "true");
+      button.setAttribute("aria-pressed", "false");
 
       button.addEventListener("click", function () {
         game.selectedModeId = modeId;
-        game.selectedMapNumber = 1;
+        game.selectedMapNumber = number;
 
         grid.querySelectorAll("button").forEach(function (item) {
           item.setAttribute("aria-pressed", "false");
-          item.style.borderColor = "#45305f";
         });
 
         button.setAttribute("aria-pressed", "true");
-        button.style.borderColor = "#c084fc";
 
         const startButton =
           document.getElementById("startCareerRaceButton");
 
         if (startButton) startButton.disabled = false;
+      });
+    } else {
+      button.textContent =
+        "🔒 MAP " + String(number).padStart(2, "0") +
+        "\n🪙 " + cost;
+
+      button.style.whiteSpace = "pre-line";
+
+      button.addEventListener("click", function () {
+        const coins = coinBalance();
+
+        if (coins < cost) {
+          alert(
+            "Not enough coins! You need " + cost +
+            " coins to unlock this map."
+          );
+          return;
+        }
+
+        if (!confirm(
+          "Unlock MAP " + number + " for " + cost + " coins?"
+        )) return;
+
+        game.coins = coins - cost;
+
+        saved[modeId].push(number);
+
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(saved));
+        } catch (error) {
+          alert("Could not save map unlock. Please try again.");
+          return;
+        }
+
+        const balance = document.getElementById("coinBalance");
+        if (balance) balance.textContent = game.coins;
+
+        renderMaps(mode);
+
+        alert("MAP " + number + " unlocked!");
       });
     }
 
@@ -5044,9 +5096,8 @@ function renderMaps(modeId) {
     document.getElementById("startCareerRaceButton");
 
   if (startButton) startButton.disabled = false;
-}
+   }
  
-
 /* PART 04-E END */
    
 /* =====================================================
