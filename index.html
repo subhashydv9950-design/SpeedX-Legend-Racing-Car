@@ -4285,6 +4285,152 @@ button:disabled {
 
 /* PART 04-B END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-C: MENU, SETTINGS & DIALOGS
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame =
+    window.SuperXGame || {};
+
+  function showPanel(id) {
+    const panel = document.getElementById(id);
+    if (panel) panel.hidden = false;
+  }
+
+  function hidePanel(id) {
+    const panel = document.getElementById(id);
+    if (panel) panel.hidden = true;
+  }
+
+  function showMessage(title, message, icon) {
+    const titleEl = document.getElementById("gameMessageTitle");
+    const textEl = document.getElementById("gameMessageText");
+    const iconEl = document.getElementById("gameMessageIcon");
+
+    if (titleEl) titleEl.textContent = title;
+    if (textEl) textEl.textContent = message;
+    if (iconEl) iconEl.textContent = icon || "🏁";
+
+    showPanel("gameMessageOverlay");
+  }
+
+  game.showMessage = showMessage;
+
+  const panelButtons = {
+    menuButton: ["menuOverlay", true],
+    closeMenuButton: ["menuOverlay", false],
+    settingsButton: ["settingsOverlay", true],
+    closeSettingsButton: ["settingsOverlay", false],
+    profileButton: ["profileOverlay", true],
+    closeProfileButton: ["profileOverlay", false],
+    aboutButton: ["aboutOverlay", true],
+    closeAboutButton: ["aboutOverlay", false],
+    closeMessageButton: ["gameMessageOverlay", false]
+  };
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    const action = panelButtons[button.id];
+
+    if (action) {
+      if (action[1]) showPanel(action[0]);
+      else hidePanel(action[0]);
+    }
+
+    if (button.id === "controlsMenuButton") {
+      hidePanel("menuOverlay");
+      game.showScreen("raceSettingsScreen");
+    }
+
+    if (button.id === "coinsButton") {
+      showMessage(
+        "SUPERX COINS",
+        "Earn coins by completing races and daily tasks.",
+        "🪙"
+      );
+    }
+
+    if (button.id === "homeMusicButton") {
+      showMessage(
+        "MUSIC PLAYER",
+        "Music playback will be connected in a later update.",
+        "🎵"
+      );
+    }
+
+    if (button.id === "tasksShortcutButton") {
+      game.showScreen("rewardsScreen");
+    }
+
+    if (button.id === "saveSettingsButton") {
+      saveSettings();
+      showMessage(
+        "SETTINGS SAVED",
+        "Your available settings have been saved on this device.",
+        "✓"
+      );
+    }
+  });
+
+  function saveSettings() {
+    const ids = [
+      "musicVolume",
+      "soundVolume",
+      "graphicsQuality",
+      "cameraShake",
+      "transmissionMode",
+      "steeringMode"
+    ];
+
+    const settings = {};
+
+    ids.forEach(function (id) {
+      const element = document.getElementById(id);
+      if (element) settings[id] = element.value;
+    });
+
+    try {
+      localStorage.setItem(
+        "superxGameSettings",
+        JSON.stringify(settings)
+      );
+    } catch (error) {
+      console.warn("Settings could not be saved.", error);
+    }
+  }
+
+  function loadSettings() {
+    try {
+      const saved = localStorage.getItem("superxGameSettings");
+      if (!saved) return;
+
+      const settings = JSON.parse(saved);
+
+      Object.keys(settings).forEach(function (id) {
+        const element = document.getElementById(id);
+
+        if (element) element.value = settings[id];
+      });
+    } catch (error) {
+      console.warn("Saved settings could not be loaded.", error);
+    }
+  }
+
+  loadSettings();
+
+  console.log("SUPERX: Menu and settings initialized.");
+
+})();
+
+/* PART 04-C END */
+     
+   
   </script>
 
   <!-- ===== PART 01-A.8: JAVASCRIPT PLACEHOLDER END ===== -->
