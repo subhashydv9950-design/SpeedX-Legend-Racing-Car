@@ -11354,7 +11354,237 @@ button:disabled {
 })();
 
 /* ===== END OF PART 06-B ===== */
-       
+     
+/* ===== PART 06-C: DISTINCT CAR BODY DESIGNS START ===== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+
+  if (!game) {
+    console.warn("SUPERX: Game object not found for PART 06-C.");
+    return;
+  }
+
+  const palette = [
+    0x8b5cf6, 0xff3030, 0x00c8ff, 0xffb000,
+    0x21e68a, 0xff42b3, 0xffffff, 0x505a70
+  ];
+
+  function material(color, metalness, roughness) {
+    return new THREE.MeshStandardMaterial({
+      color: color,
+      metalness: metalness,
+      roughness: roughness
+    });
+  }
+
+  function addPart(car, geometry, mat, x, y, z) {
+    const mesh = new THREE.Mesh(geometry, mat);
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    car.add(mesh);
+    return mesh;
+  }
+
+  function buildDesignedCar(color, carClass) {
+    if (!window.THREE) return null;
+
+    const car = new THREE.Group();
+    const bodyMat = material(color, 0.65, 0.26);
+    const glassMat = material(0x172033, 0.35, 0.18);
+    const tyreMat = material(0x101014, 0.05, 0.9);
+    const rimMat = material(0xc4c9d8, 0.85, 0.2);
+    const lightMat = material(0xbdeeff, 0.3, 0.18);
+
+    const type = String(carClass || "SPORT").toUpperCase();
+
+    let bodyWidth = 1.8;
+    let bodyHeight = 0.46;
+    let bodyLength = 3.7;
+    let roofWidth = 1.28;
+    let roofHeight = 0.48;
+    let roofLength = 1.55;
+    let roofZ = -0.25;
+
+    if (type === "SUPER") {
+      bodyWidth = 1.95;
+      bodyHeight = 0.43;
+      bodyLength = 4.0;
+      roofWidth = 1.35;
+      roofHeight = 0.43;
+      roofLength = 1.45;
+      roofZ = -0.25;
+    }
+
+    if (type === "HYPER") {
+      bodyWidth = 2.05;
+      bodyHeight = 0.39;
+      bodyLength = 4.2;
+      roofWidth = 1.18;
+      roofHeight = 0.38;
+      roofLength = 1.35;
+      roofZ = -0.2;
+    }
+
+    addPart(
+      car,
+      new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyLength),
+      bodyMat, 0, 0.62, 0
+    );
+
+    addPart(
+      car,
+      new THREE.BoxGeometry(roofWidth, roofHeight, roofLength),
+      glassMat, 0, 1.02, roofZ
+    );
+
+    // Front hood and nose
+    addPart(
+      car,
+      new THREE.BoxGeometry(bodyWidth * 0.86, 0.16, 1.05),
+      bodyMat, 0, 0.79, 1.15
+    );
+
+    // Rear deck
+    addPart(
+      car,
+      new THREE.BoxGeometry(bodyWidth * 0.9, 0.14, 0.65),
+      bodyMat, 0, 0.79, -1.45
+    );
+
+    // Front lights
+    [-1, 1].forEach(function (side) {
+      addPart(
+        car,
+        new THREE.BoxGeometry(0.32, 0.09, 0.07),
+        lightMat, side * bodyWidth * 0.34, 0.76, 1.87
+      );
+    });
+
+    // Four wheels with rims
+    [
+      [-1, -1.15],
+      [1, -1.15],
+      [-1, 1.15],
+      [1, 1.15]
+    ].forEach(function (point) {
+      const wheel = new THREE.Group();
+
+      const tyre = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.34, 0.34, 0.22, 20),
+        tyreMat
+      );
+      tyre.rotation.z = Math.PI / 2;
+      wheel.add(tyre);
+
+      const rim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.19, 0.19, 0.235, 16),
+        rimMat
+      );
+      rim.rotation.z = Math.PI / 2;
+      wheel.add(rim);
+
+      wheel.position.set(
+        point[0] * (bodyWidth / 2 + 0.02),
+        0.35,
+        point[1]
+      );
+
+      car.add(wheel);
+    });
+
+    // Hypercar rear wing
+    if (type === "HYPER") {
+      addPart(
+        car,
+        new THREE.BoxGeometry(1.55, 0.09, 0.32),
+        bodyMat, 0, 1.12, -1.95
+      );
+
+      [-0.55, 0.55].forEach(function (x) {
+        addPart(
+          car,
+          new THREE.BoxGeometry(0.07, 0.3, 0.08),
+          rimMat, x, 0.96, -1.82
+        );
+      });
+    }
+
+    // Supercar rear accent
+    if (type === "SUPER") {
+      addPart(
+        car,
+        new THREE.BoxGeometry(1.15, 0.08, 0.16),
+        rimMat, 0, 0.98, -1.92
+      );
+    }
+
+    car.userData.carClass = type;
+    return car;
+  }
+
+  function selectedCar() {
+    if (typeof game.getSelectedCar === "function") {
+      return game.getSelectedCar();
+    }
+
+    return Array.isArray(game.cars)
+      ? game.cars.find(function (car) {
+          return car.id === game.selectedCarId;
+        })
+      : null;
+  }
+
+  function installDesignedBuilder() {
+    const world = game.threeDWorld;
+
+    if (!world || typeof world.buildCar !== "function") {
+      return false;
+    }
+
+    if (world.buildCar.__part06C) return true;
+
+    const originalBuilder = world.buildCar;
+
+    function designedBuilder(color, classOverride) {
+      const car = selectedCar();
+
+      const carClass = classOverride ||
+        (car && car.className) || "SPORT";
+
+      const finalColor = typeof color === "number"
+        ? color
+        : palette[Math.abs(Number(game.selectedCarId) || 0) %
+            palette.length];
+
+      return buildDesignedCar(finalColor, carClass) ||
+        originalBuilder.call(world, finalColor);
+    }
+
+    designedBuilder.__part06C = true;
+    designedBuilder.originalBuilder = originalBuilder;
+    world.buildCar = designedBuilder;
+
+    // Refresh the existing garage preview if PART 06-B is installed.
+    if (typeof game.updateSelectedCar === "function") {
+      game.updateSelectedCar();
+    }
+
+    console.log("SUPERX: Sport, Super and Hyper body designs installed.");
+    return true;
+  }
+
+  if (!installDesignedBuilder()) {
+    document.addEventListener("DOMContentLoaded", installDesignedBuilder);
+  }
+
+})();
+
+/* ===== PART 06-C: DISTINCT CAR BODY DESIGNS END ===== */
+   
    
        
      
