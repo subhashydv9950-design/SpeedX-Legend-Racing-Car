@@ -4429,6 +4429,236 @@ button:disabled {
 })();
 
 /* PART 04-C END */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-D: GARAGE & CAR COLLECTION
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame =
+    window.SuperXGame || {};
+
+  const carNames = [
+    "STREET BEAST",
+    "NIGHT RUNNER",
+    "APEX GT",
+    "VORTEX R",
+    "PHANTOM X",
+    "THUNDER RS",
+    "FALCON GT",
+    "SHADOW XR",
+    "TITAN S",
+    "STORM GT",
+    "BLAZE R",
+    "VIPER X",
+    "NOVA GT",
+    "FURY RS",
+    "ECLIPSE",
+    "VENOM R",
+    "RAPTOR X",
+    "PULSE GT",
+    "INFERNO",
+    "DARK HORSE",
+    "HYPERION",
+    "CYCLONE X",
+    "APOLLO RS",
+    "OBLIVION",
+    "ZENITH GT",
+    "PHOENIX R",
+    "TURBO LEGEND",
+    "SUPERNOVA",
+    "BLACK MAMBA",
+    "INFINITY X",
+    "VELOCITY",
+    "GHOST PRO",
+    "DOMINATOR",
+    "OMEGA X",
+    "LEGEND 520"
+  ];
+
+  const cars = carNames.map(function (name, index) {
+    const speed = index === 0
+      ? 240
+      : index === 34
+        ? 520
+        : Math.min(250 + index * 8, 510);
+
+    return {
+      id: index,
+      name: name,
+      speed: speed,
+      price: index === 0
+        ? 0
+        : index === 1
+          ? 0
+          : 1000 + index * 650,
+      owned: index < 2,
+      className: index < 12
+        ? "SPORT"
+        : index < 25
+          ? "SUPER"
+          : "HYPER"
+    };
+  });
+
+  game.cars = cars;
+  game.selectedCarId = 0;
+  game.coins = 500;
+
+  function getCar(id) {
+    return cars.find(function (car) {
+      return car.id === id;
+    });
+  }
+
+  function updateCoinDisplays() {
+    [
+      "coinBalance",
+      "rewardsCoinBalance"
+    ].forEach(function (id) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = game.coins;
+    });
+
+    document.querySelectorAll("[data-coin-balance]")
+      .forEach(function (element) {
+        element.textContent = game.coins;
+      });
+  }
+
+  function updateSelectedCar() {
+    const car = getCar(game.selectedCarId);
+    if (!car) return;
+
+    const fields = {
+      homeCarName: car.name,
+      homeTopSpeed: car.speed,
+      garageSelectedCarName: car.name,
+      garageSelectedCarClass: car.className,
+      garageSelectedCarSpeed: car.speed,
+      customizationCarName: car.name
+    };
+
+    Object.keys(fields).forEach(function (id) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = fields[id];
+    });
+
+    const ownedCount = document.getElementById("garageOwnedCount");
+
+    if (ownedCount) {
+      ownedCount.textContent =
+        cars.filter(function (item) {
+          return item.owned;
+        }).length + "/35";
+    }
+  }
+
+  function renderGarage(filter) {
+    const grid = document.getElementById("garageCarGrid");
+    if (!grid) return;
+
+    grid.replaceChildren();
+
+    cars.filter(function (car) {
+      return filter === "all" ||
+        car.className.toLowerCase() === filter;
+    }).forEach(function (car) {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "garageCarCard";
+      card.style.cssText =
+        "padding:14px;border:1px solid #45305f;" +
+        "border-radius:12px;background:#15101f;" +
+        "color:white;text-align:left;min-height:100px;";
+
+      const title = document.createElement("strong");
+      title.textContent = car.name;
+
+      const details = document.createElement("div");
+      details.style.marginTop = "8px";
+      details.textContent = car.speed + " KM/H";
+
+      const status = document.createElement("div");
+      status.style.marginTop = "6px";
+      status.style.color = "#c084fc";
+      status.textContent = car.owned
+        ? (car.id === game.selectedCarId
+          ? "SELECTED"
+          : "OWNED")
+        : "🪙 " + car.price;
+
+      card.append(title, details, status);
+
+      card.addEventListener("click", function () {
+        if (car.owned) {
+          game.selectedCarId = car.id;
+          updateSelectedCar();
+          renderGarage(filter);
+          return;
+        }
+
+        if (game.coins < car.price) {
+          if (game.showMessage) {
+            game.showMessage(
+              "NOT ENOUGH COINS",
+              "Earn more coins by completing races and tasks.",
+              "🪙"
+            );
+          }
+          return;
+        }
+
+        game.coins -= car.price;
+        car.owned = true;
+        game.selectedCarId = car.id;
+
+        updateCoinDisplays();
+        updateSelectedCar();
+        renderGarage(filter);
+
+        if (game.showMessage) {
+          game.showMessage(
+            "CAR UNLOCKED",
+            car.name + " is now in your garage!",
+            "🏎️"
+          );
+        }
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    if (button.hasAttribute("data-car-filter")) {
+      renderGarage(button.dataset.carFilter);
+    }
+  });
+
+  game.renderGarage = renderGarage;
+  game.updateSelectedCar = updateSelectedCar;
+  game.updateCoinDisplays = updateCoinDisplays;
+  game.getSelectedCar = function () {
+    return getCar(game.selectedCarId);
+  };
+
+  updateCoinDisplays();
+  updateSelectedCar();
+  renderGarage("all");
+
+  console.log("SUPERX: Garage initialized with 35 cars.");
+
+})();
+
+/* PART 04-D END */
+     
      
    
   </script>
