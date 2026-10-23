@@ -6589,6 +6589,116 @@ button:disabled {
 
 /* PART 04-N: RACE & PROGRESSION CONNECTION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-O: CAMERA & VEHICLE SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const vehicleState = {
+    cameraModes: ["chase", "cockpit", "hood", "far-chase", "zoom"],
+    cameraIndex: 0,
+    headlights: false,
+    leftIndicator: false,
+    rightIndicator: false,
+    handbrake: false,
+    hornPressed: false
+  };
+
+  game.vehicleState = vehicleState;
+
+  function showStatus(title, message) {
+    if (typeof game.showMessage === "function") {
+      game.showMessage("🏎️", title, message);
+    }
+  }
+
+  function attachToggle(id, stateKey, label) {
+    const button = document.getElementById(id);
+    if (!button || button.dataset.vehicleSystemAttached === "yes") return;
+
+    button.dataset.vehicleSystemAttached = "yes";
+
+    button.addEventListener("click", function () {
+      vehicleState[stateKey] = !vehicleState[stateKey];
+
+      button.classList.toggle("active", vehicleState[stateKey]);
+      button.setAttribute(
+        "aria-pressed",
+        String(vehicleState[stateKey])
+      );
+
+      if (stateKey === "leftIndicator" && vehicleState.leftIndicator) {
+        vehicleState.rightIndicator = false;
+        document.getElementById("rightIndicatorButton")
+          ?.classList.remove("active");
+      }
+
+      if (stateKey === "rightIndicator" && vehicleState.rightIndicator) {
+        vehicleState.leftIndicator = false;
+        document.getElementById("leftIndicatorButton")
+          ?.classList.remove("active");
+      }
+
+      if (stateKey === "headlights") {
+        showStatus(
+          "HEADLIGHTS",
+          vehicleState.headlights ? "Headlights enabled." : "Headlights disabled."
+        );
+      }
+    });
+  }
+
+  function changeCamera() {
+    vehicleState.cameraIndex =
+      (vehicleState.cameraIndex + 1) % vehicleState.cameraModes.length;
+
+    const mode = vehicleState.cameraModes[vehicleState.cameraIndex];
+
+    showStatus(
+      "CAMERA MODE",
+      mode.toUpperCase() + " selected. 3D camera positioning will be connected next."
+    );
+
+    return mode;
+  }
+
+  const cameraButton = document.getElementById("changeCameraButton");
+
+  if (cameraButton && cameraButton.dataset.cameraSystemAttached !== "yes") {
+    cameraButton.dataset.cameraSystemAttached = "yes";
+    cameraButton.addEventListener("click", changeCamera);
+  }
+
+  attachToggle("headlightButton", "headlights", "Headlights");
+  attachToggle("leftIndicatorButton", "leftIndicator", "Left indicator");
+  attachToggle("rightIndicatorButton", "rightIndicator", "Right indicator");
+  attachToggle("handbrakeButton", "handbrake", "Handbrake");
+
+  game.getVehicleState = function () {
+    return { ...vehicleState };
+  };
+
+  game.setCameraMode = function (mode) {
+    const index = vehicleState.cameraModes.indexOf(mode);
+
+    if (index === -1) return false;
+
+    vehicleState.cameraIndex = index;
+    return true;
+  };
+
+  console.log("SUPERX PART 04-O loaded.");
+
+})();
+
+/* PART 04-O: CAMERA & VEHICLE SYSTEM END */
+   
    
        
      
