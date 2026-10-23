@@ -4925,181 +4925,196 @@ button:disabled {
 (function () {
   "use strict";
 
-  const game = window.SuperXGame =
-    window.SuperXGame || {};
+  const game = window.SuperXGame = window.SuperXGame || {};
 
   const modes = [
-    {
-      id: "village",
-      name: "VILLAGE RACING",
-      description: "Race through village roads and countryside."
-    },
-    {
-      id: "city",
-      name: "CITY RACING",
-      description: "Navigate busy streets and city traffic."
-    },
-    {
-      id: "mountain",
-      name: "MOUNTAIN RACING",
-      description: "Challenge winding roads and steep climbs."
-    },
-    {
-      id: "poison-crows",
-      name: "POISON OF CROWS",
-      description: "A mysterious and challenging racing route."
-    },
-    {
-      id: "coastal",
-      name: "COASTAL RACING",
-      description: "Race along scenic coastal highways."
-    },
-    {
-      id: "snow-ice",
-      name: "SNOW & ICE",
-      description: "Take on slippery roads in freezing conditions."
-    },
-    {
-      id: "stunt",
-      name: "STUNT RACING",
-      description: "Take on jumps, ramps and stunt challenges."
-    },
-    {
-      id: "ai-racing",
-      name: "OFFLINE AI RACING",
-      description: "Race against computer-controlled opponents."
-    }
+    { id: "village", name: "VILLAGE RACING", description: "Race through village roads and countryside." },
+    { id: "city", name: "CITY RACING", description: "Navigate busy streets and city traffic." },
+    { id: "mountain", name: "MOUNTAIN RACING", description: "Challenge winding roads and steep climbs." },
+    { id: "poison-crows", name: "POISON OF CROWS", description: "A mysterious and challenging racing route." },
+    { id: "coastal", name: "COASTAL RACING", description: "Race along scenic coastal highways." },
+    { id: "snow-ice", name: "SNOW & ICE", description: "Take on slippery roads in freezing conditions." },
+    { id: "stunt", name: "STUNT RACING", description: "Take on jumps, ramps and stunt challenges." },
+    { id: "ai-racing", name: "OFFLINE AI RACING", description: "Race against computer-controlled opponents." }
   ];
 
   game.raceModes = modes;
   game.selectedModeId = "village";
   game.selectedMapNumber = 1;
 
-  const unlockedMaps = {};
+  const storageKey = "superx_unlocked_maps_v1";
+  let unlockedMaps = {};
+
+  try {
+    unlockedMaps = JSON.parse(localStorage.getItem(storageKey) || "{}") || {};
+  } catch (error) {
+    unlockedMaps = {};
+  }
 
   modes.forEach(function (mode) {
-    unlockedMaps[mode.id] = 1;
+    if (!Array.isArray(unlockedMaps[mode.id])) {
+      unlockedMaps[mode.id] = [1];
+    }
+    if (!unlockedMaps[mode.id].includes(1)) {
+      unlockedMaps[mode.id].push(1);
+    }
   });
 
   game.unlockedMaps = unlockedMaps;
 
-function renderMaps(mode) {
-  const grid = document.getElementById("careerMapGrid");
-  if (!grid) return;
-
-  const modeId = typeof mode === "string" ? mode : mode.id;
-  if (!modeId) return;
-
-  const storageKey = "superx_unlocked_maps_v1";
-  let saved = {};
-
-  try {
-    saved = JSON.parse(localStorage.getItem(storageKey) || "{}") || {};
-  } catch (error) {
-    saved = {};
+  function saveMaps() {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(unlockedMaps));
+    } catch (error) {
+      console.warn("SUPERX: Map progress could not be saved.", error);
+    }
   }
 
-  if (!saved[modeId]) saved[modeId] = [1];
+  saveMaps();
 
-  // Map 01 is always free.
-  if (!saved[modeId].includes(1)) saved[modeId].push(1);
+  function renderMaps(mode) {
+    const grid = document.getElementById("careerMapGrid");
+    if (!grid) return;
 
-  grid.replaceChildren();
+    const modeId = typeof mode === "string" ? mode : mode.id;
+    if (!modeId || !unlockedMaps[modeId]) return;
 
-  const coinBalance = () =>
-    Math.max(0, Number(game.coins) || 0);
+    grid.replaceChildren();
 
-  for (let number = 1; number <= 100; number++) {
-    const cost = number * 100;
-    const unlocked = saved[modeId].includes(number);
-    const button = document.createElement("button");
+    for (let number = 1; number <= 100; number++) {
+      const unlocked = unlockedMaps[modeId].includes(number);
+      const cost = number * 100;
+      const button = document.createElement("button");
 
-    button.type = "button";
-    button.className = "careerMapCard mapCard";
-    button.style.cssText =
-      "padding:12px 6px;border:1px solid #45305f;" +
-      "border-radius:12px;background:#171020;color:white;" +
-      "min-height:76px;font-weight:800;";
+      button.type = "button";
+      button.className = "careerMapCard mapCard";
+      button.style.cssText =
+        "padding:12px 6px;border:1px solid #45305f;" +
+        "border-radius:12px;background:#171020;color:white;" +
+        "min-height:72px;font-weight:800;white-space:pre-line;";
 
-    if (unlocked) {
-      button.textContent = number === 1
-        ? "🔓 MAP 01 · FREE"
-        : "🔓 MAP " + String(number).padStart(2, "0");
+      button.textContent = unlocked
+        ? (number === 1
+          ? "🔓 MAP 01 · FREE"
+          : "🔓 MAP " + String(number).padStart(2, "0"))
+        : "🔒 MAP " + String(number).padStart(2, "0") +
+          "\n🪙 " + cost + " COINS";
 
-      button.style.borderColor = "#c084fc";
-      button.setAttribute("aria-pressed", "false");
+      button.disabled = false;
 
-      button.addEventListener("click", function () {
-        game.selectedModeId = modeId;
-        game.selectedMapNumber = number;
+      if (unlocked) {
+        button.setAttribute("aria-pressed", "false");
+        button.addEventListener("click", function () {
+          game.selectedModeId = modeId;
+          game.selectedMapNumber = number;
 
-        grid.querySelectorAll("button").forEach(function (item) {
-          item.setAttribute("aria-pressed", "false");
+          grid.querySelectorAll("button").forEach(function (item) {
+            item.setAttribute("aria-pressed", "false");
+          });
+
+          button.setAttribute("aria-pressed", "true");
+          button.style.borderColor = "#c084fc";
+
+          const startButton =
+            document.getElementById("startCareerRaceButton");
+
+          if (startButton) startButton.disabled = false;
         });
+      } else {
+        button.addEventListener("click", function () {
+          const coins = Math.max(0, Number(game.coins) || 0);
 
-        button.setAttribute("aria-pressed", "true");
+          if (coins < cost) {
+            alert("Not enough coins! You need " + cost + " coins.");
+            return;
+          }
 
-        const startButton =
-          document.getElementById("startCareerRaceButton");
+          if (!confirm("Unlock MAP " + number + " for " + cost + " coins?")) {
+            return;
+          }
 
-        if (startButton) startButton.disabled = false;
-      });
-    } else {
-      button.textContent =
-        "🔒 MAP " + String(number).padStart(2, "0") +
-        "\n🪙 " + cost;
+          game.coins = coins - cost;
+          unlockedMaps[modeId].push(number);
+          saveMaps();
 
-      button.style.whiteSpace = "pre-line";
+          if (typeof game.updateCoinDisplays === "function") {
+            game.updateCoinDisplays();
+          } else {
+            document.querySelectorAll(
+              "#coinBalance, #rewardsCoinBalance, [data-coin-balance]"
+            ).forEach(function (element) {
+              element.textContent = game.coins;
+            });
+          }
 
-      button.addEventListener("click", function () {
-        const coins = coinBalance();
+          renderMaps(modeId);
+        });
+      }
 
-        if (coins < cost) {
-          alert(
-            "Not enough coins! You need " + cost +
-            " coins to unlock this map."
-          );
-          return;
-        }
-
-        if (!confirm(
-          "Unlock MAP " + number + " for " + cost + " coins?"
-        )) return;
-
-        game.coins = coins - cost;
-
-        saved[modeId].push(number);
-
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(saved));
-        } catch (error) {
-          alert("Could not save map unlock. Please try again.");
-          return;
-        }
-
-        const balance = document.getElementById("coinBalance");
-        if (balance) balance.textContent = game.coins;
-
-        renderMaps(mode);
-
-        alert("MAP " + number + " unlocked!");
-      });
+      grid.appendChild(button);
     }
 
-    grid.appendChild(button);
+    game.selectedModeId = modeId;
+    game.selectedMapNumber = 1;
+
+    const startButton =
+      document.getElementById("startCareerRaceButton");
+
+    if (startButton) startButton.disabled = false;
   }
 
-  game.selectedModeId = modeId;
-  game.selectedMapNumber = 1;
+  function selectMode(modeId) {
+    const mode = modes.find(function (item) {
+      return item.id === modeId;
+    });
 
-  const startButton =
-    document.getElementById("startCareerRaceButton");
+    if (!mode) return;
 
-  if (startButton) startButton.disabled = false;
-   }
- 
+    game.selectedModeId = mode.id;
+    game.selectedMapNumber = 1;
+
+    const title = document.getElementById("selectedCareerModeTitle");
+    const description = document.getElementById("selectedCareerModeDescription");
+
+    if (title) title.textContent = mode.name;
+    if (description) description.textContent = mode.description;
+
+    const panel = document.getElementById("careerMapPanel");
+    if (panel) panel.hidden = false;
+
+    renderMaps(mode);
+  }
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    if (button.hasAttribute("data-career-mode")) {
+      selectMode(button.dataset.careerMode);
+    }
+
+    if (button.id === "startCareerRaceButton") {
+      if (typeof game.startRace === "function") {
+        game.startRace(game.selectedModeId, game.selectedMapNumber);
+      } else if (typeof game.showMessage === "function") {
+        game.showMessage(
+          "RACE SYSTEM",
+          "The racing engine is not ready yet.",
+          "🏁"
+        );
+      }
+    }
+  });
+
+  game.selectRaceMode = selectMode;
+  game.renderMaps = renderMaps;
+
+  console.log("SUPERX: Career modes and map selection initialized.");
+})();
+
 /* PART 04-E END */
    
+ 
 /* =====================================================
    SUPERX LEGEND RACING CAR GAME
    PART 04-F: THREE.JS 3D RACING WORLD
