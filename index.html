@@ -768,33 +768,438 @@
 
       <!-- ===== PART 01-A.7: OTHER GAME SCREENS START ===== -->
 
-      <section
-        id="careerScreen"
-        class="gameScreen"
-        aria-label="Career Mode"
-        hidden
-      ></section>
+      
+<!-- =====================================================
+ SUPERX LEGEND RACING CAR GAME
+ PART 01-D: MAIN GAME SCREENS
+ ORDER: AFTER PART 01-C
+===================================================== -->
 
-      <section
-        id="onlineScreen"
-        class="gameScreen"
-        aria-label="Online Mode"
-        hidden
-      ></section>
 
-      <section
-        id="garageScreen"
-        class="gameScreen"
-        aria-label="Car Garage"
-        hidden
-      ></section>
+<!-- ===== PART 01-D.1: CAREER MODE SCREEN START ===== -->
 
-      <section
-        id="rewardsScreen"
-        class="gameScreen"
-        aria-label="Tasks and Rewards"
-        hidden
-      ></section>
+<section
+  id="careerScreen"
+  class="gameScreen"
+  aria-label="Career Mode"
+  hidden
+>
+
+  <header class="subScreenHeader">
+    <button type="button" class="backHomeButton" data-go-home>
+      ← BACK
+    </button>
+
+    <div class="subScreenBrand">
+      <span>SUPERX</span>
+      <strong>CAREER MODE</strong>
+    </div>
+
+    <div class="subScreenBalance">
+      ◆ <span data-coin-balance>500</span>
+    </div>
+  </header>
+
+  <div class="subScreenContent">
+
+    <div class="subScreenTitle">
+      <span class="panelEyebrow">YOUR JOURNEY STARTS HERE</span>
+      <h1>CHOOSE YOUR <span>RACE</span></h1>
+      <p>Master every road. Build your racing legacy.</p>
+    </div>
+
+    <div class="careerModeGrid">
+
+      <button type="button" class="modeCard" data-career-mode="village">
+        <span class="modeCardNumber">01</span>
+        <span class="modeCardIcon">🌄</span>
+        <strong>VILLAGE RACING</strong>
+        <small>Rural roads and countryside</small>
+        <span class="modeCardFooter">100 MAPS · MAP 01 UNLOCKED</span>
+      </button>
+
+      <button type="button" class="modeCard" data-career-mode="city">
+        <span class="modeCardNumber">02</span>
+        <span class="modeCardIcon">🌆</span>
+        <strong>CITY RACING</strong>
+        <small>Urban roads and flyovers</small>
+        <span class="modeCardFooter">100 MAPS · MAP 01 UNLOCKED</span>
+      </button>
+
+      <button type="button" class="modeCard" data-career-mode="mountain">
+        <span class="modeCardNumber">03</span>
+        <span class="modeCardIcon">⛰</span>
+        <strong>MOUNTAIN RACING</strong>
+        <small>Hairpins and mountain roads</small>
+        <span class="modeCardFooter">100 MAPS · MAP 01 UNLOCKED</span>
+      </button>
+
+      <button type="button" class="modeCard" data-career-mode="poison-crows">
+        <span class="modeCardNumber">04</span>
+        <span class="modeCardIcon">🌑</span>
+        <strong>POISON OF CROWS</strong>
+        <small>Dark and mysterious roads</small>
+        <span class="modeCardFooter">100 MAPS · MAP 01 UNLOCKED</span>
+      </button>
+
+      <button type="button" class="modeCard" data-career-mode="coastal">
+        <span class="modeCardNumber">05</span>
+        <span class="modeCardIcon">🌊</span>
+        <strong>COASTAL RACING</strong>
+        <small>Ocean roads and coastal curves</small>
+        <span class="modeCardFooter">100 MAPS · MAP 01 UNLOCKED</span>
+      </button>
+
+      <button type="button" class="modeCard" data-career-mode="snow-ice">
+        <span class="modeCardNumber">06</span>
+        <span class="modeCardIcon">❄</span>
+        <strong>SNOW &amp; ICE</strong>
+        <small>Frozen roads and slippery turns</small>
+        <span class="modeCardFooter">100 MAPS · MAP 01 UNLOCKED</span>
+      </button>
+
+      <button type="button" class="modeCard" data-career-mode="stunt">
+        <span class="modeCardNumber">07</span>
+        <span class="modeCardIcon">🏎</span>
+        <strong>STUNT RACING</strong>
+        <small>Ramps, jumps and challenges</small>
+        <span class="modeCardFooter">100 MAPS · MAP 01 UNLOCKED</span>
+      </button>
+
+      <button type="button" class="modeCard" data-career-mode="ai-racing">
+        <span class="modeCardNumber">08</span>
+        <span class="modeCardIcon">🏁</span>
+        <strong>OFFLINE AI RACING</strong>
+        <small>Race against computer drivers</small>
+        <span class="modeCardFooter">100 MAPS · MAP 01 UNLOCKED</span>
+      </button>
+
+    </div>
+
+    <div id="careerMapPanel" class="careerMapPanel" hidden>
+      <span class="panelEyebrow">SELECT YOUR DESTINATION</span>
+      <h2 id="selectedCareerModeTitle">SELECTED RACE</h2>
+      <p id="selectedCareerModeDescription">
+        Choose a map to continue.
+      </p>
+
+      <div id="careerMapGrid" class="careerMapGrid"></div>
+
+      <button
+        type="button"
+        id="startCareerRaceButton"
+        class="primaryActionButton"
+        disabled
+      >
+        SELECT A MAP FIRST
+      </button>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ===== PART 01-D.1: CAREER MODE SCREEN END ===== -->
+
+
+<!-- ===== PART 01-D.2: ONLINE SCREEN START ===== -->
+
+<section
+  id="onlineScreen"
+  class="gameScreen"
+  aria-label="Online Racing"
+  hidden
+>
+
+  <header class="subScreenHeader">
+    <button type="button" class="backHomeButton" data-go-home>
+      ← BACK
+    </button>
+
+    <div class="subScreenBrand">
+      <span>SUPERX</span>
+      <strong>ONLINE RACING</strong>
+    </div>
+  </header>
+
+  <div class="subScreenContent">
+
+    <div class="subScreenTitle">
+      <span class="panelEyebrow">RACE BEYOND YOUR LIMITS</span>
+      <h1>ENTER THE <span>GRID</span></h1>
+      <p>Choose how you want to compete.</p>
+    </div>
+
+    <div class="onlineModeGrid">
+
+      <button type="button" class="onlineModeCard" id="quickJoinButton">
+        <span class="onlineModeIcon">⚡</span>
+        <strong>QUICK JOIN</strong>
+        <small>Find an available race</small>
+        <span class="modeCardFooter">UP TO 8 PLAYERS</span>
+      </button>
+
+      <button type="button" class="onlineModeCard" id="createRoomButton">
+        <span class="onlineModeIcon">＋</span>
+        <strong>CREATE ROOM</strong>
+        <small>Choose race settings</small>
+        <span class="modeCardFooter">UP TO 12 PLAYERS</span>
+      </button>
+
+      <button type="button" class="onlineModeCard" id="friendsRaceButton">
+        <span class="onlineModeIcon">♧</span>
+        <strong>FRIENDS RACE</strong>
+        <small>Race with your friends</small>
+        <span class="modeCardFooter">INVITE YOUR FRIENDS</span>
+      </button>
+
+      <button type="button" class="onlineModeCard" id="teamRaceButton">
+        <span class="onlineModeIcon">♜</span>
+        <strong>TEAM RACE</strong>
+        <small>Compete as a team</small>
+        <span class="modeCardFooter">TEAM COMPETITION</span>
+      </button>
+
+    </div>
+
+    <div class="onlineConnectionNotice">
+      <span class="statusDot"></span>
+      <div>
+        <strong>ONLINE MULTIPLAYER</strong>
+        <p>
+          Online races require a connected multiplayer server.
+          The room interface will be connected in a later development part.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ===== PART 01-D.2: ONLINE SCREEN END ===== -->
+
+
+<!-- ===== PART 01-D.3: GARAGE SCREEN START ===== -->
+
+<section
+  id="garageScreen"
+  class="gameScreen"
+  aria-label="Car Garage"
+  hidden
+>
+
+  <header class="subScreenHeader">
+    <button type="button" class="backHomeButton" data-go-home>
+      ← BACK
+    </button>
+
+    <div class="subScreenBrand">
+      <span>SUPERX</span>
+      <strong>CAR GARAGE</strong>
+    </div>
+
+    <div class="subScreenBalance">
+      ◆ <span data-coin-balance>500</span>
+    </div>
+  </header>
+
+  <div class="subScreenContent">
+
+    <div class="subScreenTitle">
+      <span class="panelEyebrow">BUILT TO BE YOURS</span>
+      <h1>YOUR <span>COLLECTION</span></h1>
+      <p>Choose your machine. Make it legendary.</p>
+    </div>
+
+    <div class="garageFeaturedCar">
+
+      <div class="garageCarVisual" id="garageCarVisual">
+        <span class="garageCarPlaceholder">3D CAR DISPLAY</span>
+      </div>
+
+      <div class="garageFeaturedInfo">
+        <span class="panelEyebrow">SELECTED VEHICLE</span>
+        <h2 id="garageSelectedCarName">STREET BEAST</h2>
+        <p id="garageSelectedCarClass">SPORT CLASS · S-01</p>
+
+        <div class="garageSpeedInfo">
+          <strong id="garageSelectedCarSpeed">240</strong>
+          <span>KM/H TOP SPEED</span>
+        </div>
+
+        <button
+          type="button"
+          id="customizeCarButton"
+          class="primaryActionButton"
+        >
+          CUSTOMIZE CAR
+        </button>
+      </div>
+
+    </div>
+
+    <div class="garageCollectionHeader">
+      <h2>CAR COLLECTION</h2>
+      <span><strong id="garageOwnedCount">2</strong> / 35 OWNED</span>
+    </div>
+
+    <div class="garageFilterBar">
+      <button type="button" class="garageFilter active" data-car-filter="all">
+        ALL CARS
+      </button>
+      <button type="button" class="garageFilter" data-car-filter="sport">
+        SPORT
+      </button>
+      <button type="button" class="garageFilter" data-car-filter="super">
+        SUPER
+      </button>
+      <button type="button" class="garageFilter" data-car-filter="hyper">
+        HYPER
+      </button>
+    </div>
+
+    <div id="garageCarGrid" class="garageCarGrid"></div>
+
+    <p class="garageDevelopmentNote">
+      The complete car collection, 3D models, upgrades and purchases
+      will be connected in later parts.
+    </p>
+
+  </div>
+
+</section>
+
+<!-- ===== PART 01-D.3: GARAGE SCREEN END ===== -->
+
+
+<!-- ===== PART 01-D.4: TASKS & REWARDS SCREEN START ===== -->
+
+<section
+  id="rewardsScreen"
+  class="gameScreen"
+  aria-label="Tasks and Rewards"
+  hidden
+>
+
+  <header class="subScreenHeader">
+    <button type="button" class="backHomeButton" data-go-home>
+      ← BACK
+    </button>
+
+    <div class="subScreenBrand">
+      <span>SUPERX</span>
+      <strong>TASKS &amp; REWARDS</strong>
+    </div>
+
+    <div class="subScreenBalance">
+      ◆ <span data-coin-balance>500</span>
+    </div>
+  </header>
+
+  <div class="subScreenContent">
+
+    <div class="subScreenTitle">
+      <span class="panelEyebrow">RACE · COMPLETE · EARN</span>
+      <h1>CLAIM YOUR <span>GLORY</span></h1>
+      <p>Complete challenges to earn in-game rewards.</p>
+    </div>
+
+    <div class="rewardSummaryCard">
+      <div>
+        <span class="panelEyebrow">YOUR AVAILABLE BALANCE</span>
+        <strong>◆ <span id="rewardsCoinBalance">500</span></strong>
+      </div>
+
+      <div>
+        <span class="panelEyebrow">DAILY PROGRESS</span>
+        <strong id="dailyTaskProgress">0 / 3</strong>
+      </div>
+    </div>
+
+    <div class="rewardSectionHeader">
+      <h2>DAILY CHALLENGES</h2>
+      <span>REFRESHES DAILY</span>
+    </div>
+
+    <div class="taskList" id="dailyTaskList">
+
+      <article class="taskCard" data-task-id="daily-race">
+        <div class="taskIcon">🏁</div>
+        <div class="taskInfo">
+          <strong>FIRST RACE</strong>
+          <p>Complete one race.</p>
+          <small>PROGRESS: <span data-task-progress>0 / 1</span></small>
+        </div>
+        <div class="taskReward">+100 ◆</div>
+      </article>
+
+      <article class="taskCard" data-task-id="daily-distance">
+        <div class="taskIcon">↗</div>
+        <div class="taskInfo">
+          <strong>ROAD EXPLORER</strong>
+          <p>Drive a total of 5 kilometres.</p>
+          <small>PROGRESS: <span data-task-progress>0 / 5 KM</span></small>
+        </div>
+        <div class="taskReward">+150 ◆</div>
+      </article>
+
+      <article class="taskCard" data-task-id="daily-win">
+        <div class="taskIcon">🏆</div>
+        <div class="taskInfo">
+          <strong>RACE WINNER</strong>
+          <p>Win one race.</p>
+          <small>PROGRESS: <span data-task-progress>0 / 1</span></small>
+        </div>
+        <div class="taskReward">+250 ◆</div>
+      </article>
+
+    </div>
+
+    <div class="rewardSectionHeader">
+      <h2>ACHIEVEMENTS</h2>
+      <span>YOUR RACING LEGACY</span>
+    </div>
+
+    <div class="achievementGrid">
+
+      <article class="achievementCard">
+        <span>🏎</span>
+        <strong>CAR COLLECTOR</strong>
+        <small>Own more cars.</small>
+      </article>
+
+      <article class="achievementCard">
+        <span>⚡</span>
+        <strong>SPEED DEMON</strong>
+        <small>Reach high speeds.</small>
+      </article>
+
+      <article class="achievementCard">
+        <span>🏆</span>
+        <strong>CHAMPION</strong>
+        <small>Win races and progress.</small>
+      </article>
+
+    </div>
+
+    <p class="rewardsDevelopmentNote">
+      Reward claiming, challenge tracking and saved progress will be
+      implemented in the game logic.
+    </p>
+
+  </div>
+
+</section>
+
+<!-- ===== PART 01-D.4: TASKS & REWARDS SCREEN END ===== -->
+
+
+<!-- =====================================================
+ PART 01-D: MAIN GAME SCREENS END
+ NEXT PART: PART 01-E
+===================================================== -->
+     
 
       <!-- ===== PART 01-A.7: OTHER GAME SCREENS END ===== -->
 
