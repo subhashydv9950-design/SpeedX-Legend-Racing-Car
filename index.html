@@ -9381,6 +9381,80 @@ button:disabled {
 
 /* PART 05-N: RACE MINIMAP INTEGRATION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-O: RACE POSITION COUNTER START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const raceScreen = document.getElementById("raceScreen");
+  if (!raceScreen) return;
+
+  let panel = document.getElementById("raceOpponentCounter");
+
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "raceOpponentCounter";
+
+    Object.assign(panel.style, {
+      position: "fixed",
+      top: "74px",
+      right: "12px",
+      zIndex: "44",
+      padding: "9px 12px",
+      borderRadius: "10px",
+      background: "rgba(15,10,28,0.88)",
+      color: "#ffffff",
+      border: "1px solid rgba(168,85,247,0.7)",
+      fontSize: "12px",
+      fontWeight: "800",
+      lineHeight: "1.6"
+    });
+
+    raceScreen.appendChild(panel);
+  }
+
+  function updatePosition() {
+    const traffic = game.trafficSystem;
+    const cars = traffic && Array.isArray(traffic.cars)
+      ? traffic.cars
+      : [];
+
+    const visibleOpponents = cars.length;
+    const position = document.getElementById("racePlayerPosition");
+
+    if (position && !position.textContent.trim()) {
+      position.textContent = "1/" + (visibleOpponents + 1);
+    }
+
+    panel.innerHTML =
+      '<div style="color:#c084fc">RACE STATUS</div>' +
+      '<div>POSITION: ' +
+      (position && position.textContent.trim()
+        ? position.textContent.trim()
+        : "1/" + (visibleOpponents + 1)) +
+      '</div>' +
+      '<div>TRAFFIC: ' + visibleOpponents + '</div>';
+
+    requestAnimationFrame(updatePosition);
+  }
+
+  updatePosition();
+
+  game.racePositionHUD = {
+    update: updatePosition
+  };
+
+  console.log("SUPERX: Race position HUD initialized.");
+})();
+
+/* PART 05-O: RACE POSITION COUNTER END */
+   
    
    
    
