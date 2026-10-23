@@ -1929,6 +1929,158 @@ button:disabled {
 
 /* PART 02-G END */
  
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 02-H: FINAL RESPONSIVE CSS
+===================================================== */
+
+[hidden] {
+  display: none !important;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #c084fc;
+  outline-offset: 3px;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dialogOverlay,
+#menuOverlay,
+#gameMessageOverlay,
+#settingsOverlay,
+#profileOverlay,
+#aboutOverlay {
+  z-index: 100;
+}
+
+#settingsOverlay,
+#profileOverlay,
+#aboutOverlay,
+#gameMessageOverlay {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#settingsOverlay .dialogPanel,
+#profileOverlay .dialogPanel,
+#aboutOverlay .dialogPanel,
+#gameMessageOverlay .dialogPanel {
+  width: min(92vw, 520px);
+  max-height: 85dvh;
+  overflow-y: auto;
+}
+
+#careerMapGrid,
+#garageCarGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+#careerMapGrid > *,
+#garageCarGrid > * {
+  min-width: 0;
+}
+
+#customPaintPanel,
+#customWheelsPanel,
+#customBodyPanel,
+#customDecalsPanel,
+#customUpgradesPanel {
+  width: 100%;
+}
+
+#roomSetupScreen input,
+#roomSetupScreen select,
+#customizationScreen input,
+#customizationScreen select {
+  max-width: 100%;
+}
+
+#roomPreviewStatus {
+  overflow-wrap: anywhere;
+}
+
+#raceResultOverlay,
+#racePauseOverlay {
+  z-index: 80;
+}
+
+#raceSettingsScreen {
+  z-index: 90;
+}
+
+@keyframes superXFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gameScreen:not([hidden]) {
+  animation: superXFadeIn 0.25s ease-out;
+}
+
+@media (max-width: 600px) {
+  #careerMapGrid,
+  #garageCarGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  #settingsOverlay .dialogPanel,
+  #profileOverlay .dialogPanel,
+  #aboutOverlay .dialogPanel,
+  #gameMessageOverlay .dialogPanel {
+    width: 94vw;
+    max-height: 82dvh;
+    padding: 16px;
+  }
+
+  #customizationScreen,
+  #roomSetupScreen,
+  #raceSettingsScreen {
+    padding-bottom: 28px;
+  }
+
+  button {
+    min-height: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* PART 02-H END */
+   
    
    
    
