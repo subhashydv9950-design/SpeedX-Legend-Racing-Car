@@ -8073,6 +8073,110 @@ button:disabled {
 
 /* PART 05-A: TRAFFIC COLLISION DETECTION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-B: CAMERA POSITIONING START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const modes = ["chase", "far-chase", "hood", "cockpit", "zoom"];
+  let modeIndex = 0;
+  let lastCamera = null;
+
+  function getWorld() {
+    return game.threeDWorld || null;
+  }
+
+  function applyCamera() {
+    const world = getWorld();
+
+    if (!world || !world.camera || !world.playerCar) return;
+
+    const camera = world.camera;
+    const car = world.playerCar;
+    const mode = modes[modeIndex];
+
+    const positions = {
+      chase:     { x: 0,    y: 4.2, z: 8.5, lookY: 0.8 },
+      "far-chase": { x: 0,  y: 7.0, z: 13,  lookY: 0.5 },
+      hood:      { x: 0,    y: 1.8, z: 1.0, lookY: 1.5 },
+      cockpit:   { x: 0,    y: 1.4, z: 0.2, lookY: 1.4 },
+      zoom:      { x: 0.15, y: 3.0, z: 5.0, lookY: 0.8 }
+    };
+
+    const p = positions[mode];
+    const carPosition = car.position;
+
+    const targetX = carPosition.x + p.x;
+    const targetY = carPosition.y + p.y;
+    const targetZ = carPosition.z + p.z;
+
+    camera.position.x += (targetX - camera.position.x) * 0.12;
+    camera.position.y += (targetY - camera.position.y) * 0.12;
+    camera.position.z += (targetZ - camera.position.z) * 0.12;
+
+    camera.lookAt(
+      carPosition.x,
+      carPosition.y + p.lookY,
+      carPosition.z - 4
+    );
+
+    lastCamera = mode;
+  }
+
+  const cameraButton = document.getElementById("changeCameraButton");
+  const cameraSelect = document.getElementById("raceCameraMode");
+
+  if (cameraButton && !cameraButton.dataset.cameraPositioningReady) {
+    cameraButton.dataset.cameraPositioningReady = "true";
+
+    cameraButton.addEventListener("click", function () {
+      modeIndex = (modeIndex + 1) % modes.length;
+
+      if (cameraSelect) {
+        cameraSelect.value = modes[modeIndex];
+      }
+
+      applyCamera();
+    });
+  }
+
+  if (cameraSelect) {
+    cameraSelect.addEventListener("change", function () {
+      const index = modes.indexOf(cameraSelect.value);
+      if (index !== -1) modeIndex = index;
+      applyCamera();
+    });
+  }
+
+  function cameraLoop() {
+    applyCamera();
+    requestAnimationFrame(cameraLoop);
+  }
+
+  cameraLoop();
+
+  game.cameraPositioning = {
+    setMode: function (mode) {
+      const index = modes.indexOf(mode);
+      if (index !== -1) modeIndex = index;
+      applyCamera();
+    },
+    getMode: function () {
+      return lastCamera;
+    }
+  };
+
+  console.log("SUPERX: Camera positioning initialized.");
+})();
+
+/* PART 05-B: CAMERA POSITIONING END */
+   
    
    
    
