@@ -7724,6 +7724,112 @@ button:disabled {
 
 /* PART 04-W: COLLISION & DAMAGE SYSTEM END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-X: RACE COUNTDOWN SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  let countdownTimer = null;
+  let raceReady = false;
+
+  function createCountdownOverlay() {
+    let overlay = document.getElementById("raceCountdownOverlay");
+
+    if (overlay) return overlay;
+
+    overlay = document.createElement("div");
+    overlay.id = "raceCountdownOverlay";
+
+    Object.assign(overlay.style, {
+      position: "fixed",
+      inset: "0",
+      zIndex: "9999",
+      display: "none",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "rgba(5, 3, 15, 0.45)",
+      color: "#ffffff",
+      fontSize: "clamp(64px, 18vw, 150px)",
+      fontWeight: "900",
+      fontFamily: "Arial, sans-serif",
+      fontStyle: "italic",
+      textShadow: "0 0 30px #9d4dff",
+      pointerEvents: "none"
+    });
+
+    overlay.setAttribute("aria-live", "assertive");
+    overlay.setAttribute("aria-label", "Race countdown");
+
+    document.body.appendChild(overlay);
+
+    return overlay;
+  }
+
+  function cancelCountdown() {
+    if (countdownTimer !== null) {
+      clearTimeout(countdownTimer);
+      countdownTimer = null;
+    }
+
+    const overlay = document.getElementById("raceCountdownOverlay");
+
+    if (overlay) {
+      overlay.style.display = "none";
+      overlay.textContent = "";
+    }
+
+    raceReady = false;
+  }
+
+  function startCountdown(onComplete) {
+    cancelCountdown();
+
+    const overlay = createCountdownOverlay();
+    const sequence = ["3", "2", "1", "GO!"];
+    let index = 0;
+
+    overlay.style.display = "flex";
+
+    function showNext() {
+      if (index >= sequence.length) {
+        overlay.style.display = "none";
+        countdownTimer = null;
+        raceReady = true;
+
+        if (typeof onComplete === "function") {
+          onComplete();
+        }
+
+        return;
+      }
+
+      overlay.textContent = sequence[index];
+      index += 1;
+
+      countdownTimer = setTimeout(showNext, 850);
+    }
+
+    showNext();
+  }
+
+  game.raceCountdown = {
+    start: startCountdown,
+    cancel: cancelCountdown,
+    isReady: () => raceReady
+  };
+
+  console.log("SUPERX PART 04-X loaded.");
+
+})();
+
+/* PART 04-X: RACE COUNTDOWN SYSTEM END */
+   
    
    
    
