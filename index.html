@@ -7644,6 +7644,86 @@ button:disabled {
 
 /* PART 04-V: DAY NIGHT ENVIRONMENT END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-W: COLLISION & DAMAGE SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const damageState = {
+    damage: 0,
+    collisions: 0,
+    lastCollisionTime: 0,
+    maxDamage: 100
+  };
+
+  function applyDamage(amount) {
+    const value = Math.max(0, Number(amount) || 0);
+
+    damageState.damage = Math.min(
+      damageState.maxDamage,
+      damageState.damage + value
+    );
+
+    damageState.collisions += 1;
+    damageState.lastCollisionTime = Date.now();
+
+    return getState();
+  }
+
+  function repair(amount) {
+    const value = Math.max(0, Number(amount) || 0);
+
+    damageState.damage = Math.max(
+      0,
+      damageState.damage - value
+    );
+
+    return getState();
+  }
+
+  function resetDamage() {
+    damageState.damage = 0;
+    damageState.collisions = 0;
+    damageState.lastCollisionTime = 0;
+
+    return getState();
+  }
+
+  function getState() {
+    return {
+      damage: damageState.damage,
+      damagePercent: Math.round(damageState.damage),
+      collisions: damageState.collisions,
+      condition: getCondition()
+    };
+  }
+
+  function getCondition() {
+    if (damageState.damage >= 80) return "CRITICAL";
+    if (damageState.damage >= 50) return "HEAVY DAMAGE";
+    if (damageState.damage >= 20) return "DAMAGED";
+    return "GOOD";
+  }
+
+  game.damageSystem = {
+    applyDamage,
+    repair,
+    reset: resetDamage,
+    getState
+  };
+
+  console.log("SUPERX PART 04-W loaded.");
+
+})();
+
+/* PART 04-W: COLLISION & DAMAGE SYSTEM END */
+   
    
    
    
