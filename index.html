@@ -399,6 +399,364 @@
 
 <!-- ===== PART 01-B.8: MENU PANEL END ===== -->
 
+<!-- =====================================================
+ SUPERX LEGEND RACING CAR GAME
+ PART 01-C: SETTINGS, PROFILE & ABOUT PANELS
+ ORDER: AFTER PART 01-B.8
+===================================================== -->
+
+
+<!-- ===== PART 01-C.1: SETTINGS PANEL START ===== -->
+
+<div id="settingsOverlay" class="dialogOverlay" hidden>
+
+  <section
+    class="dialogPanel settingsPanel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settingsTitle"
+  >
+
+    <header class="dialogHeader">
+      <div>
+        <span class="panelEyebrow">PERSONALIZE YOUR RACE</span>
+        <h2 id="settingsTitle">SETTINGS</h2>
+      </div>
+
+      <button
+        type="button"
+        id="closeSettingsButton"
+        class="closePanelButton"
+        aria-label="Close settings"
+      >×</button>
+    </header>
+
+
+    <div class="settingsContent">
+
+      <!-- AUDIO SETTINGS -->
+
+      <div class="settingsGroup">
+        <h3>AUDIO EXPERIENCE</h3>
+
+        <label class="settingRow" for="musicVolume">
+          <span>
+            <strong>Music Volume</strong>
+            <small>Background and in-game music</small>
+          </span>
+
+          <input
+            type="range"
+            id="musicVolume"
+            min="0"
+            max="100"
+            value="65"
+          >
+        </label>
+
+        <label class="settingRow" for="soundVolume">
+          <span>
+            <strong>Sound Effects</strong>
+            <small>Engine, tyres and race sounds</small>
+          </span>
+
+          <input
+            type="range"
+            id="soundVolume"
+            min="0"
+            max="100"
+            value="80"
+          >
+        </label>
+      </div>
+
+
+      <!-- GRAPHICS SETTINGS -->
+
+      <div class="settingsGroup">
+        <h3>GRAPHICS QUALITY</h3>
+
+        <label class="settingField" for="graphicsQuality">
+          <span>
+            <strong>Visual Quality</strong>
+            <small>Choose a graphics preset</small>
+          </span>
+
+          <select id="graphicsQuality">
+            <option value="low">Low — Smooth Performance</option>
+            <option value="medium" selected>Medium — Balanced</option>
+            <option value="high">High — Detailed Graphics</option>
+          </select>
+        </label>
+
+        <label class="settingField" for="cameraShake">
+          <span>
+            <strong>Camera Effects</strong>
+            <small>Enable or disable camera shake</small>
+          </span>
+
+          <select id="cameraShake">
+            <option value="on" selected>ON</option>
+            <option value="off">OFF</option>
+          </select>
+        </label>
+      </div>
+
+
+      <!-- TRANSMISSION SETTINGS -->
+
+      <div class="settingsGroup">
+        <h3>DRIVING PREFERENCES</h3>
+
+        <label class="settingField" for="transmissionMode">
+          <span>
+            <strong>Transmission</strong>
+            <small>Select your gear-shifting style</small>
+          </span>
+
+          <select id="transmissionMode">
+            <option value="automatic" selected>Automatic</option>
+            <option value="manual">Manual</option>
+          </select>
+        </label>
+
+        <label class="settingField" for="steeringMode">
+          <span>
+            <strong>Steering Control</strong>
+            <small>Choose how you control the car</small>
+          </span>
+
+          <select id="steeringMode">
+            <option value="buttons" selected>Left / Right Buttons</option>
+            <option value="wheel">Virtual Steering Wheel</option>
+            <option value="tilt">Tilt Phone</option>
+          </select>
+        </label>
+
+      </div>
+
+    </div>
+
+
+    <footer class="dialogFooter">
+      <button
+        type="button"
+        id="saveSettingsButton"
+        class="primaryActionButton"
+      >
+        SAVE SETTINGS
+      </button>
+    </footer>
+
+  </section>
+
+</div>
+
+<!-- ===== PART 01-C.1: SETTINGS PANEL END ===== -->
+
+
+<!-- ===== PART 01-C.2: PLAYER PROFILE PANEL START ===== -->
+
+<div id="profileOverlay" class="dialogOverlay" hidden>
+
+  <section
+    class="dialogPanel profilePanel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="profileTitle"
+  >
+
+    <header class="dialogHeader">
+      <div>
+        <span class="panelEyebrow">YOUR RACING IDENTITY</span>
+        <h2 id="profileTitle">PLAYER PROFILE</h2>
+      </div>
+
+      <button
+        type="button"
+        id="closeProfileButton"
+        class="closePanelButton"
+        aria-label="Close profile"
+      >×</button>
+    </header>
+
+
+    <div class="profileHero">
+
+      <div class="largeProfileAvatar">R</div>
+
+      <h3 id="playerDisplayName">RACER</h3>
+
+      <p class="playerRank">
+        <span class="rankStar">★</span>
+        ROOKIE DRIVER
+      </p>
+
+    </div>
+
+
+    <div class="profileStatsGrid">
+
+      <div class="profileStatCard">
+        <span class="profileStatLabel">TOTAL RACES</span>
+        <strong id="profileRaceCount">0</strong>
+      </div>
+
+      <div class="profileStatCard">
+        <span class="profileStatLabel">RACE WINS</span>
+        <strong id="profileWinCount">0</strong>
+      </div>
+
+      <div class="profileStatCard">
+        <span class="profileStatLabel">CARS OWNED</span>
+        <strong id="profileCarCount">2</strong>
+      </div>
+
+      <div class="profileStatCard">
+        <span class="profileStatLabel">PLAYER LEVEL</span>
+        <strong id="profilePlayerLevel">1</strong>
+      </div>
+
+    </div>
+
+
+    <div class="profileNotice">
+      <span>ⓘ</span>
+      <p>
+        Your racing progress and statistics will be connected
+        to the game save system in a later development part.
+      </p>
+    </div>
+
+  </section>
+
+</div>
+
+<!-- ===== PART 01-C.2: PLAYER PROFILE PANEL END ===== -->
+
+
+<!-- ===== PART 01-C.3: ABOUT GAME PANEL START ===== -->
+
+<div id="aboutOverlay" class="dialogOverlay" hidden>
+
+  <section
+    class="dialogPanel aboutPanel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="aboutTitle"
+  >
+
+    <header class="dialogHeader">
+      <div>
+        <span class="panelEyebrow">BUILT FOR RACING ENTHUSIASTS</span>
+        <h2 id="aboutTitle">ABOUT THE GAME</h2>
+      </div>
+
+      <button
+        type="button"
+        id="closeAboutButton"
+        class="closePanelButton"
+        aria-label="Close about panel"
+      >×</button>
+    </header>
+
+
+    <div class="aboutBrandBlock">
+
+      <div class="aboutLogoMark">SX</div>
+
+      <h3>SUPERX LEGEND</h3>
+
+      <p class="aboutEdition">RACING CAR GAME</p>
+
+      <p class="aboutDescription">
+        Enter the driver's seat, build your collection,
+        master the road and create your own racing legacy.
+      </p>
+
+    </div>
+
+
+    <div class="aboutDetails">
+
+      <div class="aboutDetailRow">
+        <span>GAME TITLE</span>
+        <strong>SUPERX LEGEND RACING CAR GAME</strong>
+      </div>
+
+      <div class="aboutDetailRow">
+        <span>FOUNDER &amp; DEVELOPER</span>
+        <strong>Subhash Yadav</strong>
+      </div>
+
+      <div class="aboutDetailRow">
+        <span>INSTAGRAM</span>
+        <a
+          href="https://www.instagram.com/iamsubhash177/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >@iamsubhash177</a>
+      </div>
+
+      <div class="aboutDetailRow">
+        <span>CONTACT EMAIL</span>
+        <a href="mailto:yahu9950@gmail.com">
+          yahu9950@gmail.com
+        </a>
+      </div>
+
+    </div>
+
+
+    <p class="aboutDisclaimer">
+      Game features and availability may change as development continues.
+    </p>
+
+  </section>
+
+</div>
+
+<!-- ===== PART 01-C.3: ABOUT GAME PANEL END ===== -->
+
+
+<!-- ===== PART 01-C.4: GENERAL MESSAGE PANEL START ===== -->
+
+<div
+  id="gameMessageOverlay"
+  class="dialogOverlay"
+  role="status"
+  aria-live="polite"
+  hidden
+>
+  <div class="gameMessagePanel">
+
+    <span id="gameMessageIcon" class="gameMessageIcon">✦</span>
+
+    <h2 id="gameMessageTitle">SUPERX LEGEND</h2>
+
+    <p id="gameMessageText">
+      Welcome to the racing experience.
+    </p>
+
+    <button
+      type="button"
+      id="closeMessageButton"
+      class="primaryActionButton"
+    >
+      CONTINUE
+    </button>
+
+  </div>
+</div>
+
+<!-- ===== PART 01-C.4: GENERAL MESSAGE PANEL END ===== -->
+
+
+<!-- =====================================================
+ PART 01-C: SETTINGS, PROFILE & ABOUT PANELS END
+ NEXT PART: PART 01-D
+===================================================== -->
+       
 
 <!-- ===== PART 01-B.9: HOME SCREEN UI END ===== -->
        
