@@ -7532,6 +7532,118 @@ button:disabled {
 
 /* PART 04-U: TRAFFIC CARS & AI TRAFFIC END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-V: DAY NIGHT ENVIRONMENT START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const environment = {
+    mode: "night",
+    fogEnabled: true,
+    originalBackground: null,
+    originalFog: null
+  };
+
+  function getWorld() {
+    return game.threeDWorld || null;
+  }
+
+  function applyEnvironment(mode) {
+    const world = getWorld();
+    const THREE = window.THREE;
+
+    if (!world || !world.scene || !THREE) {
+      return false;
+    }
+
+    const scene = world.scene;
+    environment.mode = mode === "day" ? "day" : "night";
+
+    if (environment.mode === "day") {
+      scene.background = new THREE.Color(0x91bde8);
+
+      if (environment.fogEnabled) {
+        scene.fog = new THREE.Fog(0x91bde8, 35, 190);
+      } else {
+        scene.fog = null;
+      }
+    } else {
+      scene.background = new THREE.Color(0x080515);
+
+      if (environment.fogEnabled) {
+        scene.fog = new THREE.Fog(0x080515, 25, 145);
+      } else {
+        scene.fog = null;
+      }
+    }
+
+    scene.traverse(function (object) {
+      if (!object.isLight) return;
+
+      if (object.isAmbientLight || object.isHemisphereLight) {
+        object.intensity = environment.mode === "day" ? 1.1 : 0.45;
+      }
+
+      if (object.isDirectionalLight) {
+        object.intensity = environment.mode === "day" ? 1.5 : 0.55;
+      }
+    });
+
+    return true;
+  }
+
+  function setFog(enabled) {
+    environment.fogEnabled = Boolean(enabled);
+    return applyEnvironment(environment.mode);
+  }
+
+  function toggleMode() {
+    const nextMode = environment.mode === "night" ? "day" : "night";
+
+    if (!applyEnvironment(nextMode)) {
+      return false;
+    }
+
+    game.showMessage?.(
+      "🌙",
+      "ENVIRONMENT UPDATED",
+      "Environment mode: " + nextMode.toUpperCase()
+    );
+
+    return true;
+  }
+
+  game.environmentSystem = {
+    apply: applyEnvironment,
+    toggle: toggleMode,
+    setFog,
+    getState: function () {
+      return {
+        mode: environment.mode,
+        fogEnabled: environment.fogEnabled
+      };
+    }
+  };
+
+  // Apply the default cinematic night environment.
+  if (!applyEnvironment("night")) {
+    document.addEventListener("DOMContentLoaded", function () {
+      applyEnvironment("night");
+    }, { once: true });
+  }
+
+  console.log("SUPERX PART 04-V loaded.");
+
+})();
+
+/* PART 04-V: DAY NIGHT ENVIRONMENT END */
+   
    
    
    
