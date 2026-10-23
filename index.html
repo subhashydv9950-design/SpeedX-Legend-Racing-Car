@@ -11585,6 +11585,192 @@ button:disabled {
 
 /* ===== PART 06-C: DISTINCT CAR BODY DESIGNS END ===== */
    
+/* ===== PART 06-D: CAR CLASS CONNECTION START ===== */
+
+(function () {
+  "use strict";
+
+  function connectCarClasses() {
+    const g = window.game || window.SuperXGame;
+
+    if (!g || !g.threeDWorld || !Array.isArray(g.cars)) {
+      return false;
+    }
+
+    const classMap = {
+      STREET: "SPORT",
+      SPORT: "SPORT",
+      SUPER: "SUPER",
+      HYPER: "HYPER"
+    };
+
+    function getClass(car) {
+      if (!car) return "SPORT";
+
+      const raw = String(
+        car.className || car.class || car.category || car.type || ""
+      ).toUpperCase();
+
+      if (raw.includes("HYPER")) return "HYPER";
+      if (raw.includes("SUPER")) return "SUPER";
+      if (raw.includes("SPORT")) return "SPORT";
+
+      const id = Number(car.id) || 0;
+
+      if (id >= 24) return "HYPER";
+      if (id >= 10) return "SUPER";
+
+      return classMap[raw] || "SPORT";
+    }
+
+    g.cars.forEach(function (car) {
+      if (car) {
+        car.visualClass = getClass(car);
+      }
+    });
+
+    g.getSelectedCarClass = function () {
+      const car = typeof g.getSelectedCar === "function"
+        ? g.getSelectedCar()
+        : g.cars.find(function (item) {
+            return item.id === g.selectedCarId;
+          });
+
+      return getClass(car);
+    };
+
+    g.getCarVisualClass = getClass;
+
+    if (typeof g.updateSelectedCar === "function" &&
+        !g.updateSelectedCar.__classConnection) {
+      const previousUpdate = g.updateSelectedCar;
+
+      function updateWithClass() {
+        const result = previousUpdate.apply(this, arguments);
+
+        const car = typeof g.getSelectedCar === "function"
+          ? g.getSelectedCar()
+          : null;
+
+        const nameElement = document.getElementById(
+          "garageSelectedCarClass"
+        );
+
+        if (nameElement && car) {
+          nameElement.textContent = getClass(car);
+        }
+
+        return result;
+      }
+
+      updateWithClass.__classConnection = true;
+      g.updateSelectedCar = updateWithClass;
+    }
+
+    console.log("PART 06-D: Car classes connected.");
+    return true;
+  }
+
+  if (!connectCarClasses()) {
+    document.addEventListener("DOMContentLoaded", connectCarClasses);
+    window.addEventListener("load", connectCarClasses);
+  }
+})();
+
+/* ===== PART 06-D: CAR CLASS CONNECTION END ===== */
+        
+/* ===== PART 06-E: CAR LIGHTS SYSTEM START ===== */
+
+(function () {
+  "use strict";
+
+  function installCarLights() {
+    const g = window.game || window.SuperXGame;
+
+    if (!window.THREE || !g || !g.threeDWorld) {
+      return false;
+    }
+
+    const world = g.threeDWorld;
+
+    if (typeof world.buildCar !== "function") {
+      return false;
+    }
+
+    if (world.buildCar.__part06E) return true;
+
+    const originalBuilder = world.buildCar;
+
+    function addLightBar(car, color, x, y, z, width) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(width, 0.075, 0.045),
+        new THREE.MeshBasicMaterial({
+          color: color,
+          toneMapped: false
+        })
+      );
+
+      mesh.position.set(x, y, z);
+      mesh.userData.superXCarLight = true;
+      car.add(mesh);
+
+      return mesh;
+    }
+
+    function buildCarWithLights(color, carClass) {
+      const car = originalBuilder.call(world, color, carClass);
+
+      if (!car || !car.traverse) return car;
+
+      if (car.userData && car.userData.superXLightsAdded) {
+        return car;
+      }
+
+      if (!car.userData) car.userData = {};
+
+      const frontLightColor = 0xc9f3ff;
+      const rearLightColor = 0xff172d;
+
+      // Front headlights
+      addLightBar(
+        car, frontLightColor, -0.48, 0.57, 1.88, 0.42
+      );
+
+      addLightBar(
+        car, frontLightColor, 0.48, 0.57, 1.88, 0.42
+      );
+
+      // Rear tail lights
+      addLightBar(
+        car, rearLightColor, -0.48, 0.57, -1.88, 0.42
+      );
+
+      addLightBar(
+        car, rearLightColor, 0.48, 0.57, -1.88, 0.42
+      );
+
+      car.userData.superXLightsAdded = true;
+
+      return car;
+    }
+
+    buildCarWithLights.__part06E = true;
+    buildCarWithLights.originalBuilder = originalBuilder;
+
+    world.buildCar = buildCarWithLights;
+
+    console.log("PART 06-E: Car headlights and tail lights installed.");
+
+    return true;
+  }
+
+  if (!installCarLights()) {
+    window.addEventListener("load", installCarLights);
+  }
+})();
+
+/* ===== PART 06-E: CAR LIGHTS SYSTEM END ===== */
+   
    
        
      
