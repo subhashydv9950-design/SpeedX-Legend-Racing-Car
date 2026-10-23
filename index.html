@@ -8781,6 +8781,154 @@ button:disabled {
 
 /* PART 05-H: RACE SETTINGS SAVE SYSTEM END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-I: MANUAL GEAR SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const gearState = {
+    mode: "automatic",
+    gear: 1,
+    maxGear: 5,
+    reverse: false
+  };
+
+  function readMode() {
+    const selector = document.getElementById("transmissionMode");
+    gearState.mode = selector && selector.value === "manual"
+      ? "manual"
+      : "automatic";
+  }
+
+  function shiftUp() {
+    readMode();
+
+    if (gearState.mode !== "manual" || gearState.reverse) return;
+
+    gearState.gear = Math.min(
+      gearState.maxGear,
+      gearState.gear + 1
+    );
+
+    updateDisplay();
+  }
+
+  function shiftDown() {
+    readMode();
+
+    if (gearState.mode !== "manual" || gearState.reverse) return;
+
+    gearState.gear = Math.max(1, gearState.gear - 1);
+    updateDisplay();
+  }
+
+  function setReverse(enabled) {
+    readMode();
+
+    if (gearState.mode !== "manual") {
+      if (typeof game.showMessage === "function") {
+        game.showMessage(
+          "⚙️",
+          "MANUAL MODE REQUIRED",
+          "Select Manual transmission in Settings to control gears."
+        );
+      }
+      return;
+    }
+
+    gearState.reverse = Boolean(enabled);
+
+    if (gearState.reverse) {
+      gearState.gear = 0;
+    } else {
+      gearState.gear = 1;
+    }
+
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    const display = document.getElementById("raceCurrentGear");
+
+    if (display) {
+      display.textContent = gearState.reverse
+        ? "R"
+        : String(gearState.gear);
+    }
+  }
+
+  function addGearButtons() {
+    const hud = document.getElementById("raceScreen");
+    if (!hud) return;
+
+    if (!document.getElementById("manualGearControls")) {
+      const panel = document.createElement("div");
+      panel.id = "manualGearControls";
+
+      Object.assign(panel.style, {
+        position: "fixed",
+        left: "12px",
+        bottom: "110px",
+        display: "flex",
+        gap: "8px",
+        zIndex: "45"
+      });
+
+      panel.innerHTML =
+        '<button type="button" id="gearDownButton">− GEAR</button>' +
+        '<button type="button" id="gearUpButton">+ GEAR</button>' +
+        '<button type="button" id="reverseGearButton">REVERSE</button>';
+
+      hud.appendChild(panel);
+
+      panel.querySelectorAll("button").forEach(function (button) {
+        Object.assign(button.style, {
+          background: "#211632",
+          color: "#ffffff",
+          border: "1px solid #a855f7",
+          borderRadius: "10px",
+          padding: "10px",
+          fontWeight: "700"
+        });
+      });
+
+      document.getElementById("gearDownButton")
+        .addEventListener("click", shiftDown);
+
+      document.getElementById("gearUpButton")
+        .addEventListener("click", shiftUp);
+
+      document.getElementById("reverseGearButton")
+        .addEventListener("click", function () {
+          setReverse(!gearState.reverse);
+        });
+    }
+  }
+
+  readMode();
+  addGearButtons();
+  updateDisplay();
+
+  game.manualGearSystem = {
+    shiftUp: shiftUp,
+    shiftDown: shiftDown,
+    setReverse: setReverse,
+    getState: function () {
+      return { ...gearState };
+    }
+  };
+
+  console.log("SUPERX: Manual gear controls initialized.");
+})();
+
+/* PART 05-I: MANUAL GEAR SYSTEM END */
+   
    
    
    
