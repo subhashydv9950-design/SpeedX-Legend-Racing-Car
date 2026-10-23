@@ -9273,6 +9273,114 @@ button:disabled {
 
 /* PART 05-M: NITRO SPEED INTEGRATION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-N: RACE MINIMAP INTEGRATION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const canvas = document.getElementById("raceMinimapCanvas");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  canvas.width = 180;
+  canvas.height = 240;
+
+  function drawMinimap() {
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    // Background
+    ctx.fillStyle = "#100d19";
+    ctx.fillRect(0, 0, width, height);
+
+    // Road
+    ctx.fillStyle = "#383440";
+    ctx.fillRect(45, 0, 90, height);
+
+    // Road edges
+    ctx.strokeStyle = "#b58bff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(45, 0);
+    ctx.lineTo(45, height);
+    ctx.moveTo(135, 0);
+    ctx.lineTo(135, height);
+    ctx.stroke();
+
+    // Lane markers
+    ctx.strokeStyle = "#e8e3f0";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([12, 12]);
+    ctx.beginPath();
+    ctx.moveTo(90, 0);
+    ctx.lineTo(90, height);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const world = game.threeDWorld;
+    const player = world && world.playerCar;
+    const traffic = game.trafficSystem;
+    const cars = traffic && Array.isArray(traffic.cars)
+      ? traffic.cars
+      : [];
+
+    // Draw traffic cars if available
+    if (player && player.position) {
+      cars.forEach(function (car) {
+        if (!car || !car.position) return;
+
+        const relativeX = car.position.x - player.position.x;
+        const relativeZ = car.position.z - player.position.z;
+
+        const x = 90 + relativeX * 12;
+        const y = 120 + relativeZ * 1.5;
+
+        if (x < 50 || x > 130 || y < 5 || y > 235) return;
+
+        ctx.fillStyle = "#ff6464";
+        ctx.fillRect(x - 4, y - 6, 8, 12);
+      });
+    }
+
+    // Player marker
+    ctx.fillStyle = "#c084fc";
+    ctx.beginPath();
+    ctx.moveTo(90, 104);
+    ctx.lineTo(82, 120);
+    ctx.lineTo(98, 120);
+    ctx.closePath();
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = "rgba(192,132,252,0.8)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, width - 2, height - 2);
+
+    requestAnimationFrame(drawMinimap);
+  }
+
+  drawMinimap();
+
+  game.minimapSystem = {
+    redraw: drawMinimap,
+    canvas: canvas
+  };
+
+  console.log("SUPERX: Minimap initialized.");
+})();
+
+/* PART 05-N: RACE MINIMAP INTEGRATION END */
+   
    
    
    
