@@ -6804,6 +6804,171 @@ button:disabled {
 
 /* PART 04-P: PLAYER STATS & RECORDS END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-Q: MUSIC PLAYER & AUDIO SETTINGS START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame || {};
+
+  const music = {
+    enabled: false,
+    audio: null,
+    source: "",
+    volume: 0.35
+  };
+
+  function getMusicVolume() {
+    const slider = document.getElementById("musicVolume");
+
+    if (!slider) return music.volume;
+
+    const value = Number(slider.value);
+    return Math.max(0, Math.min(1, value / 100));
+  }
+
+  function updateMusicButton() {
+    const button = document.getElementById("homeMusicButton");
+    const label = document.getElementById("homeMusicLabel");
+
+    if (button) {
+      button.classList.toggle("active", music.enabled);
+      button.setAttribute("aria-pressed", String(music.enabled));
+    }
+
+    if (label) {
+      label.textContent = music.enabled ? "MUSIC ON" : "MUSIC OFF";
+    }
+  }
+
+  function setMusicSource(url) {
+    if (!url || typeof url !== "string") return false;
+
+    try {
+      const parsed = new URL(url, window.location.href);
+
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        return false;
+      }
+
+      if (music.audio) {
+        music.audio.pause();
+        music.audio.src = "";
+      }
+
+      music.audio = new Audio();
+      music.audio.loop = true;
+      music.audio.preload = "none";
+      music.audio.src = parsed.href;
+      music.audio.volume = getMusicVolume();
+      music.source = parsed.href;
+
+      return true;
+    } catch (error) {
+      console.warn("SUPERX: Invalid music URL.", error);
+      return false;
+    }
+  }
+
+  async function toggleMusic() {
+    if (!music.audio) {
+      music.enabled = false;
+      updateMusicButton();
+
+      if (typeof game.showMessage === "function") {
+        game.showMessage(
+          "🎵",
+          "MUSIC PLAYER",
+          "Music player is ready. An audio file URL must be configured before music can play."
+        );
+      }
+
+      return false;
+    }
+
+    try {
+      if (music.enabled) {
+        music.audio.pause();
+        music.enabled = false;
+      } else {
+        music.audio.volume = getMusicVolume();
+        await music.audio.play();
+        music.enabled = true;
+      }
+
+      updateMusicButton();
+      return music.enabled;
+    } catch (error) {
+      music.enabled = false;
+      updateMusicButton();
+
+      if (typeof game.showMessage === "function") {
+        game.showMessage(
+          "⚠️",
+          "MUSIC UNAVAILABLE",
+          "The browser could not play this audio. Check the file URL and try again."
+        );
+      }
+
+      return false;
+    }
+  }
+
+  function updateVolume() {
+    music.volume = getMusicVolume();
+
+    if (music.audio) {
+      music.audio.volume = music.volume;
+    }
+  }
+
+  const button = document.getElementById("homeMusicButton");
+
+  if (button && button.dataset.musicPlayerAttached !== "yes") {
+    button.dataset.musicPlayerAttached = "yes";
+
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      toggleMusic();
+    });
+  }
+
+  const volumeSlider = document.getElementById("musicVolume");
+
+  if (volumeSlider) {
+    volumeSlider.addEventListener("input", updateVolume);
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden && music.audio && music.enabled) {
+      music.audio.pause();
+      music.enabled = false;
+      updateMusicButton();
+    }
+  });
+
+  game.musicPlayer = {
+    setSource: setMusicSource,
+    toggle: toggleMusic,
+    setVolume: updateVolume,
+    getState: () => ({
+      enabled: music.enabled,
+      source: music.source,
+      volume: music.volume
+    })
+  };
+
+  updateMusicButton();
+
+  console.log("SUPERX PART 04-Q loaded.");
+
+})();
+
+/* PART 04-Q: MUSIC PLAYER & AUDIO SETTINGS END */
+   
    
        
      
