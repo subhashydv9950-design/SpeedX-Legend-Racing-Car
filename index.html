@@ -551,6 +551,653 @@ button:focus-visible { outline: 2px solid #bc8cff; }
 </div>
 
 <!-- PART 8: FINAL GAME JAVASCRIPT WILL BE ADDED AFTER ALL HTML -->
+  
+<!-- =====================================================
+ SPEEDX LEGEND — PART 3
+ 3D CAR ENGINE + 35 CAR DATABASE + COIN SYSTEM
+===================================================== -->
+
+<script>
+(function () {
+  "use strict";
+
+  const SPEEDX = window.SPEEDX;
+
+  if (!SPEEDX) {
+    console.error("Part 1 must be loaded before Part 3.");
+    return;
+  }
+
+  /* ---------------- CAR DATABASE ---------------- */
+
+  const CAR_DATA = [
+    {id:0,name:"Legend GT",category:"sport",price:0,speed:320,acceleration:70,handling:70,color:"#8b5cf6",shape:"sport"},
+    {id:1,name:"Street Phantom",category:"sport",price:1500,speed:335,acceleration:72,handling:73,color:"#ff315c",shape:"sport"},
+    {id:2,name:"Neon Runner",category:"sport",price:2200,speed:345,acceleration:75,handling:74,color:"#36e9ff",shape:"sport"},
+    {id:3,name:"Shadow RS",category:"sport",price:3000,speed:350,acceleration:76,handling:77,color:"#42445a",shape:"sport"},
+    {id:4,name:"Vortex S",category:"sport",price:4000,speed:360,acceleration:78,handling:75,color:"#d8e1ff",shape:"sport"},
+    {id:5,name:"Night Blade",category:"sport",price:5000,speed:370,acceleration:80,handling:78,color:"#171723",shape:"sport"},
+    {id:6,name:"Storm GT",category:"sport",price:6500,speed:380,acceleration:79,handling:80,color:"#47b7ff",shape:"sport"},
+    {id:7,name:"Crimson R",category:"sport",price:8000,speed:390,acceleration:82,handling:79,color:"#d8243e",shape:"sport"},
+    {id:8,name:"Titan Roadster",category:"sport",price:9500,speed:395,acceleration:83,handling:81,color:"#b9a5ff",shape:"sport"},
+
+    {id:9,name:"Velocity X",category:"super",price:12000,speed:405,acceleration:84,handling:82,color:"#ffb22c",shape:"super"},
+    {id:10,name:"Apex R",category:"super",price:15000,speed:415,acceleration:86,handling:84,color:"#f4f4f4",shape:"super"},
+    {id:11,name:"Thunderbolt",category:"super",price:18000,speed:425,acceleration:88,handling:82,color:"#ffe347",shape:"super"},
+    {id:12,name:"Silver Arrow",category:"super",price:22000,speed:430,acceleration:87,handling:87,color:"#bfc7d7",shape:"super"},
+    {id:13,name:"Inferno Z",category:"super",price:26000,speed:440,acceleration:90,handling:85,color:"#ff542f",shape:"super"},
+    {id:14,name:"Blue Comet",category:"super",price:30000,speed:445,acceleration:89,handling:88,color:"#277aff",shape:"super"},
+    {id:15,name:"Night Racer",category:"super",price:35000,speed:450,acceleration:91,handling:87,color:"#6b61ff",shape:"super"},
+    {id:16,name:"Phantom V12",category:"super",price:40000,speed:460,acceleration:92,handling:89,color:"#282536",shape:"super"},
+    {id:17,name:"Falcon GT",category:"super",price:46000,speed:465,acceleration:91,handling:91,color:"#3de0a3",shape:"super"},
+
+    {id:18,name:"Hyperion",category:"hyper",price:52000,speed:470,acceleration:93,handling:90,color:"#8a58ff",shape:"hyper"},
+    {id:19,name:"Nova X",category:"hyper",price:60000,speed:475,acceleration:94,handling:91,color:"#fcfcff",shape:"hyper"},
+    {id:20,name:"Quantum R",category:"hyper",price:70000,speed:480,acceleration:95,handling:92,color:"#30eaff",shape:"hyper"},
+    {id:21,name:"Dark Matter",category:"hyper",price:80000,speed:485,acceleration:94,handling:94,color:"#22212e",shape:"hyper"},
+    {id:22,name:"Aether One",category:"hyper",price:90000,speed:490,acceleration:96,handling:93,color:"#e2c4ff",shape:"hyper"},
+    {id:23,name:"Infinity Z",category:"hyper",price:105000,speed:495,acceleration:97,handling:94,color:"#ff2e8a",shape:"hyper"},
+    {id:24,name:"Eclipse X",category:"hyper",price:120000,speed:500,acceleration:96,handling:96,color:"#3e65ff",shape:"hyper"},
+    {id:25,name:"Godspeed",category:"hyper",price:140000,speed:505,acceleration:98,handling:95,color:"#ffd166",shape:"hyper"},
+    {id:26,name:"Legendary One",category:"hyper",price:165000,speed:510,acceleration:98,handling:97,color:"#f5f5f5",shape:"hyper"},
+
+    {id:27,name:"Desert Wolf",category:"offroad",price:18000,speed:300,acceleration:72,handling:86,color:"#c99a5b",shape:"offroad"},
+    {id:28,name:"Mountain King",category:"offroad",price:25000,speed:315,acceleration:75,handling:90,color:"#688b55",shape:"offroad"},
+    {id:29,name:"Sandstorm X",category:"offroad",price:32000,speed:325,acceleration:77,handling:89,color:"#db6c39",shape:"offroad"},
+    {id:30,name:"Wild Tracker",category:"offroad",price:40000,speed:330,acceleration:79,handling:92,color:"#d5c59a",shape:"offroad"},
+    {id:31,name:"Raptor Trail",category:"offroad",price:48000,speed:340,acceleration:80,handling:93,color:"#d83f4f",shape:"offroad"},
+
+    {id:32,name:"Cyber GT",category:"hyper",price:200000,speed:515,acceleration:99,handling:98,color:"#5cffff",shape:"hyper"},
+    {id:33,name:"Omega Legend",category:"hyper",price:250000,speed:518,acceleration:99,handling:99,color:"#b64dff",shape:"hyper"},
+    {id:34,name:"SpeedX Ultimate",category:"hyper",price:300000,speed:520,acceleration:100,handling:100,color:"#ffec80",shape:"hyper"}
+  ];
+
+  /* ---------------- GAME SAVE DATA ---------------- */
+
+  const STORAGE_KEY = "speedx_legend_save_v1";
+
+  function loadSave() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+
+      if (saved && typeof saved === "object") {
+        return {
+          coins: Math.max(0, Number(saved.coins) || 0),
+          selectedCar: Number.isInteger(saved.selectedCar) ? saved.selectedCar : 0,
+          ownedCars: Array.isArray(saved.ownedCars) ? saved.ownedCars : [0],
+          paint: saved.paint && typeof saved.paint === "object" ? saved.paint : {},
+          upgrades: saved.upgrades && typeof saved.upgrades === "object" ? saved.upgrades : {}
+        };
+      }
+    } catch (error) {
+      console.warn("Save data could not be loaded.", error);
+    }
+
+    return {
+      coins: 2500,
+      selectedCar: 0,
+      ownedCars: [0],
+      paint: {},
+      upgrades: {}
+    };
+  }
+
+  const save = loadSave();
+
+  save.ownedCars = [...new Set([0, ...save.ownedCars])]
+    .filter(id => Number.isInteger(id) && id >= 0 && id < CAR_DATA.length);
+
+  if (!save.ownedCars.includes(save.selectedCar)) {
+    save.selectedCar = 0;
+  }
+
+  function saveGame() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
+    } catch (error) {
+      console.warn("Browser storage is unavailable.", error);
+      SPEEDX.showToast("Save unavailable. Check browser storage.");
+    }
+
+    updateCoinDisplay();
+    updateOwnedCount();
+  }
+
+  function updateCoinDisplay() {
+    const coin = document.getElementById("coinBalance");
+    if (coin) coin.textContent = save.coins.toLocaleString("en-IN");
+  }
+
+  function updateOwnedCount() {
+    const owned = document.getElementById("ownedCarsCount");
+    const total = document.getElementById("totalCarsCount");
+
+    if (owned) owned.textContent = save.ownedCars.length;
+    if (total) total.textContent = CAR_DATA.length;
+  }
+
+  function getCar(id) {
+    return CAR_DATA.find(car => car.id === id) || CAR_DATA[0];
+  }
+
+  function isOwned(id) {
+    return save.ownedCars.includes(id);
+  }
+
+  function getCurrentCar() {
+    return getCar(save.selectedCar);
+  }
+
+  function getCarPaint(car) {
+    return save.paint[car.id] || car.color;
+  }
+
+  /* ---------------- THREE.JS SCENE ---------------- */
+
+  let scene = null;
+  let camera = null;
+  let renderer = null;
+  let carGroup = null;
+  let carBody = null;
+  let animationFrame = 0;
+  let initialized = false;
+  let currentContainer = null;
+
+  function makeMaterial(color, metalness, roughness) {
+    return new THREE.MeshStandardMaterial({
+      color: color,
+      metalness: metalness == null ? 0.45 : metalness,
+      roughness: roughness == null ? 0.3 : roughness
+    });
+  }
+
+  function addBox(parent, width, height, depth, material, x, y, z) {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(width, height, depth),
+      material
+    );
+
+    mesh.position.set(x || 0, y || 0, z || 0);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+
+    return mesh;
+  }
+
+  function buildCar(car) {
+    if (!scene) return;
+
+    if (carGroup) {
+      scene.remove(carGroup);
+      carGroup.traverse(function (object) {
+        if (object.geometry) object.geometry.dispose();
+      });
+    }
+
+    carGroup = new THREE.Group();
+
+    const paint = makeMaterial(getCarPaint(car), 0.72, 0.23);
+    const dark = makeMaterial("#151522", 0.3, 0.4);
+    const glass = new THREE.MeshStandardMaterial({
+      color: "#65cde8",
+      metalness: 0.5,
+      roughness: 0.16,
+      transparent: true,
+      opacity: 0.8
+    });
+    const rubber = makeMaterial("#08080d", 0.05, 0.88);
+    const rim = makeMaterial("#b9c5d7", 0.85, 0.2);
+    const lamp = new THREE.MeshStandardMaterial({
+      color: "#baf8ff",
+      emissive: "#3acfff",
+      emissiveIntensity: 1.5
+    });
+
+    const isOffroad = car.shape === "offroad";
+    const bodyLength = isOffroad ? 2.25 : 2.45;
+    const bodyHeight = isOffroad ? 0.48 : 0.34;
+    const bodyWidth = isOffroad ? 1.18 : 1.12;
+    const cabinHeight = isOffroad ? 0.55 : car.shape === "hyper" ? 0.32 : 0.43;
+
+    carBody = addBox(
+      carGroup, bodyWidth, bodyHeight, bodyLength,
+      paint, 0, 0.45, 0
+    );
+
+    const cabin = addBox(
+      carGroup,
+      bodyWidth * 0.72,
+      cabinHeight,
+      bodyLength * 0.43,
+      glass,
+      0,
+      0.45 + bodyHeight * 0.5 + cabinHeight * 0.45,
+      -0.13
+    );
+
+    if (car.shape === "hyper") {
+      addBox(carGroup, bodyWidth * 0.9, 0.07, 0.4, dark, 0, 0.65, -1.08);
+      addBox(carGroup, bodyWidth * 0.9, 0.06, 0.45, paint, 0, 0.68, 1.03);
+    }
+
+    if (isOffroad) {
+      addBox(carGroup, bodyWidth * 0.8, 0.12, 0.12, dark, 0, 0.18, 1.05);
+      addBox(carGroup, 0.1, 0.55, 0.1, dark, -0.38, 0.84, -0.3);
+      addBox(carGroup, 0.1, 0.55, 0.1, dark, 0.38, 0.84, -0.3);
+    }
+
+    const wheelPositions = [
+      [-bodyWidth * 0.55, 0.31, -0.72],
+      [ bodyWidth * 0.55, 0.31, -0.72],
+      [-bodyWidth * 0.55, 0.31,  0.73],
+      [ bodyWidth * 0.55, 0.31,  0.73]
+    ];
+
+    wheelPositions.forEach(function (position) {
+      const wheel = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+          isOffroad ? 0.3 : 0.25,
+          isOffroad ? 0.3 : 0.25,
+          0.17,
+          20
+        ),
+        rubber
+      );
+
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(position[0], position[1], position[2]);
+      wheel.castShadow = true;
+      carGroup.add(wheel);
+
+      const wheelRim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.13, 0.13, 0.18, 16),
+        rim
+      );
+
+      wheelRim.rotation.z = Math.PI / 2;
+      wheelRim.position.set(position[0] * 1.02, position[1], position[2]);
+      carGroup.add(wheelRim);
+    });
+
+    for (let i = -1; i <= 1; i += 2) {
+      addBox(carGroup, 0.22, 0.08, 0.05, lamp, i * 0.36, 0.48, 1.235);
+      addBox(carGroup, 0.2, 0.07, 0.05, dark, i * 0.36, 0.45, -1.235);
+    }
+
+    addBox(carGroup, 0.09, 0.07, 0.13, dark, -bodyWidth * 0.55, 0.69, 0.05);
+    addBox(carGroup, 0.09, 0.07, 0.13, dark, bodyWidth * 0.55, 0.69, 0.05);
+
+    carGroup.rotation.y = Math.PI;
+    carGroup.position.y = 0.02;
+    scene.add(carGroup);
+
+    cabin.material = glass;
+  }
+
+  function initializeScene(containerId) {
+    if (!window.THREE) {
+      SPEEDX.showToast("3D engine did not load. Check your internet connection.");
+      return;
+    }
+
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // Reuse the renderer when switching between showroom containers.
+    if (initialized && renderer) {
+      if (currentContainer && renderer.domElement.parentElement) {
+        renderer.domElement.parentElement.removeChild(renderer.domElement);
+      }
+
+      currentContainer = container;
+      container.innerHTML = "";
+      container.appendChild(renderer.domElement);
+      resizeRenderer();
+      buildCar(getCurrentCar());
+      return;
+    }
+
+    currentContainer = container;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color("#171328");
+
+    camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+    camera.position.set(4.3, 3.0, 5.8);
+    camera.lookAt(0, 0.4, 0);
+
+    renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      powerPreference: "low-power"
+    });
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
+    renderer.shadowMap.enabled = false;
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.domElement.setAttribute("aria-label", "Interactive 3D car");
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+
+    container.innerHTML = "";
+    container.appendChild(renderer.domElement);
+
+    scene.add(new THREE.HemisphereLight("#dce8ff", "#261332", 2));
+
+    const keyLight = new THREE.DirectionalLight("#ffffff", 2.3);
+    keyLight.position.set(4, 7, 5);
+    scene.add(keyLight);
+
+    const purpleLight = new THREE.PointLight("#9d5cff", 14, 20);
+    purpleLight.position.set(-4, 2, -2);
+    scene.add(purpleLight);
+
+    const cyanLight = new THREE.PointLight("#4beaff", 10, 15);
+    cyanLight.position.set(3, 2, 3);
+    scene.add(cyanLight);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(200, 200),
+      new THREE.MeshStandardMaterial({
+        color: "#161324",
+        metalness: 0.45,
+        roughness: 0.42
+      })
+    );
+
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.02;
+    scene.add(floor);
+
+    // Decorative glowing showroom lines.
+    for (let i = -5; i <= 5; i++) {
+      const line = new THREE.Mesh(
+        new THREE.BoxGeometry(0.018, 0.012, 9),
+        makeMaterial(i % 2 === 0 ? "#49326f" : "#244a63", 0.4, 0.3)
+      );
+
+      line.position.set(i * 0.65, 0.005, 0);
+      scene.add(line);
+    }
+
+    initialized = true;
+    resizeRenderer();
+    buildCar(getCurrentCar());
+
+    function animate() {
+      animationFrame = requestAnimationFrame(animate);
+
+      if (carGroup) {
+        carGroup.position.y = 0.02 + Math.sin(performance.now() * 0.0015) * 0.018;
+        carGroup.rotation.y = Math.PI + Math.sin(performance.now() * 0.00045) * 0.12;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  }
+
+  function resizeRenderer() {
+    if (!renderer || !camera || !currentContainer) return;
+
+    const width = Math.max(1, currentContainer.clientWidth);
+    const height = Math.max(1, currentContainer.clientHeight);
+
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+  }
+
+  window.addEventListener("resize", resizeRenderer);
+
+  /* ---------------- CAR INFO UI ---------------- */
+
+  function updateCarInfo() {
+    const car = getCurrentCar();
+
+    const homeName = document.getElementById("homeCarName");
+    const homeSpeed = document.getElementById("homeCarSpeed");
+    const garageName = document.getElementById("garageCarName");
+    const garagePrice = document.getElementById("garageCarPrice");
+    const speedStat = document.getElementById("garageSpeedStat");
+    const accelerationStat = document.getElementById("garageAccelerationStat");
+    const handlingStat = document.getElementById("garageHandlingStat");
+
+    if (homeName) homeName.textContent = car.name.toUpperCase();
+    if (homeSpeed) homeSpeed.textContent = "TOP SPEED: " + car.speed + " KM/H";
+    if (garageName) garageName.textContent = car.name;
+
+    if (garagePrice) {
+      garagePrice.textContent = isOwned(car.id)
+        ? "OWNED"
+        : "PRICE: " + car.price.toLocaleString("en-IN") + " COINS";
+    }
+
+    if (speedStat) speedStat.textContent = car.speed;
+    if (accelerationStat) accelerationStat.textContent = car.acceleration;
+    if (handlingStat) handlingStat.textContent = car.handling;
+
+    if (carBody) {
+      carBody.material.color.set(getCarPaint(car));
+    }
+
+    updateCoinDisplay();
+    updateOwnedCount();
+  }
+
+  function selectCar(id) {
+    const car = getCar(id);
+
+    if (!isOwned(car.id)) {
+      SPEEDX.showToast("This car is locked. Buy it with coins first.");
+      return;
+    }
+
+    save.selectedCar = car.id;
+    saveGame();
+    updateCarInfo();
+
+    if (initialized) buildCar(car);
+
+    renderCarCollection();
+    SPEEDX.showToast(car.name + " selected.");
+  }
+
+  function buyCar(id) {
+    const car = getCar(id);
+
+    if (isOwned(id)) {
+      selectCar(id);
+      return;
+    }
+
+    if (save.coins < car.price) {
+      SPEEDX.showToast(
+        "Not enough coins. Need " +
+        (car.price - save.coins).toLocaleString("en-IN") +
+        " more coins."
+      );
+      return;
+    }
+
+    save.coins -= car.price;
+    save.ownedCars.push(id);
+    save.ownedCars = [...new Set(save.ownedCars)];
+
+    saveGame();
+    selectCar(id);
+    SPEEDX.showToast(car.name + " unlocked!");
+  }
+
+  /* ---------------- CAR COLLECTION UI ---------------- */
+
+  let activeCategory = "all";
+
+  function renderCarCollection() {
+    const grid = document.getElementById("carCollectionGrid");
+    if (!grid) return;
+
+    grid.innerHTML = "";
+
+    const filteredCars = CAR_DATA.filter(function (car) {
+      return activeCategory === "all" || car.category === activeCategory;
+    });
+
+    filteredCars.forEach(function (car) {
+      const owned = isOwned(car.id);
+      const selected = save.selectedCar === car.id;
+
+      const card = document.createElement("article");
+      card.className = "car-card" + (owned ? "" : " locked");
+
+      const visual = document.createElement("div");
+      visual.className = "car-card-visual";
+      visual.style.color = getCarPaint(car);
+      visual.textContent = "🏎️";
+
+      const body = document.createElement("div");
+      body.className = "car-card-body";
+
+      const title = document.createElement("h3");
+      title.textContent = car.name;
+
+      const info = document.createElement("p");
+      info.textContent =
+        car.category.toUpperCase() +
+        " • " + car.speed + " KM/H" +
+        " • " + car.handling + " HANDLING";
+
+      const action = document.createElement("button");
+      action.type = "button";
+
+      if (selected) {
+        action.textContent = "SELECTED";
+        action.disabled = true;
+      } else if (owned) {
+        action.textContent = "SELECT CAR";
+        action.addEventListener("click", function () {
+          selectCar(car.id);
+        });
+      } else {
+        action.textContent = "🪙 " + car.price.toLocaleString("en-IN");
+        action.addEventListener("click", function () {
+          buyCar(car.id);
+        });
+      }
+
+      body.appendChild(title);
+      body.appendChild(info);
+      body.appendChild(action);
+      card.appendChild(visual);
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+
+    updateOwnedCount();
+  }
+
+  document.querySelectorAll("[data-car-category]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      activeCategory = button.getAttribute("data-car-category");
+
+      document.querySelectorAll("[data-car-category]").forEach(function (item) {
+        item.classList.toggle("active", item === button);
+      });
+
+      renderCarCollection();
+    });
+  });
+
+  document.getElementById("previousCarButton").addEventListener("click", function () {
+    let index = save.selectedCar - 1;
+
+    for (let i = 0; i < CAR_DATA.length; i++) {
+      if (index < 0) index = CAR_DATA.length - 1;
+
+      if (isOwned(index)) {
+        selectCar(index);
+        return;
+      }
+
+      index--;
+    }
+  });
+
+  document.getElementById("nextCarButton").addEventListener("click", function () {
+    let index = save.selectedCar;
+
+    for (let i = 0; i < CAR_DATA.length; i++) {
+      index = (index + 1) % CAR_DATA.length;
+
+      if (isOwned(index)) {
+        selectCar(index);
+        return;
+      }
+    }
+  });
+
+  document.getElementById("openGarageButton").addEventListener("click", function () {
+    setTimeout(function () {
+      initializeScene("garage3DContainer");
+      updateCarInfo();
+    }, 50);
+  });
+document.querySelectorAll('[data-screen="garageScreen"]').forEach(function (button) {
+    button.addEventListener("click", function () {
+      setTimeout(function () {
+        initializeScene("garage3DContainer");
+        updateCarInfo();
+      }, 50);
+    });
+  });
+
+  document.querySelectorAll('[data-screen="carsScreen"]').forEach(function (button) {
+    button.addEventListener("click", renderCarCollection);
+  });
+
+  // Initialize showroom once the home screen has layout dimensions.
+  function start3D() {
+    updateCoinDisplay();
+    updateOwnedCount();
+    updateCarInfo();
+    renderCarCollection();
+
+    const home = document.getElementById("homeScreen");
+
+    if (home && home.classList.contains("active")) {
+      initializeScene("car3DContainer");
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start3D);
+  } else {
+    start3D();
+  }
+
+  // Public interface for the next parts.
+  window.SPEEDX_CARS = {
+    data: CAR_DATA,
+    getSave: function () { return save; },
+    getCurrentCar: getCurrentCar,
+    getCar: getCar,
+    isOwned: isOwned,
+    buyCar: buyCar,
+    selectCar: selectCar,
+    saveGame: saveGame,
+    updateCarInfo: updateCarInfo,
+    initializeScene: initializeScene,
+    getRenderer: function () { return renderer; },
+    getScene: function () { return scene; },
+    getCamera: function () { return camera; }
+  };
+ console.log("SPEEDX LEGEND Part 3 loaded. Cars:", CAR_DATA.length);
+})();
+</script>
+
+<!-- ================= END PART 3 ================= -->
 <script>
 /*
   SPEEDX LEGEND — PART 1
