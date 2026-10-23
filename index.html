@@ -6969,6 +6969,163 @@ button:disabled {
 
 /* PART 04-Q: MUSIC PLAYER & AUDIO SETTINGS END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-R: ACHIEVEMENTS & TROPHIES START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame || {};
+  const STORAGE_KEY = "superxLegendAchievementsV1";
+
+  const definitions = [
+    {
+      id: "first-race",
+      name: "FIRST ENGINE START",
+      description: "Complete your first race.",
+      target: 1,
+      reward: 100,
+      stat: "races"
+    },
+    {
+      id: "five-races",
+      name: "ROAD REGULAR",
+      description: "Complete 5 races.",
+      target: 5,
+      reward: 250,
+      stat: "races"
+    },
+    {
+      id: "ten-wins",
+      name: "RACING LEGEND",
+      description: "Win 10 races.",
+      target: 10,
+      reward: 750,
+      stat: "wins"
+    },
+    {
+      id: "distance-10",
+      name: "ROAD EXPLORER",
+      description: "Drive a total of 10 kilometres.",
+      target: 10000,
+      reward: 300,
+      stat: "distance"
+    },
+    {
+      id: "speed-200",
+      name: "SPEED DEMON",
+      description: "Reach 200 km/h.",
+      target: 200,
+      reward: 200,
+      stat: "speed"
+    }
+  ];
+
+  let unlocked = [];
+
+  function load() {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]"
+      );
+
+      if (Array.isArray(saved)) {
+        unlocked = saved.filter(id =>
+          definitions.some(item => item.id === id)
+        );
+      }
+    } catch (error) {
+      unlocked = [];
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(unlocked)
+      );
+    } catch (error) {
+      console.warn("SUPERX: Could not save achievements.", error);
+    }
+  }
+
+  function getCurrentStats() {
+    const stats = game.playerStats?.get?.() || {};
+
+    return {
+      races: Number(stats.totalRaces) || 0,
+      wins: Number(stats.totalWins) || 0,
+      distance: Number(stats.totalDistance) || 0,
+      speed: Number(stats.bestSpeed) || 0
+    };
+  }
+
+  function check() {
+    const stats = getCurrentStats();
+    const newlyUnlocked = [];
+
+    definitions.forEach(item => {
+      if (unlocked.includes(item.id)) return;
+
+      if (stats[item.stat] >= item.target) {
+        unlocked.push(item.id);
+        newlyUnlocked.push(item);
+
+        game.coins = (Number(game.coins) || 0) + item.reward;
+      }
+    });
+
+    if (newlyUnlocked.length) {
+      save();
+
+      game.updateCoinDisplays?.();
+      game.saveGame?.(false);
+
+      const names = newlyUnlocked
+        .map(item => item.name)
+        .join(", ");
+
+      game.showMessage?.(
+        "🏆",
+        "ACHIEVEMENT UNLOCKED!",
+        names + ". Bonus coins awarded!"
+      );
+    }
+
+    return newlyUnlocked;
+  }
+
+  function getAll() {
+    const stats = getCurrentStats();
+
+    return definitions.map(item => ({
+      ...item,
+      unlocked: unlocked.includes(item.id),
+      progress: Math.min(
+        stats[item.stat],
+        item.target
+      )
+    }));
+  }
+
+  load();
+
+  game.achievements = {
+    check,
+    getAll,
+    getUnlocked: () => [...unlocked]
+  };
+
+  console.log("SUPERX PART 04-R loaded.");
+
+})();
+
+/* PART 04-R: ACHIEVEMENTS & TROPHIES END */
+   
+   
    
        
      
