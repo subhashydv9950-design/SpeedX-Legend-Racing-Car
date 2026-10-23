@@ -858,6 +858,89 @@ button:disabled {
 <script>
 /* SUPERX LEGEND — SCREEN NAVIGATION */
 
+/* ===== CAREER MAP SYSTEM ===== */
+
+let selectedCareerMode = "Village Racing";
+let selectedMapNumber = 1;
+
+const careerMapProgress = {};
+
+function openMaps(modeName) {
+  selectedCareerMode = modeName;
+  selectedMapNumber = 1;
+
+  const title = document.getElementById("selectedModeTitle");
+  if (title) title.textContent = modeName.toUpperCase();
+
+  const grid = document.getElementById("mapGrid");
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
+  const unlockedMap = careerMapProgress[modeName] || 1;
+
+  for (let mapNumber = 1; mapNumber <= 100; mapNumber++) {
+    const tile = document.createElement("button");
+    const isUnlocked = mapNumber <= unlockedMap;
+
+    tile.className = "map-tile " + (isUnlocked ? "unlocked" : "locked");
+    tile.innerHTML = isUnlocked
+      ? "MAP " + mapNumber + "<span>OPEN</span>"
+      : "MAP " + mapNumber + "<span>🔒 LOCKED</span>";
+
+    tile.disabled = !isUnlocked;
+
+    tile.addEventListener("click", function() {
+      if (!isUnlocked) return;
+
+      selectedMapNumber = mapNumber;
+
+      grid.querySelectorAll(".map-tile").forEach(function(button) {
+        button.classList.remove("selected");
+      });
+
+      tile.classList.add("selected");
+
+      const message = document.getElementById("mapMessage");
+      if (message) {
+        message.textContent =
+          modeName + " · Map " + mapNumber + " selected.";
+      }
+    });
+
+    grid.appendChild(tile);
+  }
+
+  const message = document.getElementById("mapMessage");
+  if (message) {
+    message.textContent = "Map 1 is ready. Select it to begin.";
+  }
+
+  openSection("mapsScreen");
+}
+
+function startSelectedRace() {
+  const message = document.getElementById("mapMessage");
+
+  if (selectedMapNumber !== 1) {
+    if (message) {
+      message.textContent =
+        "This prototype currently starts with Map 1 only.";
+    }
+    return;
+  }
+
+  if (message) {
+    message.textContent =
+      selectedCareerMode + " — Map 1 selected. Driving system is coming next.";
+  }
+
+  alert(
+    selectedCareerMode + " — Map " + selectedMapNumber +
+    "\nThe driving system will be connected in a later step."
+  );
+}
+   
 function openSection(screenId) {
   const currentScreens = document.querySelectorAll(".screen");
 
