@@ -6118,7 +6118,236 @@ button:disabled {
 })();
 
 /* PART 04-K: GAME SAVE & PROGRESS SYSTEM END */
-     
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-L: ENGINE SOUND & RACING AUDIO START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  let audioContext = null;
+  let engineOscillator = null;
+  let engineFilter = null;
+  let engineGain = null;
+  let engineActive = false;
+  let animationId = null;
+
+  function getAudioContext() {
+    if (!audioContext) {
+      const AudioContextClass =
+        window.AudioContext || window.webkitAudioContext;
+
+      if (!AudioContextClass) return null;
+
+      audioContext = new AudioContextClass();
+    }
+
+    if (audioContext.state === "suspended") {
+      audioContext.resume();
+    }
+
+    return audioContext;
+  }
+
+  function getSoundVolume() {
+    const slider = document.getElementById("soundVolume");
+    const value = slider ? Number(slider.value) : 70;
+
+    return Math.max(0, Math.min(1, value / 100));
+  }
+
+  function startEngineSound() {
+    const context = getAudioContext();
+
+    if (!context || engineActive) return;
+
+    engineActive = true;
+
+    engineOscillator = context.createOscillator();
+    engineFilter = context.createBiquadFilter();
+    engineGain = context.createGain();
+
+    engineOscillator.type = "sawtooth";
+    engineOscillator.frequency.value = 65;
+
+    engineFilter.type = "lowpass";
+    engineFilter.frequency.value = 220;
+
+    engineGain.gain.value = 0;
+
+    engineOscillator.connect(engineFilter);
+    engineFilter.connect(engineGain);
+    engineGain.connect(context.destination);
+
+    engineOscillator.start();
+
+    updateEngineSound();
+  }
+
+  function stopEngineSound() {
+    engineActive = false;
+
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+
+    if (engineGain && audioContext) {
+      engineGain.gain.setTargetAtTime(
+        0,
+        audioContext.currentTime,
+        0.08
+      );
+    }
+
+    if (engineOscillator) {
+      try {
+        engineOscillator.stop();
+      } catch (error) {
+        // Oscillator may already be stopped.
+      }
+
+      engineOscillator.disconnect();
+      engineOscillator = null;
+    }
+
+    if (engineFilter) {
+      engineFilter.disconnect();
+      engineFilter = null;
+    }
+
+    if (engineGain) {
+      engineGain.disconnect();
+      engineGain = null;
+    }
+  }
+
+  function updateEngineSound() {
+    if (!engineActive || !audioContext || !engineOscillator) return;
+
+    const speedElement = document.getElementById("raceCurrentSpeed");
+    const rpmElement = document.getElementById("raceCurrentRPM");
+
+    const speed = speedElement
+      ? Number(speedElement.textContent) || 0
+      : 0;
+
+    const rpm = rpmElement
+      ? Number(rpmElement.textContent) || 900
+      : 900;
+
+    const volume = getSoundVolume();
+
+    const targetFrequency = Math.max(
+      45,
+      Math.min(240, 45 + rpm / 35 + speed / 5)
+    );
+
+    engineOscillator.frequency.setTargetAtTime(
+      targetFrequency,
+      audioContext.currentTime,
+      0.08
+    );
+
+    if (engineFilter) {
+      engineFilter.frequency.setTargetAtTime(
+        Math.min(1200, 180 + rpm * 0.65),
+        audioContext.currentTime,
+        0.1
+      );
+    }
+
+    if (engineGain) {
+      engineGain.gain.setTargetAtTime(
+        volume * (speed > 0 ? 0.035 : 0.012),
+        audioContext.currentTime,
+        0.1
+      );
+    }
+
+    animationId = requestAnimationFrame(updateEngineSound);
+  }
+
+  function playBeep(frequency, duration) {
+    const context = getAudioContext();
+
+    if (!context) return;
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(
+      Math.max(0.001, getSoundVolume() * 0.12),
+      context.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      context.currentTime + duration
+    );
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+
+    oscillator.start();
+    oscillator.stop(context.currentTime + duration);
+  }
+
+  function attachSound(id, frequency, duration) {
+    const button = document.getElementById(id);
+
+    if (!button || button.dataset.soundAttached === "yes") return;
+
+    button.dataset.soundAttached = "yes";
+
+    button.addEventListener("click", function () {
+      playBeep(frequency, duration);
+    });
+  }
+
+  function setupAudio() {
+    const accelerator = document.getElementById("acceleratorButton");
+
+    if (accelerator && accelerator.dataset.engineAttached !== "yes") {
+      accelerator.dataset.engineAttached = "yes";
+
+      accelerator.addEventListener("pointerdown", startEngineSound);
+
+      ["pointerup", "pointercancel", "pointerleave"].forEach(eventName => {
+        accelerator.addEventListener(eventName, stopEngineSound);
+      });
+    }
+
+    attachSound("hornButton", 420, 0.35);
+    attachSound("leftIndicatorButton", 780, 0.08);
+    attachSound("rightIndicatorButton", 780, 0.08);
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        stopEngineSound();
+      }
+    });
+  }
+
+  window.SuperXGame = window.SuperXGame || {};
+  window.SuperXGame.startEngineSound = startEngineSound;
+  window.SuperXGame.stopEngineSound = stopEngineSound;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", setupAudio);
+  } else {
+    setupAudio();
+  }
+
+})();
+
+/* PART 04-L: ENGINE SOUND & RACING AUDIO END */
+         
                            
    
        
