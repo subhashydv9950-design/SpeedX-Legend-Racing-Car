@@ -8444,6 +8444,135 @@ button:disabled {
 
 /* PART 05-E: BRAKE & REVERSE LIGHTS END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-F: HORN & INDICATOR SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  let indicatorGroup = null;
+  let leftMaterial = null;
+  let rightMaterial = null;
+  let blinkState = false;
+  let blinkTimer = null;
+
+  function setupIndicators() {
+    const world = game.threeDWorld;
+    const THREE = window.THREE;
+
+    if (!world || !world.playerCar || !THREE) return false;
+    if (indicatorGroup) return true;
+
+    indicatorGroup = new THREE.Group();
+
+    leftMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffa500,
+      emissive: 0xff8800,
+      emissiveIntensity: 0.1
+    });
+
+    rightMaterial = leftMaterial.clone();
+
+    [-0.58, 0.58].forEach(function (x, index) {
+      const front = new THREE.Mesh(
+        new THREE.BoxGeometry(0.16, 0.1, 0.05),
+        index === 0 ? leftMaterial : rightMaterial
+      );
+
+      front.position.set(x, 0.42, -1.2);
+      indicatorGroup.add(front);
+
+      const rear = new THREE.Mesh(
+        new THREE.BoxGeometry(0.16, 0.1, 0.05),
+        index === 0 ? leftMaterial : rightMaterial
+      );
+
+      rear.position.set(x, 0.42, 1.2);
+      indicatorGroup.add(rear);
+    });
+
+    world.playerCar.add(indicatorGroup);
+    return true;
+  }
+
+  function stopBlinking() {
+    if (blinkTimer) {
+      clearInterval(blinkTimer);
+      blinkTimer = null;
+    }
+
+    blinkState = false;
+
+    if (leftMaterial) leftMaterial.emissiveIntensity = 0.1;
+    if (rightMaterial) rightMaterial.emissiveIntensity = 0.1;
+  }
+
+  function setIndicator(side) {
+    if (!setupIndicators()) return;
+
+    stopBlinking();
+
+    if (side !== "left" && side !== "right" && side !== "hazard") {
+      return;
+    }
+
+    blinkTimer = setInterval(function () {
+      blinkState = !blinkState;
+
+      leftMaterial.emissiveIntensity =
+        blinkState && (side === "left" || side === "hazard") ? 2.5 : 0.1;
+
+      rightMaterial.emissiveIntensity =
+        blinkState && (side === "right" || side === "hazard") ? 2.5 : 0.1;
+    }, 400);
+  }
+
+  const leftButton = document.getElementById("leftIndicatorButton");
+  const rightButton = document.getElementById("rightIndicatorButton");
+  const hornButton = document.getElementById("hornButton");
+
+  if (leftButton && !leftButton.dataset.indicatorConnected) {
+    leftButton.dataset.indicatorConnected = "true";
+    leftButton.addEventListener("click", function () {
+      setIndicator("left");
+    });
+  }
+
+  if (rightButton && !rightButton.dataset.indicatorConnected) {
+    rightButton.dataset.indicatorConnected = "true";
+    rightButton.addEventListener("click", function () {
+      setIndicator("right");
+    });
+  }
+
+  if (hornButton && !hornButton.dataset.hornConnected) {
+    hornButton.dataset.hornConnected = "true";
+    hornButton.addEventListener("click", function () {
+      if (game.audioSystem && typeof game.audioSystem.horn === "function") {
+        game.audioSystem.horn();
+      } else if (typeof game.showMessage === "function") {
+        game.showMessage("📣", "HORN", "Horn audio will be connected with the audio system.");
+      }
+    });
+  }
+
+  game.indicatorSystem = {
+    set: setIndicator,
+    stop: stopBlinking
+  };
+
+  setupIndicators();
+
+  console.log("SUPERX: Horn and indicator integration initialized.");
+})();
+
+/* PART 05-F: HORN & INDICATOR SYSTEM END */
+   
    
    
    
