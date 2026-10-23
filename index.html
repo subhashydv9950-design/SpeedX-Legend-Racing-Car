@@ -8348,6 +8348,102 @@ button:disabled {
 
 /* PART 05-D: HEADLIGHT SYSTEM END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-E: BRAKE & REVERSE LIGHTS START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  let lightGroup = null;
+  let brakeMaterial = null;
+  let reverseMaterial = null;
+
+  function setupLights() {
+    const world = game.threeDWorld;
+    const THREE = window.THREE;
+
+    if (!world || !world.playerCar || !THREE) return false;
+    if (lightGroup) return true;
+
+    lightGroup = new THREE.Group();
+
+    brakeMaterial = new THREE.MeshStandardMaterial({
+      color: 0xff1010,
+      emissive: 0xff0000,
+      emissiveIntensity: 0.15
+    });
+
+    reverseMaterial = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xeeeeff,
+      emissiveIntensity: 0.1
+    });
+
+    [-0.48, 0.48].forEach(function (x) {
+      const brake = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.12, 0.06),
+        brakeMaterial
+      );
+      brake.position.set(x, 0.55, 1.15);
+      lightGroup.add(brake);
+
+      const reverse = new THREE.Mesh(
+        new THREE.BoxGeometry(0.16, 0.09, 0.05),
+        reverseMaterial
+      );
+      reverse.position.set(x, 0.42, 1.18);
+      lightGroup.add(reverse);
+    });
+
+    world.playerCar.add(lightGroup);
+    return true;
+  }
+
+  function setBrakeLights(on) {
+    if (!setupLights()) return;
+
+    brakeMaterial.emissiveIntensity = on ? 2.5 : 0.15;
+  }
+
+  function setReverseLights(on) {
+    if (!setupLights()) return;
+
+    reverseMaterial.emissiveIntensity = on ? 2.0 : 0.1;
+  }
+
+  const brakeButton = document.getElementById("brakeButton");
+
+  if (brakeButton && !brakeButton.dataset.lightsConnected) {
+    brakeButton.dataset.lightsConnected = "true";
+
+    brakeButton.addEventListener("pointerdown", function () {
+      setBrakeLights(true);
+    });
+
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function (event) {
+      brakeButton.addEventListener(event, function () {
+        setBrakeLights(false);
+      });
+    });
+  }
+
+  game.vehicleLights = {
+    setBrake: setBrakeLights,
+    setReverse: setReverseLights
+  };
+
+  setupLights();
+
+  console.log("SUPERX: Brake and reverse lights initialized.");
+})();
+
+/* PART 05-E: BRAKE & REVERSE LIGHTS END */
+   
    
    
    
