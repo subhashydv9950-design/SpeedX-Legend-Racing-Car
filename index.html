@@ -610,6 +610,302 @@ button:disabled {
 
 /* PART 02-B END */
    
+/* =====================================================
+   PART 02-C: GAME SCREENS, HEADERS & PREMIUM CARDS
+===================================================== */
+
+.gameScreen:not(#raceScreen) {
+  padding: 18px clamp(12px, 3vw, 34px) 32px;
+  background:
+    radial-gradient(ellipse at 85% 0%, rgba(109, 40, 217, 0.15), transparent 40%),
+    linear-gradient(180deg, #0c0b13, #08080d);
+}
+
+.screenHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto 24px;
+  padding: 4px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.screenBrand {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.screenBrand h2 {
+  margin: 4px 0 0;
+  font-size: clamp(17px, 3vw, 28px);
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.brandEyebrow {
+  color: var(--accent-bright);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 3px;
+}
+
+.screenCoins {
+  color: #f8d477;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.screenIntro {
+  max-width: 1400px;
+  margin: 0 auto 22px;
+}
+
+.screenIntro h1 {
+  margin: 0 0 8px;
+  font-size: clamp(25px, 5vw, 42px);
+  font-weight: 950;
+  letter-spacing: 1px;
+}
+
+.screenIntro p,
+.settingsCard > p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.modeGrid,
+.onlineOptionsGrid,
+.achievementGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto 25px;
+}
+
+.modeCard,
+.onlineOptionCard,
+.achievementCard {
+  position: relative;
+  min-width: 0;
+  min-height: 135px;
+  padding: 17px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(37, 28, 54, 0.96), rgba(13, 12, 20, 0.98));
+}
+
+.modeCard {
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.modeCard:hover,
+.modeCard.active,
+.modeCard[aria-pressed="true"] {
+  border-color: var(--accent-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(109, 40, 217, 0.13);
+}
+
+.modeCard h3,
+.onlineOptionCard h3,
+.achievementCard h3 {
+  margin: 12px 0 7px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.modeCard p,
+.onlineOptionCard p,
+.achievementCard p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.modeCardIcon,
+.onlineOptionIcon,
+.achievementIcon {
+  color: var(--accent-bright);
+  font-size: 25px;
+}
+
+.modeCard.locked {
+  opacity: 0.62;
+}
+
+.primaryActionButton,
+.secondaryActionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 12px 20px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.primaryActionButton {
+  background: linear-gradient(110deg, #7c3aed, #a855f7);
+  color: #fff;
+  box-shadow: 0 7px 24px rgba(124, 58, 237, 0.2);
+}
+
+.primaryActionButton:hover {
+  background: linear-gradient(110deg, #8b5cf6, #c084fc);
+}
+
+.secondaryActionButton {
+  border-color: var(--border);
+  background: rgba(31, 27, 44, 0.85);
+}
+
+.screenPanel,
+.mapSelectionPanel,
+.settingsCard {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto 18px;
+  padding: clamp(15px, 2.5vw, 24px);
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--bg-panel);
+}
+
+.screenPanel h3,
+.mapSelectionPanel h3,
+.settingsCard h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.mapSelectionPanel > p {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.mapGrid,
+#careerMapGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.mapCard {
+  min-height: 72px;
+  padding: 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg-card);
+  text-align: center;
+}
+
+.mapCard.selected,
+.mapCard[aria-pressed="true"] {
+  border-color: var(--accent-bright);
+  background: rgba(109, 40, 217, 0.25);
+}
+
+.mapCard.locked {
+  opacity: 0.45;
+}
+
+.settingsPageContent,
+.roomSetupContent {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.settingsFootnote {
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+@media (max-width: 800px) {
+  .modeGrid,
+  .onlineOptionsGrid,
+  .achievementGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mapGrid,
+  #careerMapGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .settingsPageContent,
+  .roomSetupContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .gameScreen:not(#raceScreen) {
+    padding: 12px 10px 24px;
+  }
+
+  .screenHeader {
+    gap: 7px;
+    margin-bottom: 18px;
+  }
+
+  .screenBrand h2 {
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+
+  .brandEyebrow {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .modeGrid,
+  .onlineOptionsGrid,
+  .achievementGrid {
+    gap: 8px;
+  }
+
+  .modeCard,
+  .onlineOptionCard,
+  .achievementCard {
+    min-height: 120px;
+    padding: 12px;
+  }
+
+  .mapGrid,
+  #careerMapGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* PART 02-C END */
+   
+   
 
   </style>
 
