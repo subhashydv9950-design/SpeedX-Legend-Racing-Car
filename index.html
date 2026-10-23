@@ -8259,6 +8259,95 @@ button:disabled {
 
 /* PART 05-C: RACE HUD INTEGRATION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-D: HEADLIGHT SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  let headlightsOn = false;
+  let headlightGroup = null;
+
+  function createHeadlights() {
+    const world = game.threeDWorld;
+
+    if (!world || !world.scene || !world.playerCar) return false;
+    if (headlightGroup) return true;
+
+    const THREE = window.THREE;
+    if (!THREE) return false;
+
+    headlightGroup = new THREE.Group();
+
+    for (let i = 0; i < 2; i++) {
+      const light = new THREE.SpotLight(
+        0xd9e8ff,
+        0,
+        65,
+        Math.PI / 5,
+        0.45,
+        1.4
+      );
+
+      light.position.set(i === 0 ? -0.55 : 0.55, 0.2, -1.5);
+      light.target.position.set(i === 0 ? -0.7 : 0.7, -0.2, -18);
+
+      headlightGroup.add(light);
+      headlightGroup.add(light.target);
+    }
+
+    world.playerCar.add(headlightGroup);
+    return true;
+  }
+
+  function setHeadlights(enabled) {
+    headlightsOn = Boolean(enabled);
+
+    if (!createHeadlights()) return;
+
+    headlightGroup.children.forEach(function (item) {
+      if (item.isSpotLight) {
+        item.intensity = headlightsOn ? 3.5 : 0;
+      }
+    });
+
+    const button = document.getElementById("headlightButton");
+
+    if (button) {
+      button.classList.toggle("active", headlightsOn);
+      button.setAttribute("aria-pressed", String(headlightsOn));
+    }
+  }
+
+  const button = document.getElementById("headlightButton");
+
+  if (button && !button.dataset.realLightsConnected) {
+    button.dataset.realLightsConnected = "true";
+
+    button.addEventListener("click", function () {
+      setHeadlights(!headlightsOn);
+    });
+  }
+
+  game.headlightSystem = {
+    setEnabled: setHeadlights,
+    isEnabled: function () {
+      return headlightsOn;
+    }
+  };
+
+  createHeadlights();
+
+  console.log("SUPERX: Headlight system initialized.");
+})();
+
+/* PART 05-D: HEADLIGHT SYSTEM END */
+   
    
    
    
