@@ -2030,6 +2030,102 @@
 
 <!-- PART 01-G: CONTROL & CAMERA SETTINGS END -->
      
+<!-- PART 01-H: RACE MODE & ROOM SETUP START -->
+
+<section id="roomSetupScreen" class="gameScreen roomSetupScreen" hidden>
+  <header class="screenHeader">
+    <button class="iconButton" id="backFromRoomSetupButton" type="button">← Back</button>
+    <div class="screenBrand">
+      <span class="brandEyebrow">SUPERX LEGEND</span>
+      <h2>RACE ROOM</h2>
+    </div>
+  </header>
+
+  <div class="roomSetupContent">
+    <section class="settingsCard">
+      <h3>CREATE YOUR RACE</h3>
+      <p>Set up a room for friends or a team race.</p>
+
+      <label class="fieldLabel" for="roomNameInput">Room Name</label>
+      <input id="roomNameInput" class="gameTextInput"
+        type="text" maxlength="24" placeholder="Enter a room name">
+
+      <label class="fieldLabel" for="roomRaceMode">Race Mode</label>
+      <select id="roomRaceMode" class="gameSelect">
+        <option value="village">Village Racing</option>
+        <option value="city">City Racing</option>
+        <option value="mountain">Mountain Racing</option>
+        <option value="poison-crows">Poison of Crows</option>
+        <option value="coastal">Coastal Racing</option>
+        <option value="snow-ice">Snow & Ice</option>
+        <option value="stunt">Stunt Racing</option>
+        <option value="ai-racing">AI Racing</option>
+      </select>
+
+      <label class="fieldLabel" for="roomMapNumber">Map Number</label>
+      <select id="roomMapNumber" class="gameSelect">
+        <option value="1">Map 1</option>
+        <option value="2">Map 2</option>
+        <option value="3">Map 3</option>
+        <option value="4">Map 4</option>
+        <option value="5">Map 5</option>
+      </select>
+
+      <label class="fieldLabel" for="roomPlayerLimit">Maximum Players</label>
+      <select id="roomPlayerLimit" class="gameSelect">
+        <option value="2">2 Players</option>
+        <option value="4">4 Players</option>
+        <option value="6">6 Players</option>
+        <option value="8" selected>8 Players</option>
+        <option value="10">10 Players</option>
+        <option value="12">12 Players</option>
+      </select>
+
+      <label class="fieldLabel" for="roomPrivacy">Room Privacy</label>
+      <select id="roomPrivacy" class="gameSelect">
+        <option value="friends">Friends Only</option>
+        <option value="public">Public Room</option>
+        <option value="private">Private / Invite Only</option>
+      </select>
+
+      <button id="confirmCreateRoomButton" class="primaryActionButton" type="button">
+        CREATE RACE ROOM
+      </button>
+
+      <p class="settingsFootnote">
+        Online rooms require a multiplayer server before real players can join.
+      </p>
+    </section>
+
+    <section class="settingsCard">
+      <h3>ROOM PREVIEW</h3>
+      <div class="roomPreviewItem">
+        <span>ROOM</span>
+        <strong id="roomPreviewName">SUPERX RACE</strong>
+      </div>
+      <div class="roomPreviewItem">
+        <span>MODE</span>
+        <strong id="roomPreviewMode">Village Racing</strong>
+      </div>
+      <div class="roomPreviewItem">
+        <span>MAP</span>
+        <strong id="roomPreviewMap">Map 1</strong>
+      </div>
+      <div class="roomPreviewItem">
+        <span>PLAYER LIMIT</span>
+        <strong id="roomPreviewPlayers">8 Players</strong>
+      </div>
+      <div class="roomPreviewItem">
+        <span>STATUS</span>
+        <strong id="roomPreviewStatus">LOCAL PREVIEW</strong>
+      </div>
+    </section>
+  </div>
+</section>
+
+<!-- PART 01-H: RACE MODE & ROOM SETUP END -->
+     
+     
 
     </main>
 
