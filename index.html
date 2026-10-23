@@ -9087,6 +9087,123 @@ button:disabled {
 
 /* PART 05-K: RACE MUSIC CONTROLS END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-L: NITRO BOOST SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const nitro = {
+    charge: 100,
+    active: false,
+    lastUpdate: 0
+  };
+
+  let button = null;
+  let meterFill = null;
+  let meterText = null;
+
+  function createNitroControl() {
+    const raceScreen = document.getElementById("raceScreen");
+    if (!raceScreen || document.getElementById("nitroControl")) return;
+
+    const panel = document.createElement("div");
+    panel.id = "nitroControl";
+
+    Object.assign(panel.style, {
+      position: "fixed",
+      right: "14px",
+      bottom: "170px",
+      zIndex: "46",
+      width: "100px",
+      textAlign: "center",
+      color: "#fff",
+      fontSize: "12px",
+      fontWeight: "800"
+    });
+
+    panel.innerHTML =
+      '<div style="height:7px;background:#292036;border-radius:8px;overflow:hidden;margin-bottom:7px">' +
+      '<div id="nitroMeterFill" style="width:100%;height:100%;background:#a855f7"></div></div>' +
+      '<button id="nitroBoostButton" type="button" style="width:100%;padding:13px 6px;border-radius:14px;border:1px solid #c084fc;background:#32105b;color:#fff;font-weight:900">⚡ NITRO</button>' +
+      '<div id="nitroMeterText" style="margin-top:5px">100%</div>';
+
+    raceScreen.appendChild(panel);
+
+    button = document.getElementById("nitroBoostButton");
+    meterFill = document.getElementById("nitroMeterFill");
+    meterText = document.getElementById("nitroMeterText");
+
+    button.addEventListener("pointerdown", activateNitro);
+    button.addEventListener("pointerup", deactivateNitro);
+    button.addEventListener("pointercancel", deactivateNitro);
+    button.addEventListener("pointerleave", deactivateNitro);
+  }
+
+  function activateNitro() {
+    if (nitro.charge <= 0) return;
+    nitro.active = true;
+
+    if (button) button.style.background = "#7e22ce";
+  }
+
+  function deactivateNitro() {
+    nitro.active = false;
+
+    if (button) button.style.background = "#32105b";
+  }
+
+  function updateNitro() {
+    const now = performance.now();
+
+    if (!nitro.lastUpdate) nitro.lastUpdate = now;
+
+    const delta = Math.min((now - nitro.lastUpdate) / 1000, 0.1);
+    nitro.lastUpdate = now;
+
+    if (nitro.active && nitro.charge > 0) {
+      nitro.charge = Math.max(0, nitro.charge - 24 * delta);
+    } else {
+      nitro.charge = Math.min(100, nitro.charge + 8 * delta);
+    }
+
+    if (nitro.charge <= 0) deactivateNitro();
+
+    if (meterFill) {
+      meterFill.style.width = nitro.charge + "%";
+    }
+
+    if (meterText) {
+      meterText.textContent = Math.round(nitro.charge) + "%";
+    }
+
+    requestAnimationFrame(updateNitro);
+  }
+
+  game.nitroSystem = {
+    activate: activateNitro,
+    deactivate: deactivateNitro,
+    isActive: function () {
+      return nitro.active;
+    },
+    getCharge: function () {
+      return nitro.charge;
+    }
+  };
+
+  createNitroControl();
+  requestAnimationFrame(updateNitro);
+
+  console.log("SUPERX: Nitro control initialized.");
+})();
+
+/* PART 05-L: NITRO BOOST SYSTEM END */
+   
    
    
    
