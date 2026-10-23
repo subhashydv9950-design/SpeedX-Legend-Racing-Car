@@ -12931,6 +12931,579 @@ button:disabled {
 
 /* ===== PART 06-H END ===== */
    
+/* ===== SUPERX HOME SCREEN REDESIGN 07-A ===== */
+
+#homeScreen {
+  --neon-blue: #00eaff;
+  --neon-purple: #b14cff;
+  --neon-pink: #ff38bd;
+  --neon-orange: #ff9d27;
+  --neon-green: #9dff38;
+
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 78% 42%, #173e72 0%, transparent 43%),
+    radial-gradient(ellipse at 20% 65%, #41145f 0%, transparent 48%),
+    linear-gradient(135deg, #070a19, #15102c 55%, #050711);
+  font-family: "Trebuchet MS", Arial, sans-serif;
+}
+
+#homeScreen .homeBackground {
+  z-index: -2;
+  opacity: .95;
+}
+
+#homeScreen .backgroundGlow {
+  filter: blur(55px);
+  opacity: .7;
+}
+
+#homeScreen .glowLeft {
+  background: #7a20ff;
+}
+
+#homeScreen .glowRight {
+  background: #007dff;
+}
+
+#homeScreen .roadSurface {
+  opacity: .75;
+}
+
+/* TOP BAR */
+
+#homeScreen .homeTopBar {
+  flex: 0 0 auto;
+  min-height: 64px;
+  padding: 9px 16px;
+  gap: 12px;
+  border-bottom: 1px solid #43dfff55;
+  background: linear-gradient(90deg, #080b1bee, #201039ee, #080b1bee);
+  box-shadow: 0 5px 25px #0008;
+}
+
+#homeScreen .iconButton,
+#homeScreen .quickInfoButton,
+#homeScreen .profileButton {
+  border: 1px solid #43eaff88;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #172b50, #291449);
+  box-shadow: 0 0 14px #00d9ff22, inset 0 0 12px #a54bff18;
+  transition: transform .2s ease, filter .2s ease;
+}
+
+#homeScreen .iconButton:active,
+#homeScreen .quickInfoButton:active,
+#homeScreen .profileButton:active,
+#homeScreen .mainModeButton:active {
+  transform: scale(.96);
+}
+
+#homeScreen .gameBrand {
+  text-shadow: 0 0 18px #a34dff88;
+}
+
+#homeScreen .brandSmall {
+  color: #00eaff;
+  font-weight: 900;
+  letter-spacing: 4px;
+}
+
+#homeScreen .brandLarge {
+  color: white;
+  font-weight: 1000;
+  letter-spacing: 2px;
+  text-shadow: 2px 3px 0 #772bff, 0 0 20px #00d9ff88;
+}
+
+#homeScreen .brandSubtitle {
+  color: #ff69d4;
+  font-weight: 800;
+}
+
+#homeScreen .quickInfoIcon {
+  color: #ffe36e;
+  text-shadow: 0 0 12px #ffb700;
+}
+
+#homeScreen #profileButton {
+  border-color: #ff56d5;
+  box-shadow: 0 0 16px #ff38bd33;
+}
+
+/* HERO TITLE */
+
+#homeScreen .homeHeroText {
+  flex: 0 0 auto;
+  padding: clamp(10px, 2.3vh, 24px) 12px 0;
+}
+
+#homeScreen .heroEyebrow {
+  color: #00eaff;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-shadow: 0 0 12px #00eaff88;
+}
+
+#homeScreen .heroEyebrowLine {
+  background: linear-gradient(90deg, transparent, #00eaff);
+  box-shadow: 0 0 9px #00eaff;
+}
+
+#homeScreen .homeHeroText h1 {
+  font-size: clamp(30px, 6vw, 66px);
+  font-weight: 1000;
+  font-style: italic;
+  letter-spacing: 2px;
+  color: #fff;
+  text-shadow: 0 3px 0 #5425a4, 0 0 28px #8b48ff66;
+}
+
+#homeScreen .homeHeroText h1 span {
+  color: #ff50d0;
+  text-shadow: 0 0 25px #ff38bd99;
+}
+
+#homeScreen .homeHeroText p {
+  color: #9eefff;
+  font-weight: 900;
+}
+
+/* CAR DISPLAY */
+
+#homeScreen #carDisplayArea {
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 95px;
+  max-height: 36vh;
+  margin: 0 auto;
+  border-radius: 25px;
+  background:
+    radial-gradient(ellipse at 50% 80%, #08dfff20, transparent 58%),
+    linear-gradient(180deg, transparent, #070a1833);
+}
+
+#homeScreen #carDisplayArea::after {
+  content: "SUPERX  •  PERFORMANCE SERIES";
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  transform: translateX(-50%);
+  color: #a5edff;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  white-space: nowrap;
+  text-shadow: 0 0 10px #00cfff;
+  pointer-events: none;
+}
+
+#homeScreen .carShadow {
+  background: #050716;
+  box-shadow: 0 0 38px #00bfff66;
+}
+
+#homeScreen #carLoadingLabel {
+  border-color: #00eaff66;
+  color: #9cefff;
+  background: #080d20dd;
+  box-shadow: 0 0 18px #00dfff22;
+}
+
+/* CAR INFORMATION */
+
+#homeScreen .carInfoPanel {
+  flex: 0 0 auto;
+  width: calc(100% - 24px);
+  max-width: 620px;
+  margin: 5px auto 10px;
+  padding: 12px 15px;
+  border: 1px solid #8e5aff88;
+  border-radius: 17px;
+  background: linear-gradient(125deg, #101e38ee, #26113cee);
+  box-shadow: 0 0 25px #762cff25, inset 0 0 20px #00dfff0c;
+  backdrop-filter: blur(12px);
+}
+
+#homeScreen .carCategory {
+  color: #d9a5ff;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+#homeScreen .carStatus {
+  color: #9dffb6;
+}
+
+#homeScreen #homeCarName {
+  color: white;
+  font-weight: 1000;
+  font-style: italic;
+  text-shadow: 0 0 15px #9c4dff55;
+}
+
+#homeScreen #homeCarClass {
+  color: #9edfff;
+}
+
+#homeScreen .carTopSpeed strong {
+  color: #ffe36e;
+  text-shadow: 0 0 15px #ff9d27;
+}
+
+#homeScreen .statTrack {
+  background: #ffffff19;
+}
+
+#homeScreen .statTrack span {
+  background: linear-gradient(90deg, #00d9ff, #9b4dff, #ff45c8);
+  box-shadow: 0 0 10px #a64dff88;
+}
+
+/* MAIN MENU GRID */
+
+#homeScreen .mainGameNavigation {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "garage rewards"
+    "online career";
+  gap: 9px;
+  width: calc(100% - 24px);
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+#homeScreen #garageButton {
+  grid-area: garage;
+}
+
+#homeScreen #rewardsButton {
+  grid-area: rewards;
+}
+
+#homeScreen #onlineButton {
+  grid-area: online;
+}
+
+#homeScreen #careerButton {
+  grid-area: career;
+}
+
+/* COLORFUL BUTTON BASE */
+
+#homeScreen .mainModeButton {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px 34px minmax(0, 1fr) 15px;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 9px 10px;
+  overflow: hidden;
+  border: 1px solid #ffffff35;
+  border-radius: 15px;
+  color: #fff;
+  text-align: left;
+  background: linear-gradient(135deg, #182443, #17112c);
+  box-shadow: 0 5px 16px #0005, inset 0 0 14px #ffffff08;
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+
+#homeScreen .mainModeButton::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, #ffffff12, transparent 45%);
+  pointer-events: none;
+}
+
+#homeScreen .mainModeButton:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px #6c4dff44;
+}
+
+#homeScreen .mainModeButton > span {
+  position: relative;
+  z-index: 1;
+}
+
+#homeScreen .modeNumber {
+  color: #b6b9d6;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+#homeScreen .modeIcon {
+  font-size: 24px;
+  text-align: center;
+  filter: drop-shadow(0 0 7px currentColor);
+}
+
+#homeScreen .modeText {
+  min-width: 0;
+}
+
+#homeScreen .modeText strong {
+  display: block;
+  font-size: clamp(11px, 2.5vw, 14px);
+  font-weight: 1000;
+  font-style: italic;
+  letter-spacing: .7px;
+}
+
+#homeScreen .modeText small {
+  display: block;
+  margin-top: 4px;
+  color: #d4d9f7;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .5px;
+}
+
+#homeScreen .modeArrow {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+/* GARAGE: PURPLE / BLUE */
+
+#homeScreen #garageButton {
+  border-color: #a56bff;
+  background: linear-gradient(115deg, #34206b, #101c3b 80%);
+  box-shadow: 0 0 15px #8c43ff24, inset 0 0 15px #a56bff12;
+}
+
+#homeScreen #garageButton .modeIcon,
+#homeScreen #garageButton .modeArrow {
+  color: #bd8aff;
+}
+
+/* REWARDS: GOLD / PINK */
+
+#homeScreen #rewardsButton {
+  border-color: #ffbd48;
+  background: linear-gradient(115deg, #58321b, #30152f 80%);
+  box-shadow: 0 0 15px #ff9d2722, inset 0 0 15px #ffbd4812;
+}
+
+#homeScreen #rewardsButton .modeIcon,
+#homeScreen #rewardsButton .modeArrow {
+  color: #ffd66d;
+}
+
+/* ONLINE: CYAN */
+
+#homeScreen #onlineButton {
+  border-color: #00eaff;
+  background: linear-gradient(115deg, #0c405a, #111b3c 80%);
+  box-shadow: 0 0 17px #00dfff25, inset 0 0 15px #00eaff12;
+}
+
+#homeScreen #onlineButton .modeIcon,
+#homeScreen #onlineButton .modeArrow {
+  color: #00eaff;
+}
+
+/* PLAY OFFLINE: BOTTOM RIGHT */
+
+#homeScreen #careerButton {
+  border: 1px solid #ff68d7;
+  background: linear-gradient(115deg, #7223bd, #e42e9c 58%, #ff8b32);
+  box-shadow: 0 0 20px #f43dbb44, inset 0 0 18px #ffffff18;
+  animation: superXPlayGlow 2.8s ease-in-out infinite;
+}
+
+#homeScreen #careerButton .modeNumber {
+  color: #ffe1ff;
+}
+
+#homeScreen #careerButton .modeIcon {
+  color: #fff;
+  font-size: 27px;
+}
+
+#homeScreen #careerButton .modeText strong {
+  font-size: 0;
+}
+
+#homeScreen #careerButton .modeText strong::after {
+  content: "PLAY OFFLINE";
+  font-size: clamp(11px, 2.6vw, 14px);
+}
+
+#homeScreen #careerButton .modeText small {
+  color: #fff;
+}
+
+#homeScreen #careerButton .modeArrow {
+  color: #fff;
+  font-size: 20px;
+}
+
+@keyframes superXPlayGlow {
+  0%, 100% {
+    box-shadow: 0 0 13px #f43dbb33, inset 0 0 12px #ffffff10;
+  }
+  50% {
+    box-shadow: 0 0 25px #f43dbb77, 0 0 35px #8b45ff33;
+  }
+}
+
+/* BOTTOM BAR */
+
+#homeScreen .homeBottomBar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: calc(100% - 24px);
+  max-width: 650px;
+  margin: 8px auto 0;
+  padding: 0 0 8px;
+}
+
+#homeScreen .bottomGameVersion {
+  color: #aab8de;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+#homeScreen .versionDot {
+  background: #9dff38;
+  box-shadow: 0 0 10px #9dff38;
+}
+
+#homeScreen .musicToggleButton,
+#homeScreen .dailyRewardShortcut {
+  min-height: 35px;
+  padding: 7px 10px;
+  border: 1px solid #8a66ff77;
+  border-radius: 10px;
+  color: white;
+  background: linear-gradient(120deg, #211844, #10243a);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+/* SMALL PHONE LAYOUT */
+
+@media (max-width: 420px) {
+  #homeScreen .homeTopBar {
+    min-height: 55px;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  #homeScreen .brandLarge {
+    font-size: 14px;
+  }
+
+  #homeScreen .homeHeroText {
+    padding-top: 10px;
+  }
+
+  #homeScreen .heroEyebrow {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+  }
+
+  #homeScreen #carDisplayArea {
+    max-height: 28dvh;
+  }
+
+  #homeScreen .carInfoPanel {
+    padding: 9px 10px;
+    margin-bottom: 8px;
+  }
+
+  #homeScreen .mainGameNavigation {
+    gap: 7px;
+  }
+
+  #homeScreen .mainModeButton {
+    grid-template-columns: 14px 25px minmax(0, 1fr) 10px;
+    gap: 4px;
+    min-height: 56px;
+    padding: 7px 6px;
+    border-radius: 12px;
+  }
+
+  #homeScreen .modeIcon {
+    font-size: 20px;
+  }
+
+  #homeScreen .modeText strong {
+    font-size: 10px;
+    letter-spacing: 0;
+  }
+
+  #homeScreen #careerButton .modeText strong::after {
+    font-size: 10px;
+  }
+
+  #homeScreen .modeText small {
+    font-size: 8px;
+    letter-spacing: 0;
+  }
+
+  #homeScreen .modeNumber {
+    font-size: 8px;
+  }
+
+  #homeScreen .homeBottomBar {
+    margin-top: 6px;
+    padding-bottom: 5px;
+  }
+}
+
+/* SHORT LANDSCAPE / SMALL HEIGHT */
+
+@media (max-height: 620px) {
+  #homeScreen .homeHeroText {
+    padding-top: 5px;
+  }
+
+  #homeScreen .homeHeroText h1 {
+    font-size: clamp(24px, 5vh, 38px);
+  }
+
+  #homeScreen .homeHeroText p {
+    margin-top: 3px;
+  }
+
+  #homeScreen #carDisplayArea {
+    max-height: 25dvh;
+  }
+
+  #homeScreen .carInfoPanel {
+    padding: 7px 10px;
+    margin-top: 2px;
+    margin-bottom: 6px;
+  }
+
+  #homeScreen .mainModeButton {
+    min-height: 48px;
+  }
+
+  #homeScreen .homeBottomBar {
+    margin-top: 5px;
+  }
+}
+
+/* END SUPERX HOME SCREEN REDESIGN 07-A */
+   
    
        
      
