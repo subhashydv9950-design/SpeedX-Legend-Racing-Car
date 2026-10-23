@@ -7980,6 +7980,99 @@ button:disabled {
 
 /* PART 04-Z: DAMAGE HUD INTEGRATION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-A: TRAFFIC COLLISION DETECTION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  let lastCollisionTime = 0;
+
+  function checkTrafficCollisions() {
+    const world = game.threeDWorld;
+    const damage = game.damageSystem;
+    const traffic = game.trafficSystem;
+
+    if (
+      !world ||
+      !world.playerCar ||
+      !world.scene ||
+      !damage ||
+      typeof damage.applyDamage !== "function" ||
+      !traffic
+    ) {
+      return;
+    }
+
+    const player = world.playerCar;
+    const trafficCars = traffic.cars || [];
+
+    if (!trafficCars.length) return;
+
+    const now = Date.now();
+    if (now - lastCollisionTime < 1800) return;
+
+    for (const car of trafficCars) {
+      if (!car || !car.position) continue;
+
+      const dx = player.position.x - car.position.x;
+      const dz = player.position.z - car.position.z;
+
+      const closeEnough =
+        Math.abs(dx) < 1.65 &&
+        Math.abs(dz) < 3.2;
+
+      if (closeEnough) {
+        lastCollisionTime = now;
+
+        damage.applyDamage(12);
+
+        if (typeof game.showMessage === "function") {
+          game.showMessage(
+            "💥",
+            "COLLISION!",
+            "Your car has taken damage. Drive carefully."
+          );
+        }
+
+        break;
+      }
+    }
+  }
+
+  let collisionLoopStarted = false;
+
+  function startCollisionLoop() {
+    if (collisionLoopStarted) return;
+    collisionLoopStarted = true;
+
+    function loop() {
+      checkTrafficCollisions();
+      requestAnimationFrame(loop);
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  startCollisionLoop();
+
+  game.collisionSystem = {
+    check: checkTrafficCollisions,
+    getLastCollisionTime: function () {
+      return lastCollisionTime;
+    }
+  };
+
+  console.log("SUPERX: Collision detection loaded.");
+})();
+
+/* PART 05-A: TRAFFIC COLLISION DETECTION END */
+   
    
    
    
