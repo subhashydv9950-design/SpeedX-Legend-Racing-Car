@@ -8974,6 +8974,119 @@ button:disabled {
 
 /* PART 05-J: REVERSE LIGHT CONNECTION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-K: RACE MUSIC CONTROLS START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  let panel = null;
+
+  function createMusicPanel() {
+    const raceScreen = document.getElementById("raceScreen");
+    if (!raceScreen || panel) return;
+
+    panel = document.createElement("div");
+    panel.id = "raceMusicPanel";
+
+    Object.assign(panel.style, {
+      position: "fixed",
+      left: "12px",
+      top: "110px",
+      zIndex: "45",
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      padding: "8px",
+      borderRadius: "12px",
+      background: "rgba(15, 10, 28, 0.9)",
+      border: "1px solid rgba(168, 85, 247, 0.65)"
+    });
+
+    panel.innerHTML =
+      '<button id="raceMusicToggle" type="button">▶ MUSIC</button>' +
+      '<button id="raceMusicMute" type="button">🔊</button>';
+
+    panel.querySelectorAll("button").forEach(function (button) {
+      Object.assign(button.style, {
+        background: "#241638",
+        color: "#fff",
+        border: "1px solid #7e22ce",
+        borderRadius: "8px",
+        padding: "8px",
+        fontWeight: "700"
+      });
+    });
+
+    raceScreen.appendChild(panel);
+
+    document.getElementById("raceMusicToggle")
+      .addEventListener("click", toggleMusic);
+
+    document.getElementById("raceMusicMute")
+      .addEventListener("click", toggleMute);
+  }
+
+  function toggleMusic() {
+    const music = game.musicPlayer;
+    const button = document.getElementById("raceMusicToggle");
+
+    if (!music || typeof music.toggle !== "function") {
+      if (typeof game.showMessage === "function") {
+        game.showMessage(
+          "♫",
+          "MUSIC PLAYER",
+          "Add a music source in the music player before playback."
+        );
+      }
+      return;
+    }
+
+    music.toggle();
+
+    if (button) {
+      button.textContent = "♫ MUSIC";
+    }
+  }
+
+  function toggleMute() {
+    const music = game.musicPlayer;
+    if (!music) return;
+
+    const audio = music.audio || music.element;
+
+    if (audio && typeof audio.muted === "boolean") {
+      audio.muted = !audio.muted;
+
+      const button = document.getElementById("raceMusicMute");
+      if (button) button.textContent = audio.muted ? "🔇" : "🔊";
+    } else if (typeof game.showMessage === "function") {
+      game.showMessage(
+        "🔊",
+        "AUDIO SETTINGS",
+        "Music mute control is unavailable until the audio player exposes its audio element."
+      );
+    }
+  }
+
+  createMusicPanel();
+
+  game.raceMusicControls = {
+    show: createMusicPanel,
+    playPause: toggleMusic,
+    mute: toggleMute
+  };
+
+  console.log("SUPERX: Race music controls initialized.");
+})();
+
+/* PART 05-K: RACE MUSIC CONTROLS END */
+   
    
    
    
