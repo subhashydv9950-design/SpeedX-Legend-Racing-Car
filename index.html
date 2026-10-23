@@ -5558,6 +5558,234 @@ button:disabled {
 
 /* PART 04-H END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-I: CUSTOMIZATION & UPGRADES
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame =
+    window.SuperXGame || {};
+
+  const tabPanels = {
+    paint: "customPaintPanel",
+    wheels: "customWheelsPanel",
+    body: "customBodyPanel",
+    decals: "customDecalsPanel",
+    upgrades: "customUpgradesPanel"
+  };
+
+  const upgradeLevels = {
+    engine: 0,
+    turbo: 0,
+    transmission: 0,
+    brakes: 0,
+    suspension: 0,
+    tyres: 0
+  };
+
+  game.upgradeLevels = upgradeLevels;
+
+  function get(id) {
+    return document.getElementById(id);
+  }
+
+  function showMessage(title, message) {
+    if (game.showMessage) {
+      game.showMessage(title, message, "🏎️");
+    }
+  }
+
+  function selectTab(tabName) {
+    Object.keys(tabPanels).forEach(function (name) {
+      const panel = get(tabPanels[name]);
+
+      if (panel) panel.hidden = name !== tabName;
+    });
+
+    document.querySelectorAll("[data-custom-tab]")
+      .forEach(function (button) {
+        const selected = button.dataset.customTab === tabName;
+
+        button.classList.toggle("active", selected);
+        button.setAttribute(
+          "aria-pressed",
+          selected ? "true" : "false"
+        );
+      });
+  }
+
+  function applyPaint() {
+    const colorInput = get("carPaintColor");
+    const preview = get("customizationCarPreview");
+    const swatch = get("selectedPaintSwatch");
+    const valueLabel = get("carPaintColorValue");
+
+    const color = colorInput ? colorInput.value : "#7d28e8";
+
+    if (preview) {
+      preview.style.setProperty("--custom-car-color", color);
+      preview.style.backgroundColor = color;
+    }
+
+    if (swatch) swatch.style.backgroundColor = color;
+    if (valueLabel) valueLabel.textContent = color.toUpperCase();
+
+    const world = game.threeDWorld;
+    const car = world && world.playerCar;
+
+    if (car) {
+      car.traverse(function (object) {
+        if (
+          object.isMesh &&
+          object.material &&
+          object.material.color &&
+          object.material.color.getHex() !== 0x171b2a &&
+          object.material.color.getHex() !== 0x101014 &&
+          object.material.color.getHex() !== 0xb9bdca
+        ) {
+          object.material.color.set(color);
+        }
+      });
+    }
+
+    game.customPaint = color;
+    showMessage("PAINT APPLIED", "Your selected paint color was applied.");
+  }
+
+  function applyWheels() {
+    game.customWheels = {
+      style: get("wheelStyleSelect")?.value || "sport",
+      color: get("wheelColorSelect")?.value || "silver",
+      tyres: get("tyreTypeSelect")?.value || "street"
+    };
+
+    showMessage(
+      "WHEEL SETTINGS",
+      "Wheel preferences selected. Compatible 3D wheel models are needed for visual changes."
+    );
+  }
+
+  function applyBodyKit() {
+    game.customBody = {
+      bumper: get("frontBumperSelect")?.value || "standard",
+      spoiler: get("spoilerSelect")?.value || "none",
+      exhaust: get("exhaustSelect")?.value || "standard"
+    };
+
+    showMessage(
+      "BODY KIT SAVED",
+      "Your body kit choices are selected. Visual parts require compatible 3D models."
+    );
+  }
+
+  function applyDecals() {
+    game.customDecals = {
+      design: get("carDecalSelect")?.value || "none",
+      color: get("decalColorSelect")?.value || "white"
+    };
+
+    showMessage(
+      "DECALS SELECTED",
+      "Your decal preferences have been selected."
+    );
+  }
+
+  function buyUpgrade(type) {
+    const car = game.getSelectedCar
+      ? game.getSelectedCar()
+      : null;
+
+    if (!car) {
+      showMessage("NO CAR SELECTED", "Select a car in the Garage first.");
+      return;
+    }
+
+    const level = upgradeLevels[type] || 0;
+    const price = 500 + level * 750;
+
+    if (level >= 5) {
+      showMessage("MAX LEVEL", "This upgrade has reached Level 5.");
+      return;
+    }
+
+    if ((game.coins || 0) < price) {
+      showMessage("NOT ENOUGH COINS", "You need " + price + " coins.");
+      return;
+    }
+
+    game.coins -= price;
+    upgradeLevels[type] = level + 1;
+
+    if (type === "engine" || type === "turbo") {
+      car.speed = Math.min(520, car.speed + 5);
+    }
+
+    if (game.updateCoinDisplays) {
+      game.updateCoinDisplays();
+    }
+
+    if (game.updateSelectedCar) {
+      game.updateSelectedCar();
+    }
+
+    const levelLabel = get(type + "UpgradeLevel");
+
+    if (levelLabel) {
+      levelLabel.textContent = "LEVEL " + upgradeLevels[type];
+    }
+
+    showMessage(
+      "UPGRADE PURCHASED",
+      type.toUpperCase() + " upgraded to Level " +
+        upgradeLevels[type] + "."
+    );
+  }
+
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    if (button.hasAttribute("data-custom-tab")) {
+      selectTab(button.dataset.customTab);
+    }
+
+    if (button.id === "applyPaintButton") applyPaint();
+    if (button.id === "applyWheelsButton") applyWheels();
+    if (button.id === "applyBodyKitButton") applyBodyKit();
+    if (button.id === "applyDecalsButton") applyDecals();
+
+    const upgradeButtons = {
+      engineUpgradeButton: "engine",
+      turboUpgradeButton: "turbo",
+      transmissionUpgradeButton: "transmission",
+      brakesUpgradeButton: "brakes",
+      suspensionUpgradeButton: "suspension",
+      tyresUpgradeButton: "tyres"
+    };
+
+    if (upgradeButtons[button.id]) {
+      buyUpgrade(upgradeButtons[button.id]);
+    }
+  });
+
+  if (get("carPaintColor")) {
+    get("carPaintColor").addEventListener("input", function () {
+      const label = get("carPaintColorValue");
+      if (label) label.textContent = this.value.toUpperCase();
+    });
+  }
+
+  selectTab("paint");
+
+  console.log("SUPERX: Customization system initialized.");
+
+})();
+
+/* PART 04-I END */
+                           
    
        
      
