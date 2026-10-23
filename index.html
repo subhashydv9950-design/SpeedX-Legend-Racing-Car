@@ -10793,7 +10793,568 @@ button:disabled {
 })();
 
 /* PART 05-Z: MAIN SYSTEMS STATUS END */
-     
+    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 06-A: VIRTUAL WHEEL & TILT CONTROLS START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  let wheel = null;
+  let wheelPointer = null;
+  let tiltEnabled = false;
+  let tiltPermissionRequested = false;
+
+  function releaseSteering() {
+    ["steerLeftButton", "steerRightButton"].forEach(function (id) {
+      const button = document.getElementById(id);
+      if (!button) return;
+
+      button.classList.remove("active");
+      button.dispatchEvent(new Event("pointerup", { bubbles: true }));
+      button.dispatchEvent(new Event("pointercancel", { bubbles: true }));
+    });
+  }
+
+  function pressSteering(direction) {
+    const left = document.getElementById("steerLeftButton");
+    const right = document.getElementById("steerRightButton");
+
+    if (!left || !right) return;
+
+    left.classList.toggle("active", direction < -0.12);
+    right.classList.toggle("active", direction > 0.12);
+
+    if (direction < -0.12) {
+      right.dispatchEvent(new Event("pointerup", { bubbles: true }));
+      left.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    } else if (direction > 0.12) {
+      left.dispatchEvent(new Event("pointerup", { bubbles: true }));
+      right.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    } else {
+      releaseSteering();
+    }
+  }
+
+  function createWheel() {
+    if (wheel || !document.getElementById("raceScreen")) return;
+
+    wheel = document.createElement("div");
+    wheel.id = "superxVirtualWheel";
+    wheel.setAttribute("role", "slider");
+    wheel.setAttribute("aria-label", "Virtual steering wheel");
+    wheel.setAttribute("aria-valuemin", "-100");
+    wheel.setAttribute("aria-valuemax", "100");
+    wheel.setAttribute("aria-valuenow", "0");
+
+    Object.assign(wheel.style, {
+      position: "fixed",
+      left: "18px",
+      bottom: "110px",
+      width: "112px",
+      height: "112px",
+      border: "8px solid #a855f7",
+      borderRadius: "50%",
+      background: "radial-gradient(circle, #332044, #100817)",
+      boxShadow: "0 0 18px #7e22ce",
+      zIndex: "55",
+      display: "none",
+      touchAction: "none",
+      userSelect: "none"
+    });
+
+    const center = document.createElement("div");
+    center.textContent = "SX";
+    Object.assign(center.style, {
+      position: "absolute",
+      inset: "34px",
+      display: "grid",
+      placeItems: "center",
+      borderRadius: "50%",
+      background: "#9333ea",
+      color: "#fff",
+      fontWeight: "900",
+      fontSize: "16px",
+      pointerEvents: "none"
+    });
+
+    wheel.appendChild(center);
+    document.getElementById("raceScreen").appendChild(wheel);
+
+    wheel.addEventListener("pointerdown", function (event) {
+      wheelPointer = event.pointerId;
+      wheel.setPointerCapture(event.pointerId);
+      steerWheel(event);
+    });
+
+    wheel.addEventListener("pointermove", function (event) {
+      if (wheelPointer === event.pointerId) steerWheel(event);
+    });
+
+    function endWheel(event) {
+      if (wheelPointer !== event.pointerId) return;
+      wheelPointer = null;
+      wheel.style.transform = "rotate(0deg)";
+      wheel.setAttribute("aria-valuenow", "0");
+      releaseSteering();
+    }
+
+    wheel.addEventListener("pointerup", endWheel);
+    wheel.addEventListener("pointercancel", endWheel);
+  }
+
+  function steerWheel(event) {
+    if (!wheel) return;
+
+    const rect = wheel.getBoundingClientRect();
+    const x = event.clientX - (rect.left + rect.width / 2);
+    const y = event.clientY - (rect.top + rect.height / 2);
+
+    let angle = Math.atan2(y, x) * 180 / Math.PI;
+    angle = Math.max(-135, Math.min(135, angle));
+
+    const direction = Math.max(-1, Math.min(1, angle / 135));
+
+    wheel.style.transform = "rotate(" + angle + "deg)";
+    wheel.setAttribute("aria-valuenow", String(Math.round(direction * 100)));
+    pressSteering(direction);
+  }
+
+  function applySteeringMode(mode) {
+    createWheel();
+
+    const normalized = String(mode || "buttons").toLowerCase();
+    const useWheel = normalized.includes("wheel");
+    const useTilt = normalized.includes("tilt");
+
+    if (wheel) wheel.style.display = useWheel ? "block" : "none";
+
+    if (!useWheel) releaseSteering();
+
+    if (useTilt) {
+      enableTilt();
+    } else {
+      disableTilt();
+    }
+  }
+
+  function handleTilt(event) {
+    if (!tiltEnabled || typeof event.gamma !== "number") return;
+
+    const direction = Math.max(-1, Math.min(1, event.gamma / 25));
+    pressSteering(direction);
+  }
+
+  async function enableTilt() {
+    if (tiltEnabled) return;
+
+    if (
+      typeof DeviceOrientationEvent !== "undefined" &&
+      typeof DeviceOrientationEvent.requestPermission === "function" &&
+      !tiltPermissionRequested
+    ) {
+      tiltPermissionRequested = true;
+
+      try {
+        const permission = await DeviceOrientationEvent.requestPermission();
+        if (permission !== "granted") {
+          showTiltMessage("Motion permission was not granted.");
+          return;
+        }
+      } catch (error) {
+        showTiltMessage("Tilt controls are unavailable in this browser.");
+        return;
+      }
+    }
+
+    if (typeof DeviceOrientationEvent === "undefined") {
+      showTiltMessage("This device or browser does not support tilt controls.");
+      return;
+    }
+
+    tiltEnabled = true;
+    window.addEventListener("deviceorientation", handleTilt);
+  }
+
+  function disableTilt() {
+    tiltEnabled = false;
+    window.removeEventListener("deviceorientation", handleTilt);
+    releaseSteering();
+  }
+
+  function showTiltMessage(message) {
+    if (typeof game.showMessage === "function") {
+      game.showMessage("Tilt Controls", message, "📱");
+    }
+  }
+
+  function initialize() {
+    createWheel();
+
+    const selector = document.getElementById("raceSteeringType");
+
+    if (selector) {
+      selector.addEventListener("change", function () {
+        applySteeringMode(selector.value);
+      });
+
+      applySteeringMode(selector.value);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize, { once: true });
+  } else {
+    initialize();
+  }
+
+  game.advancedSteering = {
+    setMode: applySteeringMode,
+    enableTilt: enableTilt,
+    disableTilt: disableTilt
+  };
+
+  console.log("SUPERX: Advanced steering controls initialized.");
+})();
+
+/* PART 06-A: VIRTUAL WHEEL & TILT CONTROLS END */
+   
+/* ===== PART 06-B: 3D GARAGE PREVIEW START ===== */
+
+(function () {
+  "use strict";
+
+  let previewRenderer = null;
+  let previewScene = null;
+  let previewCamera = null;
+  let previewCar = null;
+  let previewPlatform = null;
+  let previewContainer = null;
+  let previewAnimationStarted = false;
+  let previewAngle = 0;
+  let lastWidth = 0;
+  let lastHeight = 0;
+
+  const palette = [
+    0x8b5cf6, 0xff3030, 0x00c8ff, 0xffb000,
+    0x21e68a, 0xff42b3, 0xffffff, 0x505a70,
+    0x9b59b6, 0x00a8a8
+  ];
+
+  function getGame() {
+    return window.game || null;
+  }
+
+  function getSelectedCar() {
+    const g = getGame();
+    if (!g) return null;
+
+    if (typeof g.getSelectedCar === "function") {
+      const car = g.getSelectedCar();
+      if (car) return car;
+    }
+
+    if (Array.isArray(g.cars)) {
+      return g.cars.find(function (car) {
+        return car.id === g.selectedCarId;
+      }) || g.cars[0] || null;
+    }
+
+    return null;
+  }
+
+  function getCarColor(car) {
+    if (car && typeof car.color === "number") {
+      return car.color;
+    }
+
+    const g = getGame();
+    const index = g && Number.isFinite(Number(g.selectedCarId))
+      ? Math.abs(Number(g.selectedCarId))
+      : 0;
+
+    return palette[index % palette.length];
+  }
+
+  function getCurrentContainer() {
+    const g = getGame();
+    const screen = g && g.currentScreen;
+
+    if (screen === "customization") {
+      const custom = document.getElementById(
+        "customizationCarPreview"
+      );
+      if (custom) return custom;
+    }
+
+    const garage = document.getElementById("garageCarVisual");
+    const custom = document.getElementById(
+      "customizationCarPreview"
+    );
+
+    if (garage && garage.offsetWidth > 0 && garage.offsetHeight > 0) {
+      return garage;
+    }
+
+    if (custom && custom.offsetWidth > 0 && custom.offsetHeight > 0) {
+      return custom;
+    }
+
+    return garage || custom;
+  }
+
+  function setupRenderer() {
+    if (previewRenderer) return true;
+
+    if (!window.THREE) return false;
+
+    try {
+      previewScene = new THREE.Scene();
+      previewScene.background = null;
+
+      previewCamera = new THREE.PerspectiveCamera(
+        35, 1, 0.1, 100
+      );
+      previewCamera.position.set(5, 3.2, 6);
+      previewCamera.lookAt(0, 0.7, 0);
+
+      previewRenderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true
+      });
+
+      previewRenderer.setPixelRatio(
+        Math.min(window.devicePixelRatio || 1, 1.5)
+      );
+
+      previewRenderer.setSize(320, 220);
+      previewRenderer.domElement.style.position = "absolute";
+      previewRenderer.domElement.style.inset = "0";
+      previewRenderer.domElement.style.width = "100%";
+      previewRenderer.domElement.style.height = "100%";
+      previewRenderer.domElement.style.zIndex = "2";
+      previewRenderer.domElement.style.pointerEvents = "none";
+      previewRenderer.domElement.setAttribute(
+        "aria-label", "3D car preview"
+      );
+
+      const ambient = new THREE.AmbientLight(0xffffff, 1.7);
+      previewScene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+      keyLight.position.set(4, 8, 5);
+      previewScene.add(keyLight);
+
+      const rimLight = new THREE.PointLight(0x8b5cf6, 2.2, 20);
+      rimLight.position.set(-4, 3, -3);
+      previewScene.add(rimLight);
+
+      const platformGeometry = new THREE.CylinderGeometry(
+        2.4, 2.4, 0.12, 48
+      );
+      const platformMaterial = new THREE.MeshStandardMaterial({
+        color: 0x21163a,
+        metalness: 0.65,
+        roughness: 0.35
+      });
+
+      previewPlatform = new THREE.Mesh(
+        platformGeometry,
+        platformMaterial
+      );
+      previewPlatform.position.y = -0.12;
+      previewScene.add(previewPlatform);
+
+      const ringGeometry = new THREE.TorusGeometry(2.05, 0.025, 8, 64);
+      const ringMaterial = new THREE.MeshBasicMaterial({
+        color: 0x9b5cff
+      });
+
+      const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = -0.045;
+      previewScene.add(ring);
+
+      return true;
+    } catch (error) {
+      console.warn("3D Garage Preview setup failed:", error);
+      return false;
+    }
+  }
+
+  function updatePreviewCar() {
+    if (!previewScene) return;
+
+    const g = getGame();
+    const world = g && g.threeDWorld;
+
+    if (!world || typeof world.buildCar !== "function") {
+      return;
+    }
+
+    const selected = getSelectedCar();
+    const color = getCarColor(selected);
+
+    if (previewCar) {
+      previewScene.remove(previewCar);
+
+      previewCar.traverse(function (object) {
+        if (object.geometry) object.geometry.dispose();
+
+        if (object.material) {
+          const materials = Array.isArray(object.material)
+            ? object.material
+            : [object.material];
+
+          materials.forEach(function (material) {
+            material.dispose();
+          });
+        }
+      });
+
+      previewCar = null;
+    }
+
+    try {
+      previewCar = world.buildCar(color);
+
+      if (!previewCar) return;
+
+      previewCar.scale.set(1.15, 1.15, 1.15);
+      previewCar.position.set(0, 0.03, 0);
+      previewCar.rotation.y = -0.45;
+
+      previewScene.add(previewCar);
+    } catch (error) {
+      console.warn("Could not update preview car:", error);
+    }
+  }
+
+  function attachPreview() {
+    if (!setupRenderer()) return;
+
+    const container = getCurrentContainer();
+    if (!container) return;
+
+    if (previewContainer !== container) {
+      previewContainer = container;
+
+      const style = window.getComputedStyle(container);
+
+      if (style.position === "static") {
+        container.style.position = "relative";
+      }
+
+      container.style.overflow = "hidden";
+
+      if (previewRenderer.domElement.parentElement !== container) {
+        container.appendChild(previewRenderer.domElement);
+      }
+
+      const placeholder = container.querySelector(
+        ".garageCarPlaceholder"
+      );
+
+      if (placeholder) {
+        placeholder.style.display = "none";
+      }
+
+      lastWidth = 0;
+      lastHeight = 0;
+    }
+
+    const width = Math.max(container.clientWidth, 1);
+    const height = Math.max(container.clientHeight, 1);
+
+    if (width !== lastWidth || height !== lastHeight) {
+      lastWidth = width;
+      lastHeight = height;
+
+      previewRenderer.setSize(width, height, false);
+      previewCamera.aspect = width / height;
+      previewCamera.updateProjectionMatrix();
+    }
+  }
+
+  function animatePreview() {
+    requestAnimationFrame(animatePreview);
+
+    if (!previewRenderer || !previewScene || !previewCamera) {
+      return;
+    }
+
+    attachPreview();
+
+    if (previewCar) {
+      previewAngle += 0.004;
+      previewCar.rotation.y = -0.45 + Math.sin(previewAngle) * 0.18;
+    }
+
+    previewRenderer.render(previewScene, previewCamera);
+  }
+
+  function startPreview() {
+    if (previewAnimationStarted) return;
+    previewAnimationStarted = true;
+
+    if (!setupRenderer()) {
+      previewAnimationStarted = false;
+      return;
+    }
+
+    updatePreviewCar();
+    animatePreview();
+  }
+
+  function connectGarageSelection() {
+    const g = getGame();
+    if (!g || typeof g.updateSelectedCar !== "function") {
+      return false;
+    }
+
+    if (g.updateSelectedCar.__previewConnected) {
+      return true;
+    }
+
+    const originalUpdate = g.updateSelectedCar;
+
+    function wrappedUpdate() {
+      const result = originalUpdate.apply(this, arguments);
+      updatePreviewCar();
+      return result;
+    }
+
+    wrappedUpdate.__previewConnected = true;
+    g.updateSelectedCar = wrappedUpdate;
+
+    return true;
+  }
+
+  function initialize() {
+    connectGarageSelection();
+    startPreview();
+
+    if (!previewRenderer) {
+      setTimeout(initialize, 1000);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize);
+  } else {
+    initialize();
+  }
+
+  /* ===== PART 06-B: 3D GARAGE PREVIEW END ===== */
+})();
+
+/* ===== END OF PART 06-B ===== */
+       
    
        
      
