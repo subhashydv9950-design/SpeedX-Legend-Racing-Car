@@ -5961,6 +5961,164 @@ button:disabled {
 
 /* PART 04-J END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-K: GAME SAVE & PROGRESS SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const SAVE_KEY = "superxLegendRacingSaveV1";
+
+  function createSaveData() {
+    const game = window.SuperXGame || {};
+
+    return {
+      version: 1,
+      coins: Number(game.coins ?? 500),
+      selectedCarId: Number(game.selectedCarId ?? 0),
+      ownedCarIds: Array.isArray(game.cars)
+        ? game.cars.filter(car => car.owned).map(car => car.id)
+        : [],
+      unlockedMaps: game.unlockedMaps || {},
+      settings: {
+        musicVolume: document.getElementById("musicVolume")?.value ?? "50",
+        soundVolume: document.getElementById("soundVolume")?.value ?? "70",
+        graphicsQuality: document.getElementById("graphicsQuality")?.value ?? "medium",
+        transmissionMode: document.getElementById("transmissionMode")?.value ?? "automatic",
+        steeringMode: document.getElementById("steeringMode")?.value ?? "buttons"
+      },
+      savedAt: new Date().toISOString()
+    };
+  }
+
+  function saveGame(showMessage) {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(createSaveData()));
+
+      if (showMessage && window.SuperXGame?.showMessage) {
+        window.SuperXGame.showMessage(
+          "💾",
+          "GAME SAVED",
+          "Your game progress has been saved on this device."
+        );
+      }
+
+      return true;
+    } catch (error) {
+      console.warn("SUPERX save failed:", error);
+
+      if (showMessage && window.SuperXGame?.showMessage) {
+        window.SuperXGame.showMessage(
+          "⚠️",
+          "SAVE UNAVAILABLE",
+          "Your browser may be blocking local storage."
+        );
+      }
+
+      return false;
+    }
+  }
+
+  function loadGame() {
+    try {
+      const rawSave = localStorage.getItem(SAVE_KEY);
+      if (!rawSave) return;
+
+      const data = JSON.parse(rawSave);
+      const game = window.SuperXGame;
+
+      if (!game || !data || data.version !== 1) return;
+
+      if (Number.isFinite(Number(data.coins))) {
+        game.coins = Math.max(0, Number(data.coins));
+      }
+
+      if (Array.isArray(game.cars) && Array.isArray(data.ownedCarIds)) {
+        const ownedIds = new Set(data.ownedCarIds);
+
+        game.cars.forEach(car => {
+          car.owned = ownedIds.has(car.id) || car.id === 0 || car.id === 1;
+        });
+      }
+
+      if (Number.isFinite(Number(data.selectedCarId))) {
+        const selected = game.cars?.find(
+          car => car.id === Number(data.selectedCarId) && car.owned
+        );
+
+        if (selected) {
+          game.selectedCarId = selected.id;
+        }
+      }
+
+      if (data.unlockedMaps && typeof data.unlockedMaps === "object") {
+        game.unlockedMaps = data.unlockedMaps;
+      }
+
+      const settings = data.settings || {};
+
+      [
+        ["musicVolume", settings.musicVolume],
+        ["soundVolume", settings.soundVolume],
+        ["graphicsQuality", settings.graphicsQuality],
+        ["transmissionMode", settings.transmissionMode],
+        ["steeringMode", settings.steeringMode]
+      ].forEach(([id, value]) => {
+        const element = document.getElementById(id);
+
+        if (element && value !== undefined) {
+          element.value = value;
+        }
+      });
+
+      if (typeof game.updateCoinDisplays === "function") {
+        game.updateCoinDisplays();
+      }
+
+      if (typeof game.renderGarage === "function") {
+        game.renderGarage();
+      }
+
+      if (typeof game.renderCareerMaps === "function") {
+        game.renderCareerMaps();
+      }
+    } catch (error) {
+      console.warn("SUPERX save could not be loaded:", error);
+    }
+  }
+
+  window.SuperXGame = window.SuperXGame || {};
+  window.SuperXGame.saveGame = saveGame;
+  window.SuperXGame.loadGame = loadGame;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    loadGame();
+
+    const saveButton = document.getElementById("saveSettingsButton");
+
+    if (saveButton) {
+      saveButton.addEventListener("click", function () {
+        saveGame(false);
+      });
+    }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") {
+        saveGame(false);
+      }
+    });
+
+    window.addEventListener("beforeunload", function () {
+      saveGame(false);
+    });
+  });
+
+})();
+
+/* PART 04-K: GAME SAVE & PROGRESS SYSTEM END */
+     
                            
    
        
