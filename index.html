@@ -7830,6 +7830,55 @@ button:disabled {
 
 /* PART 04-X: RACE COUNTDOWN SYSTEM END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-Y: RACE COUNTDOWN INTEGRATION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  function connectRaceCountdown() {
+    const game = window.SuperXGame;
+
+    if (
+      !game ||
+      typeof game.startRace !== "function" ||
+      !game.raceCountdown ||
+      typeof game.raceCountdown.start !== "function" ||
+      game.__countdownConnected
+    ) {
+      return;
+    }
+
+    const originalStartRace = game.startRace.bind(game);
+
+    game.startRace = function (mode, mapNumber) {
+      if (game.__countdownActive) return;
+
+      game.__countdownActive = true;
+
+      if (typeof game.showScreen === "function") {
+        game.showScreen("raceScreen");
+      }
+
+      game.raceCountdown.start(function () {
+        game.__countdownActive = false;
+        originalStartRace(mode, mapNumber);
+      });
+    };
+
+    game.__countdownConnected = true;
+    console.log("SUPERX: Race countdown connected.");
+  }
+
+  connectRaceCountdown();
+
+  document.addEventListener("DOMContentLoaded", connectRaceCountdown);
+})();
+
+/* PART 04-Y: RACE COUNTDOWN INTEGRATION END */
+   
    
    
    
