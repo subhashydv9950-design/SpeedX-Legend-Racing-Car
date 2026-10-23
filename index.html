@@ -1062,7 +1062,163 @@ button:disabled {
 <!-- JAVASCRIPT WILL BE ADDED IN A LATER PART -->
    
 <script>
+   
 /* SUPERX LEGEND — SCREEN NAVIGATION */
+   
+/* ===== SUPERX 35-CAR GARAGE SYSTEM ===== */
+
+const superxCars = [
+  {name:"STREET PHANTOM",speed:240,price:0,emoji:"🏎️",type:"STARTER"},
+  {name:"NIGHT RIDER",speed:260,price:0,emoji:"🚗",type:"SPORT"},
+  {name:"TURBO FALCON",speed:280,price:1200,emoji:"🏎️",type:"SPORT"},
+  {name:"VORTEX GT",speed:300,price:1800,emoji:"🚘",type:"SPORT"},
+  {name:"SHADOW RS",speed:315,price:2500,emoji:"🏎️",type:"SPORT"},
+  {name:"BLAZE R",speed:330,price:3200,emoji:"🚗",type:"SPORT"},
+  {name:"STORM GT",speed:345,price:4000,emoji:"🏎️",type:"SUPER"},
+  {name:"FURY X",speed:355,price:4800,emoji:"🚘",type:"SUPER"},
+  {name:"NOVA STRIKE",speed:365,price:5600,emoji:"🏎️",type:"SUPER"},
+  {name:"APEX RUSH",speed:375,price:6500,emoji:"🚗",type:"SUPER"},
+  {name:"PHANTOM X",speed:385,price:7500,emoji:"🏎️",type:"SUPER"},
+  {name:"DARK VIPER",speed:395,price:8500,emoji:"🚘",type:"SUPER"},
+  {name:"THUNDER ZX",speed:405,price:9500,emoji:"🏎️",type:"SUPER"},
+  {name:"INFERNO GT",speed:415,price:11000,emoji:"🚗",type:"SUPER"},
+  {name:"RAPTOR S",speed:425,price:12500,emoji:"🏎️",type:"SUPER"},
+  {name:"VELOCITY R",speed:435,price:14000,emoji:"🚘",type:"SUPER"},
+  {name:"TITAN RS",speed:445,price:16000,emoji:"🏎️",type:"SUPER"},
+  {name:"NEBULA GT",speed:455,price:18000,emoji:"🚗",type:"HYPER"},
+  {name:"VENOM X",speed:465,price:20000,emoji:"🏎️",type:"HYPER"},
+  {name:"CYCLONE R",speed:475,price:22500,emoji:"🚘",type:"HYPER"},
+  {name:"OBLIVION",speed:485,price:25000,emoji:"🏎️",type:"HYPER"},
+  {name:"QUANTUM GT",speed:495,price:27500,emoji:"🚗",type:"HYPER"},
+  {name:"NITRO EMPEROR",speed:500,price:30000,emoji:"🏎️",type:"HYPER"},
+  {name:"ZERO GRAVITY",speed:505,price:33000,emoji:"🚘",type:"HYPER"},
+  {name:"ETERNAL V",speed:510,price:36000,emoji:"🏎️",type:"HYPER"},
+  {name:"OMEGA STRIKER",speed:512,price:39000,emoji:"🚗",type:"HYPER"},
+  {name:"APOCALYPSE GT",speed:514,price:42000,emoji:"🏎️",type:"HYPER"},
+  {name:"BLACK COMET",speed:516,price:45000,emoji:"🚘",type:"HYPER"},
+  {name:"GHOST VELOCITY",speed:517,price:48000,emoji:"🏎️",type:"HYPER"},
+  {name:"REDLINE TITAN",speed:518,price:52000,emoji:"🚗",type:"HYPER"},
+  {name:"INFINITY X",speed:519,price:56000,emoji:"🏎️",type:"HYPER"},
+  {name:"SHADOW EMPEROR",speed:519,price:60000,emoji:"🚘",type:"HYPER"},
+  {name:"SUPERNOVA RS",speed:520,price:65000,emoji:"🏎️",type:"HYPER"},
+  {name:"ULTIMATE PHANTOM",speed:520,price:70000,emoji:"🚗",type:"HYPER"},
+  {name:"SUPERX LEGEND",speed:520,price:80000,emoji:"🏎️",type:"LEGEND"}
+];
+
+let superxCoins = 5000;
+let ownedSuperxCars = [0,1];
+let selectedSuperxCar = 0;
+
+function renderGarageCars() {
+  const list = document.getElementById("garageCarList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  superxCars.forEach(function(car, index) {
+    const owned = ownedSuperxCars.includes(index);
+    const card = document.createElement("button");
+
+    card.className = "garage-car-card";
+    if (index === selectedSuperxCar) card.classList.add("selected");
+
+    const status = owned
+      ? (index === selectedSuperxCar ? "SELECTED" : "OWNED")
+      : "🪙 " + car.price.toLocaleString("en-IN");
+
+    card.innerHTML =
+      '<div class="garage-card-emoji">' + car.emoji + '</div>' +
+      '<strong>' + car.name + '</strong>' +
+      '<small>TOP SPEED: ' + car.speed + ' KM/H</small>' +
+      '<small>' + car.type + '</small>' +
+      '<small class="car-card-status">' + status + '</small>';
+
+    card.addEventListener("click", function() {
+      if (owned) {
+        selectedSuperxCar = index;
+        updateGarageFeaturedCar();
+        renderGarageCars();
+        return;
+      }
+
+      if (superxCoins < car.price) {
+        alert("Not enough coins! You need " + car.price + " coins.");
+        return;
+      }
+
+      const buy = confirm(
+        "Buy " + car.name + " for " + car.price + " coins?"
+      );
+
+      if (!buy) return;
+
+      superxCoins -= car.price;
+      ownedSuperxCars.push(index);
+      selectedSuperxCar = index;
+
+      updateGarageFeaturedCar();
+      renderGarageCars();
+      updateSuperxCoinDisplay();
+      alert(car.name + " purchased!");
+    });
+
+    list.appendChild(card);
+  });
+}
+
+function updateGarageFeaturedCar() {
+  const car = superxCars[selectedSuperxCar];
+  if (!car) return;
+
+  const visual = document.getElementById("garageCarVisual");
+  const name = document.getElementById("garageCarName");
+  const speed = document.getElementById("garageCarSpeed");
+  const carClass = document.getElementById("garageCarClass");
+  const price = document.getElementById("garageCarPrice");
+
+  if (visual) visual.textContent = car.emoji;
+  if (name) name.textContent = car.name;
+  if (speed) speed.textContent = car.speed + " KM/H";
+  if (carClass) carClass.textContent = car.type + " CLASS";
+
+  if (price) {
+    price.textContent = ownedSuperxCars.includes(selectedSuperxCar)
+      ? "OWNED VEHICLE"
+      : "PRICE: " + car.price.toLocaleString("en-IN") + " COINS";
+  }
+}
+
+function updateSuperxCoinDisplay() {
+  ["coinBalance", "careerCoins", "garageCoins"].forEach(function(id) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = superxCoins.toLocaleString("en-IN");
+  });
+}
+
+function selectGarageCarAction() {
+  if (!ownedSuperxCars.includes(selectedSuperxCar)) {
+    alert("Purchase this car first!");
+    return;
+  }
+
+  alert(superxCars[selectedSuperxCar].name + " selected!");
+}
+
+function showCustomization(category) {
+  const message = document.getElementById("customizationMessage");
+
+  if (message) {
+    message.textContent =
+      category + ": Upgrade options will be connected in the next stage.";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  renderGarageCars();
+  updateGarageFeaturedCar();
+  updateSuperxCoinDisplay();
+});
+   
 
 /* ===== CAREER MAP SYSTEM ===== */
 
