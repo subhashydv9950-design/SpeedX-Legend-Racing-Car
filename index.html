@@ -1551,6 +1551,183 @@ button:disabled {
 
 /* PART 02-E END */
  
+/* =====================================================
+   PART 02-F: MENU, SETTINGS, PROFILE & DIALOGS
+===================================================== */
+
+#menuOverlay,
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(3, 3, 8, 0.78);
+  backdrop-filter: blur(12px);
+}
+
+.menuPanel,
+.dialogPanel {
+  width: min(100%, 460px);
+  max-height: min(85vh, 760px);
+  overflow-y: auto;
+  padding: clamp(18px, 4vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(168, 85, 247, 0.18), transparent 45%),
+    linear-gradient(145deg, #21172f, #0b0a12);
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.45);
+}
+
+.menuPanel h2,
+.dialogPanel h2 {
+  margin: 0 0 18px;
+  font-size: 23px;
+  font-weight: 950;
+  letter-spacing: 1px;
+}
+
+.menuPanel button:not(.iconButton),
+.dialogPanel button:not(.iconButton) {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.menuPanel .iconButton,
+.dialogPanel .iconButton {
+  float: right;
+}
+
+.dialogOverlay {
+  z-index: 55;
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 17px 0;
+}
+
+.settingsRow label {
+  color: #e5def1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.settingsRow input[type="range"] {
+  width: min(55%, 200px);
+  accent-color: var(--accent);
+}
+
+.settingsRow select {
+  width: min(58%, 220px);
+  min-height: 39px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #171421;
+  color: white;
+}
+
+.profileStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin: 20px 0;
+}
+
+.profileStatCard {
+  padding: 14px 7px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+  text-align: center;
+}
+
+.profileStatCard strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--accent-bright);
+  font-size: 20px;
+}
+
+.profileStatCard span {
+  color: var(--text-muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+#aboutOverlay a {
+  color: var(--accent-bright);
+  overflow-wrap: anywhere;
+}
+
+#gameMessageOverlay {
+  z-index: 90;
+}
+
+#gameMessageOverlay .dialogPanel {
+  text-align: center;
+}
+
+#gameMessageIcon {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 36px;
+}
+
+#gameMessageTitle {
+  margin-bottom: 10px;
+}
+
+#gameMessageText {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 600px) {
+  #menuOverlay,
+  .dialogOverlay {
+    padding: 12px;
+  }
+
+  .menuPanel,
+  .dialogPanel {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .menuPanel h2,
+  .dialogPanel h2 {
+    font-size: 20px;
+  }
+
+  .settingsRow {
+    gap: 9px;
+  }
+
+  .settingsRow label {
+    font-size: 11px;
+  }
+
+  .settingsRow select {
+    width: 55%;
+    font-size: 11px;
+  }
+
+  .profileStatCard strong {
+    font-size: 17px;
+  }
+}
+
+/* PART 02-F END */
+   
    
    
    
