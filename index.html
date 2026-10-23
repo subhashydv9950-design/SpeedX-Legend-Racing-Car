@@ -7125,6 +7125,154 @@ button:disabled {
 
 /* PART 04-R: ACHIEVEMENTS & TROPHIES END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-S: KEYBOARD & FULLSCREEN START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const keys = new Set();
+
+  function isTyping(element) {
+    return element &&
+      (
+        element.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT"].includes(element.tagName)
+      );
+  }
+
+  function setDriveButton(id, pressed) {
+    const button = document.getElementById(id);
+    if (!button) return;
+
+    button.classList.toggle("active", pressed);
+  }
+
+  function handleKeyDown(event) {
+    if (isTyping(event.target)) return;
+
+    const key = event.key.toLowerCase();
+
+    const controlKeys = [
+      "arrowup", "arrowdown", "arrowleft", "arrowright",
+      "w", "a", "s", "d", " "
+    ];
+
+    if (controlKeys.includes(key)) {
+      event.preventDefault();
+    }
+
+    if (keys.has(key)) return;
+    keys.add(key);
+
+    if (game.currentScreen !== "race") return;
+
+    if (key === "arrowup" || key === "w") {
+      setDriveButton("acceleratorButton", true);
+    }
+
+    if (key === "arrowdown" || key === "s") {
+      setDriveButton("brakeButton", true);
+    }
+
+    if (key === "arrowleft" || key === "a") {
+      setDriveButton("steerLeftButton", true);
+    }
+
+    if (key === "arrowright" || key === "d") {
+      setDriveButton("steerRightButton", true);
+    }
+
+    if (key === " ") {
+      setDriveButton("handbrakeButton", true);
+    }
+  }
+
+  function handleKeyUp(event) {
+    const key = event.key.toLowerCase();
+    keys.delete(key);
+
+    if (
+      key === "arrowup" || key === "w"
+    ) setDriveButton("acceleratorButton", false);
+
+    if (
+      key === "arrowdown" || key === "s"
+    ) setDriveButton("brakeButton", false);
+
+    if (
+      key === "arrowleft" || key === "a"
+    ) setDriveButton("steerLeftButton", false);
+
+    if (
+      key === "arrowright" || key === "d"
+    ) setDriveButton("steerRightButton", false);
+
+    if (key === " ") {
+      setDriveButton("handbrakeButton", false);
+    }
+  }
+
+  document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("keyup", handleKeyUp);
+
+  window.addEventListener("blur", function () {
+    keys.clear();
+
+    [
+      "acceleratorButton",
+      "brakeButton",
+      "steerLeftButton",
+      "steerRightButton",
+      "handbrakeButton"
+    ].forEach(id => setDriveButton(id, false));
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      keys.clear();
+
+      [
+        "acceleratorButton",
+        "brakeButton",
+        "steerLeftButton",
+        "steerRightButton",
+        "handbrakeButton"
+      ].forEach(id => setDriveButton(id, false));
+    }
+  });
+
+  game.toggleFullscreen = async function () {
+    try {
+      if (!document.fullscreenElement) {
+        await document.getElementById("gameApp")?.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+
+      return true;
+    } catch (error) {
+      game.showMessage?.(
+        "📱",
+        "FULLSCREEN UNAVAILABLE",
+        "Your browser may not support fullscreen mode here."
+      );
+
+      return false;
+    }
+  };
+
+  console.log("SUPERX PART 04-S loaded.");
+
+})();
+
+/* PART 04-S: KEYBOARD & FULLSCREEN END */
+   
    
    
        
