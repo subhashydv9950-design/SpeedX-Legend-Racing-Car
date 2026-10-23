@@ -12034,8 +12034,14 @@ button:disabled {
 (function () {
   "use strict";
 
-  const game = window.SuperXGame =
-    window.SuperXGame || {};
+  "use strict";
+
+const game = window.game || window.SuperXGame;
+
+if (!game) {
+  console.error("SUPERX: Main game object not found.");
+  return;
+}
 
   const style = document.createElement("style");
   style.id = "superx-repair-styles";
