@@ -10339,6 +10339,461 @@ button:disabled {
 
 /* PART 05-V: PAUSE CONTROL SAFETY END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-W: GRAPHICS QUALITY SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const STORAGE_KEY = "superxGraphicsQualityV1";
+
+  function getRenderer() {
+    const world = game.threeDWorld;
+    return world && world.renderer ? world.renderer : null;
+  }
+
+  function applyGraphicsQuality(level) {
+    const allowed = ["low", "medium", "high"];
+    if (!allowed.includes(level)) level = "medium";
+
+    const renderer = getRenderer();
+
+    if (renderer) {
+      const pixelRatio = Math.min(
+        window.devicePixelRatio || 1,
+        level === "low" ? 1 : level === "medium" ? 1.5 : 2
+      );
+
+      renderer.setPixelRatio(pixelRatio);
+
+      renderer.shadowMap.enabled = level !== "low";
+
+      if (renderer.shadowMap.enabled && window.THREE) {
+        renderer.shadowMap.type = window.THREE.PCFSoftShadowMap;
+      }
+
+      renderer.domElement.style.imageRendering = "auto";
+    }
+
+    document.documentElement.dataset.graphicsQuality = level;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, level);
+    } catch (error) {
+      console.warn("SUPERX: Graphics preference could not be saved.");
+    }
+
+    const selector = document.getElementById("graphicsQuality");
+    if (selector) {
+      const matchingOption = Array.from(selector.options || []).find(
+        function (option) {
+          return option.value.toLowerCase() === level;
+        }
+      );
+
+      if (matchingOption) selector.value = matchingOption.value;
+    }
+
+    return level;
+  }
+
+  function readSavedQuality() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved && ["low", "medium", "high"].includes(saved)) {
+        return saved;
+      }
+    } catch (error) {
+      // Keep the default if browser storage is unavailable.
+    }
+
+    return "medium";
+  }
+
+  function initialize() {
+    const selector = document.getElementById("graphicsQuality");
+
+    if (selector) {
+      selector.addEventListener("change", function () {
+        const value = selector.value.toLowerCase();
+
+        if (["low", "medium", "high"].includes(value)) {
+          applyGraphicsQuality(value);
+        }
+      });
+    }
+
+    applyGraphicsQuality(readSavedQuality());
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize, { once: true });
+  } else {
+    initialize();
+  }
+
+  game.graphicsSystem = {
+    setQuality: applyGraphicsQuality,
+    getQuality: readSavedQuality
+  };
+
+  console.log("SUPERX: Graphics quality system initialized.");
+})();
+
+/* PART 05-W: GRAPHICS QUALITY SYSTEM END */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-X: FULLSCREEN RACING MODE START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  function createFullscreenButton() {
+    const raceScreen = document.getElementById("raceScreen");
+    if (!raceScreen || document.getElementById("superxFullscreenButton")) {
+      return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "superxFullscreenButton";
+    button.type = "button";
+    button.textContent = "⛶ FULLSCREEN";
+    button.setAttribute("aria-label", "Toggle fullscreen");
+
+    Object.assign(button.style, {
+      position: "fixed",
+      top: "112px",
+      right: "12px",
+      zIndex: "48",
+      padding: "9px 11px",
+      borderRadius: "8px",
+      border: "1px solid #a855f7",
+      background: "#160b25",
+      color: "#ffffff",
+      fontSize: "11px",
+      fontWeight: "800",
+      cursor: "pointer"
+    });
+
+    button.addEventListener("click", async function () {
+      try {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else if (raceScreen.requestFullscreen) {
+          await raceScreen.requestFullscreen();
+        } else {
+          if (typeof game.showMessage === "function") {
+            game.showMessage(
+              "Fullscreen unavailable",
+              "Your browser may not support fullscreen mode for this game.",
+              "ℹ️"
+            );
+          }
+          return;
+        }
+      } catch (error) {
+        if (typeof game.showMessage === "function") {
+          game.showMessage(
+            "Fullscreen unavailable",
+            "Your browser did not allow fullscreen mode. Try opening the game directly in your browser.",
+            "ℹ️"
+          );
+        }
+      }
+    });
+
+    raceScreen.appendChild(button);
+
+    document.addEventListener("fullscreenchange", function () {
+      button.textContent = document.fullscreenElement
+        ? "⛶ EXIT FULLSCREEN"
+        : "⛶ FULLSCREEN";
+    });
+  }
+
+  function initialize() {
+    createFullscreenButton();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize, { once: true });
+  } else {
+    initialize();
+  }
+
+  game.fullscreenRacing = {
+    toggle: function () {
+      const button = document.getElementById("superxFullscreenButton");
+      if (button) button.click();
+    }
+  };
+
+  console.log("SUPERX: Fullscreen racing control initialized.");
+})();
+
+/* PART 05-X: FULLSCREEN RACING MODE END */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-Y: CAMERA MODE INDICATOR START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const cameraNames = [
+    "CHASE CAM",
+    "COCKPIT CAM",
+    "HOOD CAM",
+    "FAR CHASE",
+    "ZOOM CAM"
+  ];
+
+  let cameraIndex = 0;
+
+  function createCameraIndicator() {
+    const raceScreen = document.getElementById("raceScreen");
+    if (!raceScreen || document.getElementById("cameraModeIndicator")) return;
+
+    const indicator = document.createElement("div");
+    indicator.id = "cameraModeIndicator";
+    indicator.textContent = cameraNames[cameraIndex];
+
+    Object.assign(indicator.style, {
+      position: "fixed",
+      top: "150px",
+      right: "12px",
+      zIndex: "45",
+      padding: "7px 10px",
+      borderRadius: "7px",
+      background: "rgba(16, 8, 29, 0.88)",
+      border: "1px solid rgba(168, 85, 247, 0.8)",
+      color: "#f1ddff",
+      fontSize: "10px",
+      fontWeight: "800",
+      letterSpacing: "1px",
+      pointerEvents: "none"
+    });
+
+    raceScreen.appendChild(indicator);
+  }
+
+  function updateIndicator() {
+    const indicator = document.getElementById("cameraModeIndicator");
+    if (indicator) {
+      indicator.textContent = cameraNames[cameraIndex];
+    }
+  }
+
+  function initialize() {
+    createCameraIndicator();
+
+    const cameraButton = document.getElementById("changeCameraButton");
+    if (cameraButton) {
+      cameraButton.addEventListener("click", function () {
+        cameraIndex = (cameraIndex + 1) % cameraNames.length;
+        updateIndicator();
+      });
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize, { once: true });
+  } else {
+    initialize();
+  }
+
+  game.cameraIndicator = {
+    setMode: function (index) {
+      if (!Number.isInteger(index)) return;
+      cameraIndex = ((index % cameraNames.length) + cameraNames.length)
+        % cameraNames.length;
+      updateIndicator();
+    },
+    getMode: function () {
+      return cameraNames[cameraIndex];
+    }
+  };
+
+  console.log("SUPERX: Camera mode indicator initialized.");
+})();
+
+/* PART 05-Y: CAMERA MODE INDICATOR END */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-Z: MAIN SYSTEMS STATUS START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  function getSystemStatus() {
+    const world = game.threeDWorld;
+
+    return [
+      {
+        name: "3D World",
+        ready: !!(world && world.scene && world.renderer)
+      },
+      {
+        name: "Garage",
+        ready: Array.isArray(game.cars) && game.cars.length >= 2
+      },
+      {
+        name: "Career Modes",
+        ready: !!game.raceProgression
+      },
+      {
+        name: "Nitro",
+        ready: !!game.nitroSystem
+      },
+      {
+        name: "Weather",
+        ready: !!game.weatherSystem
+      },
+      {
+        name: "Camera",
+        ready: !!game.cameraSystem
+      },
+      {
+        name: "Traffic",
+        ready: !!game.trafficSystem
+      },
+      {
+        name: "Save System",
+        ready: typeof game.saveGame === "function"
+      }
+    ];
+  }
+
+  function showSystemStatus() {
+    const old = document.getElementById("superxSystemStatus");
+    if (old) old.remove();
+
+    const panel = document.createElement("section");
+    panel.id = "superxSystemStatus";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "Game systems status");
+
+    Object.assign(panel.style, {
+      position: "fixed",
+      inset: "10% 6%",
+      zIndex: "9999",
+      overflowY: "auto",
+      padding: "20px",
+      borderRadius: "16px",
+      border: "1px solid #a855f7",
+      background: "#10091c",
+      color: "#ffffff",
+      boxShadow: "0 15px 60px #000",
+      fontFamily: "Arial, sans-serif"
+    });
+
+    const title = document.createElement("h2");
+    title.textContent = "SUPERX SYSTEM STATUS";
+    title.style.color = "#d8a4ff";
+    panel.appendChild(title);
+
+    const note = document.createElement("p");
+    note.textContent =
+      "This checks whether system objects exist. It does not prove every feature works.";
+    note.style.fontSize = "12px";
+    panel.appendChild(note);
+
+    getSystemStatus().forEach(function (item) {
+      const row = document.createElement("div");
+      row.textContent =
+        (item.ready ? "✓  " : "○  ") +
+        item.name +
+        (item.ready ? " — Loaded" : " — Not detected");
+
+      Object.assign(row.style, {
+        padding: "11px 0",
+        borderBottom: "1px solid #332344",
+        color: item.ready ? "#b9f6ca" : "#ffd18a"
+      });
+
+      panel.appendChild(row);
+    });
+
+    const close = document.createElement("button");
+    close.textContent = "CLOSE";
+    Object.assign(close.style, {
+      marginTop: "18px",
+      padding: "12px 20px",
+      border: "0",
+      borderRadius: "8px",
+      background: "#9333ea",
+      color: "white",
+      fontWeight: "bold"
+    });
+    close.addEventListener("click", function () {
+      panel.remove();
+    });
+
+    panel.appendChild(close);
+    document.body.appendChild(panel);
+  }
+
+  function addStatusButton() {
+    if (document.getElementById("superxStatusButton")) return;
+
+    const button = document.createElement("button");
+    button.id = "superxStatusButton";
+    button.textContent = "SYSTEM STATUS";
+
+    Object.assign(button.style, {
+      position: "fixed",
+      left: "12px",
+      bottom: "12px",
+      zIndex: "90",
+      padding: "9px 12px",
+      borderRadius: "8px",
+      border: "1px solid #a855f7",
+      background: "#160b25",
+      color: "#ffffff",
+      fontSize: "10px",
+      fontWeight: "bold"
+    });
+
+    button.addEventListener("click", showSystemStatus);
+    document.body.appendChild(button);
+  }
+
+  function initialize() {
+    addStatusButton();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize, { once: true });
+  } else {
+    initialize();
+  }
+
+  game.getSystemStatus = getSystemStatus;
+
+  console.log("SUPERX: System status panel initialized.");
+})();
+
+/* PART 05-Z: MAIN SYSTEMS STATUS END */
+     
    
        
      
