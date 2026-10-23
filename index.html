@@ -7879,6 +7879,107 @@ button:disabled {
 
 /* PART 04-Y: RACE COUNTDOWN INTEGRATION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-Z: DAMAGE HUD INTEGRATION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game || !game.damageSystem) {
+    console.warn("SUPERX: Damage system not available yet.");
+    return;
+  }
+
+  const damage = game.damageSystem;
+
+  function updateDamageDisplay() {
+    const state = damage.getState();
+    if (!state) return;
+
+    let panel = document.getElementById("carDamagePanel");
+
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "carDamagePanel";
+
+      Object.assign(panel.style, {
+        position: "fixed",
+        top: "100px",
+        right: "12px",
+        zIndex: "40",
+        padding: "8px 12px",
+        borderRadius: "10px",
+        background: "rgba(12, 8, 25, 0.88)",
+        color: "#ffffff",
+        fontSize: "12px",
+        fontWeight: "700",
+        border: "1px solid rgba(180, 90, 255, 0.6)",
+        display: "none"
+      });
+
+      document.getElementById("raceScreen")?.appendChild(panel);
+    }
+
+    const amount = Math.max(
+      0,
+      Math.min(100, Number(state.damage) || 0)
+    );
+
+    panel.innerHTML =
+      "CAR CONDITION<br>" +
+      '<span style="color:#c084fc">' +
+      Math.round(100 - amount) +
+      "%</span>";
+
+    panel.style.display =
+      game.currentScreen === "race" ||
+      !document.getElementById("raceScreen")?.hidden
+        ? "block"
+        : "none";
+
+    panel.style.borderColor =
+      amount >= 70 ? "#ff4545" :
+      amount >= 35 ? "#ffb347" :
+      "#b45aff";
+  }
+
+  const originalApplyDamage = damage.applyDamage;
+
+  if (
+    typeof originalApplyDamage === "function" &&
+    !damage.__hudConnected
+  ) {
+    damage.applyDamage = function () {
+      const result = originalApplyDamage.apply(this, arguments);
+      updateDamageDisplay();
+      return result;
+    };
+
+    damage.__hudConnected = true;
+  }
+
+  const originalReset = damage.reset;
+
+  if (typeof originalReset === "function" && !damage.__resetHudConnected) {
+    damage.reset = function () {
+      const result = originalReset.apply(this, arguments);
+      updateDamageDisplay();
+      return result;
+    };
+
+    damage.__resetHudConnected = true;
+  }
+
+  updateDamageDisplay();
+
+  console.log("SUPERX: Damage HUD integration loaded.");
+})();
+
+/* PART 04-Z: DAMAGE HUD INTEGRATION END */
+   
    
    
    
