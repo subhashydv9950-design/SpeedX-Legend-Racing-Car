@@ -6519,6 +6519,76 @@ button:disabled {
 
 /* PART 04-M: RACE PROGRESSION & MAP UNLOCKS END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-N: RACE & PROGRESSION CONNECTION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+
+  if (!game || !game.raceProgression) {
+    console.warn("SUPERX: Progression system not available.");
+    return;
+  }
+
+  let activeRace = null;
+  let raceRewardProcessed = false;
+
+  const originalStartRace = game.startRace;
+
+  if (typeof originalStartRace === "function") {
+    game.startRace = function (modeId, mapNumber) {
+      activeRace = {
+        modeId: modeId || "village",
+        mapNumber: Math.max(1, Number(mapNumber) || 1)
+      };
+
+      raceRewardProcessed = false;
+
+      return originalStartRace.apply(this, arguments);
+    };
+  }
+
+  const continueButton = document.getElementById(
+    "raceResultContinueButton"
+  );
+
+  if (continueButton) {
+    continueButton.addEventListener("click", function () {
+      if (!activeRace || raceRewardProcessed) return;
+
+      raceRewardProcessed = true;
+
+      const result = game.raceProgression.completeRace(
+        activeRace.modeId,
+        activeRace.mapNumber,
+        true
+      );
+
+      if (typeof game.showMessage === "function") {
+        game.showMessage(
+          "🏁",
+          "RACE PROGRESS SAVED",
+          "Map " + result.map +
+          " completed! Bonus: " + result.bonus +
+          " coins. Map " + result.nextMap +
+          " is now unlocked."
+        );
+      }
+
+      activeRace = null;
+    });
+  }
+
+  console.log("SUPERX PART 04-N loaded.");
+
+})();
+
+/* PART 04-N: RACE & PROGRESSION CONNECTION END */
+   
    
        
      
