@@ -9456,6 +9456,306 @@ button:disabled {
 /* PART 05-O: RACE POSITION COUNTER END */
    
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-P: RACE TIMER & BEST TIME START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const STORAGE_KEY = "superxLegendRaceBestTimesV1";
+
+  let raceStartTime = 0;
+  let timerFrame = 0;
+  let elapsedSeconds = 0;
+  let active = false;
+  let bestTimes = {};
+
+  try {
+    bestTimes = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+  } catch (error) {
+    bestTimes = {};
+  }
+
+  function getRaceKey() {
+    const race = game.activeRace || {};
+    return String(race.mode || "village") + "-" +
+      String(race.mapNumber || 1);
+  }
+
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const centiseconds = Math.floor((seconds % 1) * 100);
+
+    return String(mins).padStart(2, "0") + ":" +
+      String(secs).padStart(2, "0") + "." +
+      String(centiseconds).padStart(2, "0");
+  }
+
+  function createTimer() {
+    const raceScreen = document.getElementById("raceScreen");
+    if (!raceScreen || document.getElementById("raceTimerPanel")) return;
+
+    const panel = document.createElement("div");
+    panel.id = "raceTimerPanel";
+
+    Object.assign(panel.style, {
+      position: "fixed",
+      left: "50%",
+      top: "72px",
+      transform: "translateX(-50%)",
+      zIndex: "44",
+      padding: "8px 14px",
+      borderRadius: "10px",
+      background: "rgba(15,10,28,0.9)",
+      color: "#fff",
+      border: "1px solid rgba(168,85,247,0.7)",
+      textAlign: "center",
+      fontSize: "12px",
+      fontWeight: "800",
+      whiteSpace: "nowrap"
+    });
+
+    panel.innerHTML =
+      '<div id="raceTimerValue">00:00.00</div>' +
+      '<div id="raceBestTimeValue" style="color:#c084fc">BEST: --:--.--</div>';
+
+    raceScreen.appendChild(panel);
+  }
+
+  function updateTimer() {
+    if (!active) return;
+
+    elapsedSeconds = (performance.now() - raceStartTime) / 1000;
+
+    const timerValue = document.getElementById("raceTimerValue");
+    const bestValue = document.getElementById("raceBestTimeValue");
+
+    if (timerValue) timerValue.textContent = formatTime(elapsedSeconds);
+
+    const best = bestTimes[getRaceKey()];
+    if (bestValue) {
+      bestValue.textContent = best
+        ? "BEST: " + formatTime(best)
+        : "BEST: --:--.--";
+    }
+
+    timerFrame = requestAnimationFrame(updateTimer);
+  }
+
+  function startTimer() {
+    cancelAnimationFrame(timerFrame);
+
+    raceStartTime = performance.now();
+    elapsedSeconds = 0;
+    active = true;
+
+    createTimer();
+    updateTimer();
+  }
+
+  function stopTimer() {
+    if (!active) return elapsedSeconds;
+
+    active = false;
+    cancelAnimationFrame(timerFrame);
+
+    const key = getRaceKey();
+    const previous = Number(bestTimes[key]) || Infinity;
+
+    if (elapsedSeconds < previous) {
+      bestTimes[key] = elapsedSeconds;
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(bestTimes));
+      } catch (error) {
+        console.warn("SUPERX: Could not save best race time.", error);
+      }
+    }
+
+    return elapsedSeconds;
+  }
+
+  const originalStartRace = game.startRace;
+
+  if (typeof originalStartRace === "function" && !game.__timerStartWrapped) {
+    game.startRace = function () {
+      const result = originalStartRace.apply(this, arguments);
+      startTimer();
+      return result;
+    };
+
+    game.__timerStartWrapped = true;
+  }
+
+  game.raceTimerSystem = {
+    start: startTimer,
+    stop: stopTimer,
+    getElapsed: function () {
+      return elapsedSeconds;
+    },
+    getBestTimes: function () {
+      return { ...bestTimes };
+    }
+  };
+
+  createTimer();
+
+  console.log("SUPERX: Race timer initialized.");
+})();
+
+/* PART 05-P: RACE TIMER & BEST TIME END */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-Q: WEATHER & ENVIRONMENT START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const weather = {
+    current: "clear",
+    particles: [],
+    group: null
+  };
+
+  function createWeatherSelector() {
+    const raceScreen = document.getElementById("raceScreen");
+    if (!raceScreen || document.getElementById("raceWeatherSelect")) return;
+
+    const select = document.createElement("select");
+    select.id = "raceWeatherSelect";
+    select.setAttribute("aria-label", "Race weather");
+
+    [
+      ["clear", "☀ CLEAR"],
+      ["rain", "🌧 RAIN"],
+      ["fog", "🌫 FOG"]
+    ].forEach(function (item) {
+      const option = document.createElement("option");
+      option.value = item[0];
+      option.textContent = item[1];
+      select.appendChild(option);
+    });
+
+    Object.assign(select.style, {
+      position: "fixed",
+      left: "12px",
+      top: "65px",
+      zIndex: "46",
+      padding: "8px",
+      borderRadius: "8px",
+      background: "#211632",
+      color: "#fff",
+      border: "1px solid #a855f7",
+      maxWidth: "125px"
+    });
+
+    raceScreen.appendChild(select);
+
+    select.addEventListener("change", function () {
+      setWeather(select.value);
+    });
+  }
+
+  function clearWeatherParticles(scene) {
+    if (!weather.group || !scene) return;
+
+    scene.remove(weather.group);
+
+    weather.group.traverse(function (object) {
+      if (object.geometry) object.geometry.dispose();
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach(function (material) {
+            material.dispose();
+          });
+        } else {
+          object.material.dispose();
+        }
+      }
+    });
+
+    weather.group = null;
+  }
+
+  function setWeather(type) {
+    const world = game.threeDWorld;
+    const THREE = window.THREE;
+
+    if (!["clear", "rain", "fog"].includes(type)) return;
+
+    weather.current = type;
+
+    const scene = world && world.scene;
+
+    if (scene && THREE) {
+      clearWeatherParticles(scene);
+
+      if (type === "fog") {
+        scene.fog = new THREE.Fog(0x77778a, 10, 85);
+      } else {
+        scene.fog = new THREE.Fog(0x181326, 35, 180);
+      }
+
+      if (type === "rain") {
+        const group = new THREE.Group();
+        const geometry = new THREE.BufferGeometry();
+        const vertices = [];
+
+        for (let i = 0; i < 250; i++) {
+          vertices.push(
+            (Math.random() - 0.5) * 45,
+            Math.random() * 18,
+            (Math.random() - 0.5) * 100
+          );
+        }
+
+        geometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(vertices, 3)
+        );
+
+        const material = new THREE.PointsMaterial({
+          color: 0x9bbcff,
+          size: 0.12,
+          transparent: true,
+          opacity: 0.75
+        });
+
+        group.add(new THREE.Points(geometry, material));
+        scene.add(group);
+        weather.group = group;
+      }
+    }
+
+    const select = document.getElementById("raceWeatherSelect");
+    if (select) select.value = type;
+  }
+
+  game.weatherSystem = {
+    set: setWeather,
+    get: function () {
+      return weather.current;
+    }
+  };
+
+  createWeatherSelector();
+
+  console.log("SUPERX: Weather system initialized.");
+})();
+
+/* PART 05-Q: WEATHER & ENVIRONMENT END */
+   
    
    
        
