@@ -8929,6 +8929,51 @@ button:disabled {
 
 /* PART 05-I: MANUAL GEAR SYSTEM END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-J: REVERSE LIGHT CONNECTION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game || !game.manualGearSystem) return;
+
+  const gears = game.manualGearSystem;
+
+  if (gears.__reverseLightsConnected) return;
+
+  const originalSetReverse = gears.setReverse.bind(gears);
+
+  gears.setReverse = function (enabled) {
+    originalSetReverse(enabled);
+
+    const state = gears.getState();
+    const reversing = Boolean(state && state.reverse);
+
+    if (
+      game.vehicleLights &&
+      typeof game.vehicleLights.setReverse === "function"
+    ) {
+      game.vehicleLights.setReverse(reversing);
+    }
+
+    const button = document.getElementById("reverseGearButton");
+
+    if (button) {
+      button.classList.toggle("active", reversing);
+      button.setAttribute("aria-pressed", String(reversing));
+    }
+  };
+
+  gears.__reverseLightsConnected = true;
+
+  console.log("SUPERX: Reverse lights connected to manual gear.");
+})();
+
+/* PART 05-J: REVERSE LIGHT CONNECTION END */
+   
    
    
    
