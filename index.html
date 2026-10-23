@@ -4983,109 +4983,69 @@ button:disabled {
 
   game.unlockedMaps = unlockedMaps;
 
-  function renderMaps(mode) {
-    const grid = document.getElementById("careerMapGrid");
-    if (!grid) return;
+function renderMaps(modeId) {
+  const grid = document.getElementById("careerMapGrid");
+  if (!grid) return;
 
-    grid.replaceChildren();
+  // Every mode starts with only Map 01 unlocked.
+  unlockedMaps[modeId] = 1;
+  grid.replaceChildren();
 
-    for (let number = 1; number <= 100; number++) {
-      const unlocked = number <= unlockedMaps[mode.id];
+  for (let number = 1; number <= 100; number++) {
+    const unlocked = number === 1;
+    const button = document.createElement("button");
 
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "careerMapCard";
-      button.disabled = !unlocked;
-      button.style.cssText =
-        "padding:12px;border:1px solid #45305f;" +
-        "border-radius:10px;background:#171020;color:white;" +
-        "min-height:66px;";
+    button.type = "button";
+    button.className = "careerMapCard mapCard";
+    button.disabled = !unlocked;
+    button.setAttribute("aria-pressed", "false");
 
-      button.textContent = unlocked
-        ? "MAP " + number
-        : "🔒 MAP " + number;
+    button.style.cssText =
+      "padding:12px;border:1px solid #45305f;" +
+      "border-radius:10px;background:#171020;color:white;" +
+      "min-height:66px;font-weight:800;";
 
-      if (unlocked) {
-        button.addEventListener("click", function () {
-          game.selectedModeId = mode;
-          game.selectedMapNumber = number;
+    button.textContent = unlocked
+      ? "🔓 MAP 01 · FREE"
+      : "🔒 MAP " + String(number).padStart(2, "0");
 
-          grid.querySelectorAll("button").forEach(function (item) {
-            item.style.borderColor = "";
-          });
+    if (unlocked) {
+      button.style.borderColor = "#c084fc";
+      button.style.background =
+        "linear-gradient(145deg,#49216b,#171020)";
+      button.setAttribute("aria-pressed", "true");
 
-          button.style.borderColor = "#c084fc";
+      button.addEventListener("click", function () {
+        game.selectedModeId = modeId;
+        game.selectedMapNumber = 1;
 
-          const startButton =
-            document.getElementById("startCareerRaceButton");
-
-          if (startButton) startButton.disabled = false;
+        grid.querySelectorAll("button").forEach(function (item) {
+          item.setAttribute("aria-pressed", "false");
+          item.style.borderColor = "#45305f";
         });
-      }
 
-      grid.appendChild(button);
+        button.setAttribute("aria-pressed", "true");
+        button.style.borderColor = "#c084fc";
+
+        const startButton =
+          document.getElementById("startCareerRaceButton");
+
+        if (startButton) startButton.disabled = false;
+      });
     }
+
+    grid.appendChild(button);
   }
 
-  function selectMode(modeId) {
-    const mode = modes.find(function (item) {
-      return item.id === modeId;
-    });
+  game.selectedModeId = modeId;
+  game.selectedMapNumber = 1;
 
-    if (!mode) return;
+  const startButton =
+    document.getElementById("startCareerRaceButton");
 
-    game.selectedModeId = mode.id;
-    game.selectedMapNumber = 1;
-
-    const title =
-      document.getElementById("selectedCareerModeTitle");
-
-    const description =
-      document.getElementById("selectedCareerModeDescription");
-
-    if (title) title.textContent = mode.name;
-    if (description) description.textContent = mode.description;
-
-    const panel = document.getElementById("careerMapPanel");
-    if (panel) panel.hidden = false;
-
-    const startButton =
-      document.getElementById("startCareerRaceButton");
-
-    if (startButton) startButton.disabled = false;
-
-    renderMaps(mode.id);
-  }
-
-  document.addEventListener("click", function (event) {
-    const button = event.target.closest("button");
-    if (!button) return;
-
-    if (button.hasAttribute("data-career-mode")) {
-      selectMode(button.dataset.careerMode);
-    }
-
-    if (button.id === "startCareerRaceButton") {
-      if (game.startRace) {
-        game.startRace(
-          game.selectedModeId,
-          game.selectedMapNumber
-        );
-      } else if (game.showMessage) {
-        game.showMessage(
-          "RACE SYSTEM",
-          "The racing engine is coming in the next parts.",
-          "🏁"
-        );
-      }
-    }
-  });
-
-  game.selectRaceMode = selectMode;
-
-  console.log("SUPERX: Career modes and map selection initialized.");
-
-})();
+  if (startButton) startButton.disabled = false;
+}
+ 
 
 /* PART 04-E END */
    
