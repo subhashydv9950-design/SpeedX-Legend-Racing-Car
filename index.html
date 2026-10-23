@@ -826,6 +826,63 @@ button:disabled {
         <small>Race against AI · 100 maps</small>
       </button>
     </div>
+     
+<!-- SUPERX GARAGE SCREEN -->
+<section id="garageScreen" class="screen">
+
+  <header class="home-header">
+    <button class="btn" onclick="openSection('homeScreen')">← HOME</button>
+    <div class="coin-pill">🪙 <span id="garageCoins">5000</span></div>
+  </header>
+
+  <div style="padding:18px 15px 30px">
+    <p class="brand-small">YOUR PERSONAL COLLECTION</p>
+    <h1 class="section-title">THE <span class="accent">GARAGE</span></h1>
+    <p class="muted" style="margin-top:8px">35 cars. Build your own legend.</p>
+
+    <div class="garage-feature panel">
+      <div class="garage-car-visual" id="garageCarVisual">🏎️</div>
+      <div class="garage-car-info">
+        <span class="car-tag" id="garageCarClass">STARTER CLASS</span>
+        <h2 id="garageCarName">STREET PHANTOM</h2>
+        <p class="muted" style="margin-top:7px">
+          TOP SPEED <strong id="garageCarSpeed" class="gold">240 KM/H</strong>
+        </p>
+        <p id="garageCarPrice" class="muted" style="margin-top:5px">FREE STARTER CAR</p>
+        <button class="btn btn-primary btn-block" style="margin-top:14px"
+          onclick="selectGarageCarAction()">SELECT CAR</button>
+      </div>
+    </div>
+
+    <h2 style="font-size:17px;margin:25px 0 12px">CAR COLLECTION <span class="muted">35</span></h2>
+    <div id="garageCarList" class="garage-car-list"></div>
+
+    <h2 style="font-size:17px;margin:28px 0 12px">CUSTOMIZE YOUR CAR</h2>
+    <div class="custom-panel panel">
+      <p class="muted" style="font-size:12px;margin-bottom:13px">
+        Choose a category to explore upgrades.
+      </p>
+
+      <div class="custom-options">
+        <button class="custom-option" onclick="showCustomization('Paint & Colors')">🎨<span>PAINT & COLORS</span></button>
+        <button class="custom-option" onclick="showCustomization('Rims & Tyres')">🛞<span>RIMS & TYRES</span></button>
+        <button class="custom-option" onclick="showCustomization('Body Kits')">🚘<span>BODY KITS</span></button>
+        <button class="custom-option" onclick="showCustomization('Spoilers')">🏁<span>SPOILERS</span></button>
+        <button class="custom-option" onclick="showCustomization('Engine & Turbo')">⚙️<span>ENGINE & TURBO</span></button>
+        <button class="custom-option" onclick="showCustomization('Transmission')">🔧<span>GEARBOX</span></button>
+        <button class="custom-option" onclick="showCustomization('Brakes')">🛑<span>BRAKES</span></button>
+        <button class="custom-option" onclick="showCustomization('Suspension & Handling')">🔩<span>SUSPENSION</span></button>
+        <button class="custom-option" onclick="showCustomization('Lights & Neon')">💡<span>LIGHTS & NEON</span></button>
+        <button class="custom-option" onclick="showCustomization('Exhaust')">💨<span>EXHAUST</span></button>
+      </div>
+
+      <p id="customizationMessage" class="muted" style="font-size:12px;margin-top:15px">
+        Select a category to view its options.
+      </p>
+    </div>
+  </div>
+</section>
+     
   </div>
 </section>
 
