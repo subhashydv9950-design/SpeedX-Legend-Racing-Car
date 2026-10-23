@@ -43,6 +43,276 @@
        PART 02-A: CSS WILL BE ADDED IN THE NEXT PART
        Keep all CSS inside this style section.
     ===================================================== */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 02-A: MAIN THEME & RESPONSIVE LAYOUT
+===================================================== */
+
+:root {
+  color-scheme: dark;
+  --bg-main: #08080d;
+  --bg-panel: rgba(19, 18, 30, 0.94);
+  --bg-card: rgba(29, 27, 43, 0.88);
+  --accent: #a855f7;
+  --accent-bright: #d8b4fe;
+  --accent-dark: #6d28d9;
+  --text-main: #ffffff;
+  --text-muted: #a6a2b5;
+  --border: rgba(216, 180, 254, 0.2);
+  --danger: #ff4d67;
+  --success: #54e6a5;
+  --header-height: 68px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+#gameApp {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 50% 35%, #211332 0%, transparent 55%),
+    var(--bg-main);
+}
+
+#gameScene {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+#threeDContainer,
+#raceWorld {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#gameCanvas,
+#raceCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.gameScreen,
+#homeScreen {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+#homeScreen {
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 10, 0.2), rgba(5, 5, 10, 0.82)),
+    radial-gradient(ellipse at 50% 48%, #32194d 0%, #100d19 48%, #08080d 100%);
+}
+
+.homeBackground {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(142, 45, 220, 0.25), transparent 48%),
+    linear-gradient(180deg, #11101b 0%, #171022 50%, #07070b 100%);
+}
+
+.homeGlow {
+  position: absolute;
+  width: 70vw;
+  height: 40vw;
+  left: 15%;
+  top: 30%;
+  border-radius: 50%;
+  background: rgba(146, 51, 234, 0.17);
+  filter: blur(65px);
+}
+
+.homeRoad {
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  bottom: -30%;
+  height: 52%;
+  transform: perspective(300px) rotateX(48deg);
+  transform-origin: top center;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 18%,
+      rgba(198, 142, 255, 0.16) 18.2% 18.5%,
+      transparent 18.7% 36%
+    ),
+    linear-gradient(180deg, #21172e, #07070a);
+  border-top: 1px solid rgba(200, 155, 255, 0.35);
+}
+
+.homeTopBar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--header-height);
+  padding: 12px clamp(12px, 3vw, 36px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(8, 8, 13, 0.58);
+  backdrop-filter: blur(16px);
+}
+
+.homeBrand {
+  min-width: 0;
+  font-size: clamp(11px, 1.8vw, 17px);
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.iconButton,
+.homeIconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(25, 22, 37, 0.86);
+  color: var(--text-main);
+}
+
+.homeIconButton:hover,
+.iconButton:hover {
+  border-color: var(--accent);
+  background: rgba(109, 40, 217, 0.25);
+}
+
+.homeHeroText {
+  position: relative;
+  z-index: 2;
+  padding: 28px 18px 0;
+  text-align: center;
+}
+
+.homeHeroText h1 {
+  margin: 0;
+  font-size: clamp(27px, 6vw, 68px);
+  font-weight: 950;
+  letter-spacing: clamp(1px, 0.7vw, 7px);
+  line-height: 1.05;
+  text-shadow: 0 0 28px rgba(168, 85, 247, 0.3);
+}
+
+.homeHeroText p {
+  margin: 12px 0 0;
+  color: var(--text-muted);
+  font-size: clamp(11px, 2vw, 15px);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --header-height: 58px;
+  }
+
+  .homeTopBar {
+    gap: 6px;
+    padding: 9px 10px;
+  }
+
+  .homeBrand {
+    max-width: 42%;
+    font-size: 10px;
+    letter-spacing: 0.7px;
+  }
+
+  .homeIconButton,
+  .iconButton {
+    min-width: 38px;
+    min-height: 38px;
+    padding: 8px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .homeHeroText {
+    padding-top: 22px;
+  }
+
+  .homeHeroText h1 {
+    letter-spacing: 1px;
+  }
+
+  .homeHeroText p {
+    letter-spacing: 1px;
+  }
+}
+
+/* PART 02-A END */
+ 
 
   </style>
 
