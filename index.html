@@ -1202,6 +1202,323 @@
      
 
       <!-- ===== PART 01-A.7: OTHER GAME SCREENS END ===== -->
+     
+<!-- =====================================================
+ SUPERX LEGEND RACING CAR GAME
+ PART 01-E: RACE SCREEN & DRIVING HUD STRUCTURE
+ ORDER: AFTER PART 01-D
+===================================================== -->
+
+
+<!-- ===== PART 01-E.1: RACE SCREEN START ===== -->
+
+<section
+  id="raceScreen"
+  class="gameScreen raceScreen"
+  aria-label="Active Race"
+  hidden
+>
+
+  <!-- FULL-SCREEN RACING WORLD -->
+
+  <div id="raceWorld" class="raceWorld">
+    <canvas id="raceCanvas"></canvas>
+
+    <div class="raceWorldLoading" id="raceWorldLoading">
+      <span class="loadingDot"></span>
+      <span>PREPARING RACE</span>
+    </div>
+  </div>
+
+
+  <!-- ===== PART 01-E.2: RACE TOP HUD START ===== -->
+
+  <div class="raceTopHUD">
+
+    <button
+      type="button"
+      id="pauseRaceButton"
+      class="raceHUDButton pauseRaceButton"
+      aria-label="Pause race"
+    >
+      <span>Ⅱ</span>
+    </button>
+
+    <div class="raceProgressPanel">
+      <span class="raceHUDLabel">RACE PROGRESS</span>
+
+      <div class="raceProgressTrack">
+        <span id="raceProgressFill"></span>
+      </div>
+
+      <div class="raceProgressValues">
+        <span id="raceDistanceCovered">0.0 KM</span>
+        <span id="raceDistanceRemaining">5.0 KM LEFT</span>
+      </div>
+    </div>
+
+    <div class="racePositionPanel">
+      <strong id="racePlayerPosition">1<span>ST</span></strong>
+      <small>POSITION</small>
+    </div>
+
+  </div>
+
+  <!-- ===== PART 01-E.2: RACE TOP HUD END ===== -->
+
+
+  <!-- ===== PART 01-E.3: MINIMAP START ===== -->
+
+  <div id="raceMinimapPanel" class="raceMinimapPanel">
+
+    <div class="minimapHeader">
+      <span>TRACK MAP</span>
+      <span class="minimapLiveDot"></span>
+    </div>
+
+    <canvas
+      id="raceMinimapCanvas"
+      aria-label="Race minimap"
+    ></canvas>
+
+  </div>
+
+  <!-- ===== PART 01-E.3: MINIMAP END ===== -->
+
+
+  <!-- ===== PART 01-E.4: SPEEDOMETER START ===== -->
+
+  <div class="raceSpeedometerPanel">
+
+    <div class="speedometerGear">
+      <span>GEAR</span>
+      <strong id="raceCurrentGear">1</strong>
+    </div>
+
+    <div class="speedometerMain">
+      <strong id="raceCurrentSpeed">000</strong>
+      <span>KM/H</span>
+    </div>
+
+    <div class="speedometerRPM">
+      <div class="rpmLabelRow">
+        <span>RPM</span>
+        <span id="raceCurrentRPM">1000</span>
+      </div>
+
+      <div class="rpmTrack">
+        <span id="raceRPMFill"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== PART 01-E.4: SPEEDOMETER END ===== -->
+
+
+  <!-- ===== PART 01-E.5: CAMERA & VEHICLE ACTIONS START ===== -->
+
+  <div class="raceUtilityControls">
+
+    <button type="button" id="changeCameraButton" class="raceUtilityButton">
+      <span>◉</span>
+      <small>CAMERA</small>
+    </button>
+
+    <button type="button" id="hornButton" class="raceUtilityButton">
+      <span>♬</span>
+      <small>HORN</small>
+    </button>
+
+    <button type="button" id="headlightButton" class="raceUtilityButton">
+      <span>☼</span>
+      <small>LIGHTS</small>
+    </button>
+
+    <button type="button" id="leftIndicatorButton" class="raceUtilityButton">
+      <span>◀</span>
+      <small>LEFT</small>
+    </button>
+
+    <button type="button" id="rightIndicatorButton" class="raceUtilityButton">
+      <span>▶</span>
+      <small>RIGHT</small>
+    </button>
+
+  </div>
+
+  <!-- ===== PART 01-E.5: CAMERA & VEHICLE ACTIONS END ===== -->
+
+
+  <!-- ===== PART 01-E.6: STEERING CONTROLS START ===== -->
+
+  <div id="raceDrivingControls" class="raceDrivingControls">
+
+    <div id="raceSteeringControls" class="raceSteeringControls">
+
+      <button
+        type="button"
+        id="steerLeftButton"
+        class="driveControlButton steerButton"
+        aria-label="Steer left"
+      >◀</button>
+
+      <button
+        type="button"
+        id="steerRightButton"
+        class="driveControlButton steerButton"
+        aria-label="Steer right"
+      >▶</button>
+
+    </div>
+
+
+    <div class="racePedalControls">
+
+      <button
+        type="button"
+        id="brakeButton"
+        class="driveControlButton brakeControlButton"
+        aria-label="Brake"
+      >
+        <span>■</span>
+        <strong>BRAKE</strong>
+      </button>
+
+      <button
+        type="button"
+        id="acceleratorButton"
+        class="driveControlButton acceleratorControlButton"
+        aria-label="Accelerator"
+      >
+        <span>▲</span>
+        <strong>ACCEL</strong>
+      </button>
+
+      <button
+        type="button"
+        id="handbrakeButton"
+        class="driveControlButton handbrakeControlButton"
+        aria-label="Handbrake"
+      >
+        <span>H</span>
+        <strong>HANDBRAKE</strong>
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- ===== PART 01-E.6: STEERING CONTROLS END ===== -->
+
+
+  <!-- ===== PART 01-E.7: PAUSE MENU START ===== -->
+
+  <div id="racePauseOverlay" class="dialogOverlay" hidden>
+
+    <section class="dialogPanel racePausePanel">
+
+      <div class="dialogHeader">
+        <div>
+          <span class="panelEyebrow">TAKE A BREATHER</span>
+          <h2>RACE PAUSED</h2>
+        </div>
+
+        <span class="pauseIcon">Ⅱ</span>
+      </div>
+
+      <button
+        type="button"
+        id="resumeRaceButton"
+        class="primaryActionButton"
+      >
+        RESUME RACE
+      </button>
+
+      <button
+        type="button"
+        id="restartRaceButton"
+        class="secondaryActionButton"
+      >
+        RESTART RACE
+      </button>
+
+      <button
+        type="button"
+        id="raceCameraSettingsButton"
+        class="secondaryActionButton"
+      >
+        CAMERA SETTINGS
+      </button>
+
+      <button
+        type="button"
+        id="raceControlSettingsButton"
+        class="secondaryActionButton"
+      >
+        CONTROL SETTINGS
+      </button>
+
+      <button
+        type="button"
+        id="quitRaceButton"
+        class="dangerActionButton"
+      >
+        QUIT RACE
+      </button>
+
+    </section>
+
+  </div>
+
+  <!-- ===== PART 01-E.7: PAUSE MENU END ===== -->
+
+
+  <!-- ===== PART 01-E.8: RACE RESULT PANEL START ===== -->
+
+  <div id="raceResultOverlay" class="dialogOverlay" hidden>
+
+    <section class="dialogPanel raceResultPanel">
+
+      <span class="panelEyebrow">RACE COMPLETE</span>
+
+      <h2 id="raceResultTitle">RACE FINISHED</h2>
+
+      <div class="raceResultPosition">
+        <span>YOUR POSITION</span>
+        <strong id="raceResultPosition">1ST</strong>
+      </div>
+
+      <div class="raceResultReward">
+        <span>REWARD EARNED</span>
+        <strong>+<span id="raceResultCoins">100</span> ◆</strong>
+      </div>
+
+      <button
+        type="button"
+        id="raceResultContinueButton"
+        class="primaryActionButton"
+      >
+        CONTINUE
+      </button>
+
+    </section>
+
+  </div>
+
+  <!-- ===== PART 01-E.8: RACE RESULT PANEL END ===== -->
+
+
+</section>
+
+<!-- ===== PART 01-E.1: RACE SCREEN END ===== -->
+
+
+<!-- =====================================================
+ PART 01-E: RACE SCREEN & DRIVING HUD STRUCTURE END
+ NEXT PART: PART 01-F
+===================================================== -->
+     
 
     </main>
 
