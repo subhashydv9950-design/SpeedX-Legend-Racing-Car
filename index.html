@@ -5288,6 +5288,9 @@ button:disabled {
     drive.braking = false;
 
     drive.paused = true;
+   if (game.recordRaceFinished) {
+  game.recordRaceFinished(drive.distance);
+   }
 
     setText("raceResultTitle", "RACE COMPLETE!");
     setText("raceResultPosition", "FINISH");
@@ -5391,6 +5394,170 @@ button:disabled {
 })();
 
 /* PART 04-G END */
+   
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-H: REWARDS & DAILY TASKS
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame =
+    window.SuperXGame || {};
+
+  const tasks = [
+    {
+      id: "first-race",
+      title: "Complete Your First Race",
+      description: "Finish one race.",
+      target: 1,
+      progress: 0,
+      reward: 100,
+      claimed: false
+    },
+    {
+      id: "road-explorer",
+      title: "Road Explorer",
+      description: "Travel 1,000 metres.",
+      target: 1000,
+      progress: 0,
+      reward: 150,
+      claimed: false
+    },
+    {
+      id: "race-winner",
+      title: "Racing Champion",
+      description: "Complete three races.",
+      target: 3,
+      progress: 0,
+      reward: 250,
+      claimed: false
+    }
+  ];
+
+  game.dailyTasks = tasks;
+  game.completedRaces = 0;
+
+  function renderTasks() {
+    const list = document.getElementById("dailyTaskList");
+    if (!list) return;
+
+    list.replaceChildren();
+
+    tasks.forEach(function (task) {
+      const card = document.createElement("div");
+      card.className = "dailyTaskCard";
+      card.style.cssText =
+        "display:flex;gap:12px;align-items:center;" +
+        "padding:14px;margin:10px 0;border-radius:12px;" +
+        "background:#171020;border:1px solid #45305f;color:white;";
+
+      const details = document.createElement("div");
+      details.style.flex = "1";
+
+      const title = document.createElement("strong");
+      title.textContent = task.title;
+
+      const description = document.createElement("p");
+      description.textContent = task.description;
+      description.style.margin = "6px 0";
+
+      const progress = document.createElement("p");
+      progress.textContent =
+        "Progress: " + Math.min(task.progress, task.target) +
+        " / " + task.target;
+      progress.style.fontSize = "12px";
+
+      const reward = document.createElement("p");
+      reward.textContent = "🪙 " + task.reward;
+      reward.style.color = "#c084fc";
+
+      details.append(title, description, progress, reward);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = task.claimed
+        ? "CLAIMED"
+        : task.progress >= task.target
+          ? "CLAIM"
+          : "IN PROGRESS";
+
+      button.disabled =
+        task.claimed || task.progress < task.target;
+
+      button.addEventListener("click", function () {
+        if (task.claimed || task.progress < task.target) return;
+
+        task.claimed = true;
+        game.coins = (game.coins || 0) + task.reward;
+
+        if (game.updateCoinDisplays) {
+          game.updateCoinDisplays();
+        }
+
+        renderTasks();
+
+        if (game.showMessage) {
+          game.showMessage(
+            "REWARD CLAIMED!",
+            task.reward + " coins added to your balance.",
+            "🪙"
+          );
+        }
+      });
+
+      card.append(details, button);
+      list.appendChild(card);
+    });
+
+    const completed = tasks.filter(function (task) {
+      return task.progress >= task.target;
+    }).length;
+
+    const progressLabel =
+      document.getElementById("dailyTaskProgress");
+
+    if (progressLabel) {
+      progressLabel.textContent = completed + " / " + tasks.length;
+    }
+  }
+
+  game.recordRaceFinished = function (distance) {
+    game.completedRaces = (game.completedRaces || 0) + 1;
+
+    tasks.find(function (task) {
+      return task.id === "first-race";
+    }).progress = Math.max(
+      1,
+      tasks.find(function (task) {
+        return task.id === "first-race";
+      }).progress
+    );
+
+    const explorer = tasks.find(function (task) {
+      return task.id === "road-explorer";
+    });
+
+    explorer.progress += Math.max(0, Math.floor(distance || 0));
+
+    const champion = tasks.find(function (task) {
+      return task.id === "race-winner";
+    });
+
+    champion.progress = game.completedRaces;
+
+    renderTasks();
+  };
+
+  renderTasks();
+
+  console.log("SUPERX: Rewards and tasks initialized.");
+
+})();
+
+/* PART 04-H END */
+   
    
        
      
