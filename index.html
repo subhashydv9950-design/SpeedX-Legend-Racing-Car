@@ -1519,6 +1519,415 @@
  NEXT PART: PART 01-F
 ===================================================== -->
      
+<!-- =====================================================
+ SUPERX LEGEND RACING CAR GAME
+ PART 01-F: CAR CUSTOMIZATION & UPGRADE SCREEN
+ ORDER: AFTER PART 01-E
+===================================================== -->
+
+<!-- ===== PART 01-F.1: CUSTOMIZATION SCREEN START ===== -->
+
+<section
+  id="customizationScreen"
+  class="gameScreen customizationScreen"
+  aria-label="Car Customization"
+  hidden
+>
+
+  <header class="subScreenHeader">
+
+    <button type="button" class="backHomeButton" id="backToGarageButton">
+      ← GARAGE
+    </button>
+
+    <div class="subScreenBrand">
+      <span>SUPERX</span>
+      <strong>CUSTOMIZATION LAB</strong>
+    </div>
+
+    <div class="subScreenBalance">
+      ◆ <span data-coin-balance>500</span>
+    </div>
+
+  </header>
+
+
+  <div class="subScreenContent">
+
+    <!-- CUSTOMIZATION HEADING -->
+
+    <div class="subScreenTitle">
+      <span class="panelEyebrow">MAKE IT YOUR MACHINE</span>
+      <h1>BUILD YOUR <span>LEGEND</span></h1>
+      <p>Customize the look. Upgrade the performance.</p>
+    </div>
+
+
+    <!-- CAR PREVIEW -->
+
+    <div class="customizationPreview">
+
+      <div id="customizationCarPreview" class="customizationCarPreview">
+        <span class="garageCarPlaceholder">3D CUSTOM CAR PREVIEW</span>
+      </div>
+
+      <div class="customizationPreviewFooter">
+        <div>
+          <span class="panelEyebrow">CURRENT VEHICLE</span>
+          <strong id="customizationCarName">STREET BEAST</strong>
+        </div>
+
+        <div class="customizationPaintPreview">
+          <span>BODY COLOR</span>
+          <span id="selectedPaintSwatch" class="paintSwatch"></span>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- CUSTOMIZATION NAVIGATION -->
+
+    <div class="customizationTabs" role="tablist" aria-label="Customization categories">
+
+      <button
+        type="button"
+        class="customizationTab active"
+        data-custom-tab="paint"
+        aria-selected="true"
+      >PAINT</button>
+
+      <button
+        type="button"
+        class="customizationTab"
+        data-custom-tab="wheels"
+        aria-selected="false"
+      >WHEELS</button>
+
+      <button
+        type="button"
+        class="customizationTab"
+        data-custom-tab="body"
+        aria-selected="false"
+      >BODY KITS</button>
+
+      <button
+        type="button"
+        class="customizationTab"
+        data-custom-tab="decals"
+        aria-selected="false"
+      >DECALS</button>
+
+      <button
+        type="button"
+        class="customizationTab"
+        data-custom-tab="upgrades"
+        aria-selected="false"
+      >UPGRADES</button>
+
+    </div>
+
+
+    <!-- PAINT CUSTOMIZATION -->
+
+    <div
+      id="customPaintPanel"
+      class="customizationCategoryPanel"
+      data-custom-panel="paint"
+    >
+
+      <div class="customSectionHeading">
+        <h2>PAINT &amp; FINISH</h2>
+        <span>PERSONALIZE YOUR COLOR</span>
+      </div>
+
+      <label class="customFieldLabel" for="carPaintColor">
+        BODY COLOR
+      </label>
+
+      <div class="paintPickerRow">
+
+        <input
+          type="color"
+          id="carPaintColor"
+          value="#8a1028"
+          aria-label="Choose car body color"
+        >
+
+        <span id="carPaintColorValue">#8A1028</span>
+
+      </div>
+
+      <label class="customFieldLabel" for="carPaintFinish">
+        PAINT FINISH
+      </label>
+
+      <select id="carPaintFinish" class="customSelect">
+        <option value="glossy">Glossy</option>
+        <option value="metallic">Metallic</option>
+        <option value="matte">Matte</option>
+      </select>
+
+      <button
+        type="button"
+        id="applyPaintButton"
+        class="primaryActionButton"
+      >APPLY PAINT</button>
+
+    </div>
+
+
+    <!-- WHEELS CUSTOMIZATION -->
+
+    <div
+      id="customWheelsPanel"
+      class="customizationCategoryPanel"
+      data-custom-panel="wheels"
+      hidden
+    >
+
+      <div class="customSectionHeading">
+        <h2>WHEELS &amp; TYRES</h2>
+        <span>CHOOSE YOUR SETUP</span>
+      </div>
+
+      <label class="customFieldLabel" for="wheelStyleSelect">
+        RIM STYLE
+      </label>
+
+      <select id="wheelStyleSelect" class="customSelect">
+        <option value="standard">Standard Sport</option>
+        <option value="multi-spoke">Multi-Spoke</option>
+        <option value="racing">Racing Alloy</option>
+        <option value="forged">Forged Performance</option>
+      </select>
+
+      <label class="customFieldLabel" for="wheelColorSelect">
+        RIM COLOR
+      </label>
+
+      <select id="wheelColorSelect" class="customSelect">
+        <option value="#d7d7d7">Silver</option>
+        <option value="#202126">Gloss Black</option>
+        <option value="#b52a34">Racing Red</option>
+        <option value="#d6a840">Gold</option>
+      </select>
+
+      <label class="customFieldLabel" for="tyreTypeSelect">
+        TYRE TYPE
+      </label>
+
+      <select id="tyreTypeSelect" class="customSelect">
+        <option value="street">Street</option>
+        <option value="sport">Sport</option>
+        <option value="track">Track</option>
+      </select>
+
+      <button
+        type="button"
+        id="applyWheelsButton"
+        class="primaryActionButton"
+      >APPLY WHEEL SETUP</button>
+
+    </div>
+
+
+    <!-- BODY KIT CUSTOMIZATION -->
+
+    <div
+      id="customBodyPanel"
+      class="customizationCategoryPanel"
+      data-custom-panel="body"
+      hidden
+    >
+
+      <div class="customSectionHeading">
+        <h2>BODY &amp; AERO</h2>
+        <span>SHAPE YOUR MACHINE</span>
+      </div>
+
+      <label class="customFieldLabel" for="frontBumperSelect">
+        FRONT BUMPER
+      </label>
+
+      <select id="frontBumperSelect" class="customSelect">
+        <option value="stock">Stock Bumper</option>
+        <option value="sport">Sport Bumper</option>
+        <option value="aggressive">Aggressive Aero</option>
+      </select>
+
+      <label class="customFieldLabel" for="spoilerSelect">
+        REAR SPOILER
+      </label>
+
+      <select id="spoilerSelect" class="customSelect">
+        <option value="none">No Spoiler</option>
+        <option value="sport">Sport Spoiler</option>
+        <option value="racing">Racing Wing</option>
+      </select>
+
+      <label class="customFieldLabel" for="exhaustSelect">
+        EXHAUST
+      </label>
+
+      <select id="exhaustSelect" class="customSelect">
+        <option value="stock">Stock Exhaust</option>
+        <option value="sport">Sport Exhaust</option>
+        <option value="performance">Performance Exhaust</option>
+      </select>
+
+      <button
+        type="button"
+        id="applyBodyKitButton"
+        class="primaryActionButton"
+      >APPLY BODY KIT</button>
+
+    </div>
+
+
+    <!-- DECALS CUSTOMIZATION -->
+
+    <div
+      id="customDecalsPanel"
+      class="customizationCategoryPanel"
+      data-custom-panel="decals"
+      hidden
+    >
+
+      <div class="customSectionHeading">
+        <h2>DECALS &amp; VINYLS</h2>
+        <span>CREATE YOUR OWN STYLE</span>
+      </div>
+
+      <label class="customFieldLabel" for="carDecalSelect">
+        DECAL DESIGN
+      </label>
+
+      <select id="carDecalSelect" class="customSelect">
+        <option value="none">No Decals</option>
+        <option value="stripes">Racing Stripes</option>
+        <option value="racing">Racing Graphics</option>
+        <option value="number">Competition Number</option>
+      </select>
+
+      <label class="customFieldLabel" for="decalColorSelect">
+        DECAL COLOR
+      </label>
+
+      <select id="decalColorSelect" class="customSelect">
+        <option value="#ffffff">White</option>
+        <option value="#111111">Black</option>
+        <option value="#f2c94c">Gold</option>
+        <option value="#00c2ff">Electric Blue</option>
+      </select>
+
+      <button
+        type="button"
+        id="applyDecalsButton"
+        class="primaryActionButton"
+      >APPLY DECALS</button>
+
+    </div>
+
+
+    <!-- PERFORMANCE UPGRADES -->
+
+    <div
+      id="customUpgradesPanel"
+      class="customizationCategoryPanel"
+      data-custom-panel="upgrades"
+      hidden
+    >
+
+      <div class="customSectionHeading">
+        <h2>PERFORMANCE LAB</h2>
+        <span>UPGRADE YOUR MACHINE</span>
+      </div>
+
+      <div class="upgradeList">
+
+        <article class="upgradeItem" data-upgrade="engine">
+          <div class="upgradeItemIcon">⚙</div>
+          <div class="upgradeItemInfo">
+            <strong>ENGINE</strong>
+            <small>Power and acceleration</small>
+            <span>LEVEL <b id="engineUpgradeLevel">1</b> / 5</span>
+          </div>
+          <button type="button" data-buy-upgrade="engine">UPGRADE</button>
+        </article>
+
+        <article class="upgradeItem" data-upgrade="turbo">
+          <div class="upgradeItemIcon">↗</div>
+          <div class="upgradeItemInfo">
+            <strong>TURBO</strong>
+            <small>Boost engine output</small>
+            <span>LEVEL <b id="turboUpgradeLevel">1</b> / 5</span>
+          </div>
+          <button type="button" data-buy-upgrade="turbo">UPGRADE</button>
+        </article>
+
+        <article class="upgradeItem" data-upgrade="transmission">
+          <div class="upgradeItemIcon">⇅</div>
+          <div class="upgradeItemInfo">
+            <strong>TRANSMISSION</strong>
+            <small>Improve gear response</small>
+            <span>LEVEL <b id="transmissionUpgradeLevel">1</b> / 5</span>
+          </div>
+          <button type="button" data-buy-upgrade="transmission">UPGRADE</button>
+        </article>
+
+        <article class="upgradeItem" data-upgrade="brakes">
+          <div class="upgradeItemIcon">◉</div>
+          <div class="upgradeItemInfo">
+            <strong>BRAKES</strong>
+            <small>Improve stopping power</small>
+            <span>LEVEL <b id="brakesUpgradeLevel">1</b> / 5</span>
+          </div>
+          <button type="button" data-buy-upgrade="brakes">UPGRADE</button>
+        </article>
+
+        <article class="upgradeItem" data-upgrade="suspension">
+          <div class="upgradeItemIcon">↕</div>
+          <div class="upgradeItemInfo">
+            <strong>SUSPENSION</strong>
+            <small>Improve stability and handling</small>
+            <span>LEVEL <b id="suspensionUpgradeLevel">1</b> / 5</span>
+          </div>
+          <button type="button" data-buy-upgrade="suspension">UPGRADE</button>
+        </article>
+
+        <article class="upgradeItem" data-upgrade="tyres">
+          <div class="upgradeItemIcon">◌</div>
+          <div class="upgradeItemInfo">
+            <strong>TYRES &amp; GRIP</strong>
+            <small>Improve road traction</small>
+            <span>LEVEL <b id="tyresUpgradeLevel">1</b> / 5</span>
+          </div>
+          <button type="button" data-buy-upgrade="tyres">UPGRADE</button>
+        </article>
+
+      </div>
+
+      <p class="upgradeDisclaimer">
+        Upgrade costs and real performance effects will be implemented
+        in the game logic. Visual body parts require compatible 3D models.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ===== PART 01-F.1: CUSTOMIZATION SCREEN END ===== -->
+
+
+<!-- =====================================================
+ PART 01-F: CAR CUSTOMIZATION & UPGRADE SCREEN END
+ NEXT PART: PART 01-G
+===================================================== -->
+ 
+     
 
     </main>
 
