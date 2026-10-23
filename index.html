@@ -9204,6 +9204,75 @@ button:disabled {
 
 /* PART 05-L: NITRO BOOST SYSTEM END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-M: NITRO SPEED INTEGRATION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game || !game.nitroSystem) return;
+
+  const nitro = game.nitroSystem;
+  const speedElement = document.getElementById("raceCurrentSpeed");
+
+  let lastFrame = 0;
+  let bonusSpeed = 0;
+
+  function applyNitroBoost(now) {
+    const delta = lastFrame
+      ? Math.min((now - lastFrame) / 1000, 0.1)
+      : 0;
+
+    lastFrame = now;
+
+    const active = nitro.isActive() && nitro.getCharge() > 0;
+
+    if (active) {
+      bonusSpeed = Math.min(90, bonusSpeed + 45 * delta);
+    } else {
+      bonusSpeed = Math.max(0, bonusSpeed - 30 * delta);
+    }
+
+    if (speedElement) {
+      const displayedSpeed = Math.max(
+        0,
+        Number(speedElement.textContent) || 0
+      );
+
+      speedElement.dataset.nitroBonus = String(
+        Math.round(bonusSpeed)
+      );
+
+      /*
+       * This display-only bonus will be replaced by
+       * true vehicle physics in the final integration.
+       */
+      speedElement.title =
+        active ? "Nitro boost active" : "Nitro charging";
+    }
+
+    requestAnimationFrame(applyNitroBoost);
+  }
+
+  game.nitroSpeedIntegration = {
+    getBonusSpeed: function () {
+      return Math.round(bonusSpeed);
+    },
+    isBoosting: function () {
+      return nitro.isActive() && nitro.getCharge() > 0;
+    }
+  };
+
+  requestAnimationFrame(applyNitroBoost);
+
+  console.log("SUPERX: Nitro speed integration prepared.");
+})();
+
+/* PART 05-M: NITRO SPEED INTEGRATION END */
+   
    
    
    
