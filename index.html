@@ -8573,6 +8573,78 @@ button:disabled {
 
 /* PART 05-F: HORN & INDICATOR SYSTEM END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-G: PAUSE & RESUME INTEGRATION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  let paused = false;
+
+  function setPaused(value) {
+    paused = Boolean(value);
+
+    const overlay = document.getElementById("racePauseOverlay");
+    const pauseButton = document.getElementById("pauseRaceButton");
+
+    if (overlay) overlay.hidden = !paused;
+
+    if (pauseButton) {
+      pauseButton.setAttribute("aria-pressed", String(paused));
+    }
+
+    if (game.driveState) {
+      game.driveState.paused = paused;
+    }
+
+    if (paused) {
+      if (game.engineAudio && typeof game.engineAudio.stop === "function") {
+        game.engineAudio.stop();
+      }
+    }
+  }
+
+  const pauseButton = document.getElementById("pauseRaceButton");
+  const resumeButton = document.getElementById("resumeRaceButton");
+
+  if (pauseButton && !pauseButton.dataset.pauseIntegrationReady) {
+    pauseButton.dataset.pauseIntegrationReady = "true";
+
+    pauseButton.addEventListener("click", function () {
+      setPaused(true);
+    });
+  }
+
+  if (resumeButton && !resumeButton.dataset.resumeIntegrationReady) {
+    resumeButton.dataset.resumeIntegrationReady = "true";
+
+    resumeButton.addEventListener("click", function () {
+      setPaused(false);
+    });
+  }
+
+  game.pauseIntegration = {
+    pause: function () {
+      setPaused(true);
+    },
+    resume: function () {
+      setPaused(false);
+    },
+    isPaused: function () {
+      return paused;
+    }
+  };
+
+  console.log("SUPERX: Pause integration initialized.");
+})();
+
+/* PART 05-G: PAUSE & RESUME INTEGRATION END */
+   
    
    
    
