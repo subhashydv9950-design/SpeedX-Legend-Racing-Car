@@ -6348,7 +6348,177 @@ button:disabled {
 
 /* PART 04-L: ENGINE SOUND & RACING AUDIO END */
          
-                           
+    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 04-M: RACE PROGRESSION & MAP UNLOCKS START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const MODE_IDS = [
+    "village",
+    "city",
+    "mountain",
+    "poison-crows",
+    "coastal",
+    "snow-ice",
+    "stunt",
+    "ai-racing"
+  ];
+
+  const TOTAL_MAPS = 100;
+  const SAVE_KEY = "superxLegendRacingProgressV1";
+
+  let progress = {};
+
+  function initializeProgress() {
+    MODE_IDS.forEach(modeId => {
+      if (!progress[modeId]) {
+        progress[modeId] = {
+          unlocked: [1],
+          completed: [],
+          wins: 0,
+          races: 0
+        };
+      }
+
+      if (!progress[modeId].unlocked.includes(1)) {
+        progress[modeId].unlocked.unshift(1);
+      }
+    });
+  }
+
+  function loadProgress() {
+    try {
+      const saved = localStorage.getItem(SAVE_KEY);
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+
+        if (parsed && typeof parsed === "object") {
+          progress = parsed;
+        }
+      }
+    } catch (error) {
+      console.warn("Could not load race progress:", error);
+    }
+
+    initializeProgress();
+  }
+
+  function saveProgress() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(progress));
+    } catch (error) {
+      console.warn("Could not save race progress:", error);
+    }
+  }
+
+  function getModeProgress(modeId) {
+    if (!progress[modeId]) {
+      progress[modeId] = {
+        unlocked: [1],
+        completed: [],
+        wins: 0,
+        races: 0
+      };
+    }
+
+    return progress[modeId];
+  }
+
+  function completeRace(modeId, mapNumber, won) {
+    if (!MODE_IDS.includes(modeId)) {
+      modeId = "village";
+    }
+
+    const map = Math.max(
+      1,
+      Math.min(TOTAL_MAPS, Number(mapNumber) || 1)
+    );
+
+    const data = getModeProgress(modeId);
+
+    data.races += 1;
+
+    if (!data.completed.includes(map)) {
+      data.completed.push(map);
+    }
+
+    if (won) {
+      data.wins += 1;
+    }
+
+    const nextMap = Math.min(TOTAL_MAPS, map + 1);
+
+    if (!data.unlocked.includes(nextMap)) {
+      data.unlocked.push(nextMap);
+    }
+
+    saveProgress();
+
+    const bonus = won ? 100 + map * 5 : 25;
+    game.coins = Math.max(0, Number(game.coins) || 0) + bonus;
+
+    if (typeof game.updateCoinDisplays === "function") {
+      game.updateCoinDisplays();
+    }
+
+    if (typeof game.saveGame === "function") {
+      game.saveGame(false);
+    }
+
+    if (typeof game.renderCareerMaps === "function") {
+      game.renderCareerMaps();
+    }
+
+    return {
+      modeId,
+      map,
+      nextMap,
+      bonus,
+      won,
+      completedMaps: data.completed.length,
+      unlockedMaps: data.unlocked.length
+    };
+  }
+
+  function isMapUnlocked(modeId, mapNumber) {
+    return getModeProgress(modeId).unlocked.includes(Number(mapNumber));
+  }
+
+  function getProgress(modeId) {
+    const data = getModeProgress(modeId);
+
+    return {
+      unlocked: [...data.unlocked],
+      completed: [...data.completed],
+      races: data.races,
+      wins: data.wins,
+      totalMaps: TOTAL_MAPS
+    };
+  }
+
+  loadProgress();
+
+  game.raceProgression = {
+    modeIds: [...MODE_IDS],
+    totalMaps: TOTAL_MAPS,
+    completeRace,
+    isMapUnlocked,
+    getProgress,
+    saveProgress
+  };
+
+})();
+
+/* PART 04-M: RACE PROGRESSION & MAP UNLOCKS END */
+   
    
        
      
