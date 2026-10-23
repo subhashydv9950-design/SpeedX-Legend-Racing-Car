@@ -905,6 +905,314 @@ button:disabled {
 
 /* PART 02-C END */
    
+/* =====================================================
+   PART 02-D: GARAGE, CAR COLLECTION & CUSTOMIZATION
+===================================================== */
+
+.garageContent,
+.customizationContent {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.garageHero,
+.customizationHero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 190px;
+  margin-bottom: 22px;
+  padding: clamp(18px, 4vw, 34px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 80% 50%, rgba(168, 85, 247, 0.22), transparent 50%),
+    linear-gradient(120deg, #21152e, #0e0d16);
+}
+
+#garageCarVisual,
+#customizationCarPreview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 55%;
+  min-height: 150px;
+  border-radius: 14px;
+  background: radial-gradient(ellipse, rgba(168, 85, 247, 0.15), transparent 70%);
+}
+
+.garageCarDetails {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+#garageSelectedCarName,
+#customizationCarName {
+  margin: 0 0 8px;
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: 950;
+  letter-spacing: 1px;
+}
+
+#garageSelectedCarClass {
+  color: var(--accent-bright);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.garageSpeedValue {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.garageSpeedValue strong {
+  color: #fff;
+  font-size: 24px;
+}
+
+.garageFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.garageFilters button,
+.customTabButton {
+  min-height: 38px;
+  padding: 9px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.garageFilters button.active,
+.garageFilters button[aria-pressed="true"],
+.customTabButton.active,
+.customTabButton[aria-selected="true"] {
+  border-color: var(--accent-bright);
+  background: rgba(109, 40, 217, 0.25);
+  color: #fff;
+}
+
+#garageCarGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.garageCarCard {
+  position: relative;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: linear-gradient(145deg, #20192d, #0e0d14);
+  text-align: left;
+}
+
+.garageCarCard.selected,
+.garageCarCard[aria-pressed="true"] {
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.12);
+}
+
+.garageCarCard.locked {
+  opacity: 0.7;
+}
+
+.garageCarImage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 85px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: radial-gradient(ellipse, rgba(168, 85, 247, 0.15), transparent 75%);
+  color: var(--accent-bright);
+  font-size: 28px;
+}
+
+.garageCarCard h3 {
+  margin: 0 0 5px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.garageCarCard p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.carLockLabel {
+  display: inline-block;
+  margin-top: 9px;
+  color: #f8d477;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.customizationTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.customTabButton {
+  flex-shrink: 0;
+}
+
+.customizationPanel {
+  padding: clamp(15px, 3vw, 25px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-panel);
+}
+
+.customizationPanel h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.fieldLabel {
+  display: block;
+  margin: 16px 0 8px;
+  color: #d9d3e7;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.gameSelect,
+.gameTextInput {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #171421;
+  color: #fff;
+}
+
+.gameSelect option {
+  background: #171421;
+  color: #fff;
+}
+
+#carPaintColor {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+}
+
+#carPaintColorValue,
+#selectedPaintSwatch {
+  color: var(--accent-bright);
+  font-size: 12px;
+}
+
+.rangeSetting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rangeSetting input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.rangeSetting output {
+  min-width: 45px;
+  color: var(--accent-bright);
+  font-size: 12px;
+  text-align: right;
+}
+
+.upgradeList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.upgradeCard {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-card);
+}
+
+.upgradeCard h4 {
+  margin: 0 0 8px;
+  font-size: 12px;
+}
+
+.upgradeCard p {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.upgradeLevel {
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+@media (max-width: 600px) {
+  .garageHero,
+  .customizationHero {
+    min-height: 150px;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  #garageCarVisual,
+  #customizationCarPreview {
+    width: 48%;
+    min-height: 110px;
+  }
+
+  #garageCarGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .garageCarCard {
+    padding: 10px;
+  }
+
+  .garageCarImage {
+    min-height: 65px;
+  }
+
+  .upgradeList {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* PART 02-D END */
+   
+   
    
 
   </style>
