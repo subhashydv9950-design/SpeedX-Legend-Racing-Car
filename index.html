@@ -1212,6 +1212,346 @@ button:disabled {
 
 /* PART 02-D END */
    
+/* =====================================================
+   PART 02-E: RACING HUD & DRIVING CONTROLS
+===================================================== */
+
+#raceScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  background: #07070b;
+}
+
+#raceWorld {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+#raceCanvas {
+  position: absolute;
+  inset: 0;
+}
+
+.raceHUD {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.raceHUD button,
+.raceHUD input,
+.raceHUD select,
+.raceHUD a {
+  pointer-events: auto;
+}
+
+.raceTopHUD {
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.raceHUDPanel {
+  padding: 10px 13px;
+  border: 1px solid rgba(216, 180, 254, 0.25);
+  border-radius: 13px;
+  background: rgba(9, 8, 15, 0.76);
+  backdrop-filter: blur(12px);
+}
+
+.raceSmallLabel {
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.raceBigValue {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+#pauseRaceButton {
+  width: 43px;
+  height: 43px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(15, 12, 24, 0.85);
+  font-size: 18px;
+}
+
+.raceProgressPanel {
+  top: 76px;
+  left: 12px;
+  right: 12px;
+}
+
+.raceProgressTrack,
+.raceRPMTrack {
+  height: 5px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#raceProgressFill,
+#raceRPMFill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7c3aed, #d8b4fe);
+}
+
+.raceMinimapPanel {
+  top: 125px;
+  right: 12px;
+  width: 125px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(9, 8, 15, 0.78);
+}
+
+#raceMinimapCanvas {
+  display: block;
+  width: 100%;
+  height: 100px;
+}
+
+.raceSpeedPanel {
+  right: 14px;
+  bottom: calc(118px + var(--safe-bottom));
+  width: 140px;
+  padding: 12px;
+  border: 1px solid rgba(216, 180, 254, 0.28);
+  border-radius: 18px;
+  background: rgba(9, 8, 15, 0.84);
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+#raceCurrentSpeed {
+  font-size: 43px;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.raceSpeedUnit {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.raceGearRow {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.raceUtilityControls {
+  position: absolute;
+  z-index: 6;
+  top: 76px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.raceUtilityControls button {
+  width: 39px;
+  min-height: 39px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(9, 8, 15, 0.8);
+  font-size: 15px;
+}
+
+.raceUtilityControls button.active {
+  border-color: var(--accent-bright);
+  color: var(--accent-bright);
+}
+
+.raceDrivingControls {
+  position: absolute;
+  z-index: 8;
+  left: 12px;
+  right: 12px;
+  bottom: calc(14px + var(--safe-bottom));
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.raceSteeringGroup,
+.racePedalGroup {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.driveButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(53px, 12vw, 76px);
+  height: clamp(53px, 12vw, 76px);
+  border: 1px solid rgba(216, 180, 254, 0.32);
+  border-radius: 50%;
+  background: rgba(20, 16, 31, 0.82);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.25);
+  font-size: 21px;
+  font-weight: 900;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.driveButton:active,
+.driveButton.pressed {
+  border-color: var(--accent-bright);
+  background: rgba(109, 40, 217, 0.68);
+  transform: scale(0.96);
+}
+
+#acceleratorButton {
+  width: clamp(64px, 14vw, 88px);
+  height: clamp(78px, 17vw, 112px);
+  border-radius: 19px;
+  background: linear-gradient(145deg, rgba(36, 119, 81, 0.9), rgba(12, 48, 35, 0.9));
+  font-size: 12px;
+}
+
+#brakeButton {
+  width: clamp(57px, 12vw, 76px);
+  height: clamp(68px, 15vw, 96px);
+  border-radius: 17px;
+  background: linear-gradient(145deg, rgba(157, 41, 62, 0.9), rgba(68, 14, 27, 0.9));
+  font-size: 11px;
+}
+
+#handbrakeButton {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  font-size: 11px;
+}
+
+.raceOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(3, 3, 7, 0.78);
+  backdrop-filter: blur(12px);
+}
+
+.raceDialog {
+  width: min(100%, 420px);
+  padding: 25px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: linear-gradient(145deg, #21172f, #0c0b12);
+  text-align: center;
+}
+
+.raceDialog h2 {
+  margin-top: 0;
+  font-size: 24px;
+}
+
+.raceDialog button {
+  width: 100%;
+  margin-top: 10px;
+}
+
+@media (max-width: 600px) {
+  .raceMinimapPanel {
+    width: 92px;
+    top: 118px;
+  }
+
+  #raceMinimapCanvas {
+    height: 72px;
+  }
+
+  .raceSpeedPanel {
+    right: 10px;
+    bottom: calc(112px + var(--safe-bottom));
+    width: 112px;
+    padding: 10px;
+  }
+
+  #raceCurrentSpeed {
+    font-size: 34px;
+  }
+
+  .raceDrivingControls {
+    left: 9px;
+    right: 9px;
+    gap: 5px;
+  }
+
+  .raceSteeringGroup,
+  .racePedalGroup {
+    gap: 6px;
+  }
+
+  .driveButton {
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+
+  #acceleratorButton {
+    width: 61px;
+    height: 78px;
+    font-size: 10px;
+  }
+
+  #brakeButton {
+    width: 52px;
+    height: 67px;
+    font-size: 10px;
+  }
+
+  #handbrakeButton {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* PART 02-E END */
+ 
+   
    
    
 
