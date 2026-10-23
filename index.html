@@ -8177,6 +8177,88 @@ button:disabled {
 
 /* PART 05-B: CAMERA POSITIONING END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-C: RACE HUD INTEGRATION START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const speedEl = document.getElementById("raceCurrentSpeed");
+  const gearEl = document.getElementById("raceCurrentGear");
+  const rpmEl = document.getElementById("raceCurrentRPM");
+  const rpmFill = document.getElementById("raceRPMFill");
+
+  let lastSpeed = 0;
+
+  function updateHUD() {
+    if (!speedEl || !gearEl || !rpmEl) return;
+
+    const speed = Math.max(0, Number(speedEl.textContent) || 0);
+    lastSpeed = speed;
+
+    const settings = document.getElementById("transmissionMode");
+    const manual = settings && settings.value === "manual";
+
+    let gear = 1;
+
+    if (speed === 0) {
+      gear = 1;
+    } else if (speed < 35) {
+      gear = 1;
+    } else if (speed < 75) {
+      gear = 2;
+    } else if (speed < 120) {
+      gear = 3;
+    } else if (speed < 175) {
+      gear = 4;
+    } else if (speed < 240) {
+      gear = 5;
+    } else if (speed < 330) {
+      gear = 6;
+    } else {
+      gear = 7;
+    }
+
+    const maxGear = manual ? 5 : 7;
+    gear = Math.min(gear, maxGear);
+
+    const rpm = Math.round(
+      850 + Math.min(1, speed / 520) * 6500
+    );
+
+    gearEl.textContent = speed === 0 ? "N" : String(gear);
+    rpmEl.textContent = String(rpm);
+
+    if (rpmFill) {
+      rpmFill.style.width =
+        Math.min(100, Math.round((rpm / 7500) * 100)) + "%";
+    }
+  }
+
+  function loop() {
+    updateHUD();
+    requestAnimationFrame(loop);
+  }
+
+  loop();
+
+  game.raceHUD = {
+    update: updateHUD,
+    getLastSpeed: function () {
+      return lastSpeed;
+    }
+  };
+
+  console.log("SUPERX: Race HUD integration initialized.");
+})();
+
+/* PART 05-C: RACE HUD INTEGRATION END */
+   
    
    
    
