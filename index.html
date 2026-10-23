@@ -8645,6 +8645,142 @@ button:disabled {
 
 /* PART 05-G: PAUSE & RESUME INTEGRATION END */
    
+/* =====================================================
+   SUPERX LEGEND RACING CAR GAME
+   PART 05-H: RACE SETTINGS SAVE SYSTEM START
+===================================================== */
+
+(function () {
+  "use strict";
+
+  const game = window.SuperXGame;
+  if (!game) return;
+
+  const STORAGE_KEY = "superxLegendRaceSettingsV1";
+
+  const settingIds = [
+    "raceSteeringType",
+    "raceControlSize",
+    "raceSteeringSensitivity",
+    "raceControlSide",
+    "raceBrakePosition",
+    "raceCameraMode",
+    "raceCameraDistance",
+    "raceCameraShakeSetting",
+    "raceGraphicsMode",
+    "raceShowMinimap"
+  ];
+
+  function readSettings() {
+    const settings = {};
+
+    settingIds.forEach(function (id) {
+      const element = document.getElementById(id);
+      if (!element) return;
+
+      settings[id] =
+        element.type === "checkbox"
+          ? element.checked
+          : element.value;
+    });
+
+    return settings;
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(readSettings())
+      );
+
+      if (typeof game.showMessage === "function") {
+        game.showMessage(
+          "✓",
+          "SETTINGS SAVED",
+          "Your racing settings have been saved on this device."
+        );
+      }
+    } catch (error) {
+      console.warn("SUPERX: Settings could not be saved.", error);
+    }
+  }
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      const saved = JSON.parse(raw);
+
+      settingIds.forEach(function (id) {
+        const element = document.getElementById(id);
+        if (!element || !(id in saved)) return;
+
+        if (element.type === "checkbox") {
+          element.checked = Boolean(saved[id]);
+        } else {
+          element.value = saved[id];
+        }
+
+        element.dispatchEvent(new Event("change", {
+          bubbles: true
+        }));
+      });
+
+      updateSettingLabels();
+    } catch (error) {
+      console.warn("SUPERX: Could not load saved settings.", error);
+    }
+  }
+
+  function updateSettingLabels() {
+    const pairs = [
+      ["raceControlSize", "raceControlSizeValue", "%"],
+      ["raceSteeringSensitivity", "raceSteeringSensitivityValue", "%"],
+      ["raceCameraDistance", "raceCameraDistanceValue", ""]
+    ];
+
+    pairs.forEach(function (pair) {
+      const input = document.getElementById(pair[0]);
+      const label = document.getElementById(pair[1]);
+
+      if (input && label) {
+        label.textContent = input.value + pair[2];
+      }
+    });
+  }
+
+  const saveButton = document.getElementById("saveRaceSettingsButton");
+
+  if (saveButton && !saveButton.dataset.settingsSaveReady) {
+    saveButton.dataset.settingsSaveReady = "true";
+    saveButton.addEventListener("click", saveSettings);
+  }
+
+  settingIds.forEach(function (id) {
+    const element = document.getElementById(id);
+
+    if (element) {
+      element.addEventListener("input", updateSettingLabels);
+      element.addEventListener("change", updateSettingLabels);
+    }
+  });
+
+  loadSettings();
+  updateSettingLabels();
+
+  game.raceSettingsStore = {
+    save: saveSettings,
+    load: loadSettings,
+    getSettings: readSettings
+  };
+
+  console.log("SUPERX: Race settings save system initialized.");
+})();
+
+/* PART 05-H: RACE SETTINGS SAVE SYSTEM END */
+   
    
    
    
