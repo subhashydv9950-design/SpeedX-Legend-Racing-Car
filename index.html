@@ -8411,15 +8411,17 @@ body {
     const now = Date.now();
     if (now - lastCollisionTime < 1800) return;
 
-    for (const car of trafficCars) {
-      if (!car || !car.position) continue;
+    
+for (const car of trafficCars) {
+  if (!car || !car.mesh || !car.mesh.position) continue;
 
-      const dx = player.position.x - car.position.x;
-      const dz = player.position.z - car.position.z;
+  const dx = player.position.x - car.mesh.position.x;
+  const dz = player.position.z - car.mesh.position.z;
 
-      const closeEnough =
-        Math.abs(dx) < 1.65 &&
-        Math.abs(dz) < 3.2;
+  const closeEnough =
+    Math.abs(dx) < 1.8 &&
+    Math.abs(dz) < 3.5;
+ 
 
       if (closeEnough) {
         lastCollisionTime = now;
