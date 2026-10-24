@@ -5088,10 +5088,12 @@ body {
           button.setAttribute("aria-pressed", "true");
           button.style.borderColor = "#c084fc";
 
-          const startButton =
-            document.getElementById("startCareerRaceButton");
+                    game.selectedModeId = modeId;
+          game.selectedMapNumber = number;
 
-          if (startButton) startButton.disabled = false;
+          if (typeof game.startRace === "function") {
+            game.startRace(modeId, number);
+          }
         });
       } else {
         button.addEventListener("click", function () {
