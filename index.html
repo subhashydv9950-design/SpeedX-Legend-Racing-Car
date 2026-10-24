@@ -12461,17 +12461,14 @@ body {
 
   document.head.appendChild(css);
 
-  /* Stop unwanted touch scrolling */
+  /* Allow natural mobile scrolling */
   document.addEventListener("touchmove", function (event) {
-    if (!event.target.closest(
-      "input, select, textarea, .allowScroll"
+    if (event.target.closest(
+      "#raceScreen, .driveControlButton"
     )) {
-      event.preventDefault();
+      return;
     }
-  }, { passive: false });
-
-  console.log("SUPERX PART 06-G: Fixed UI layout applied.");
-})();
+  }, { passive: true });
 
 /* ===== PART 06-G END ===== */
    
