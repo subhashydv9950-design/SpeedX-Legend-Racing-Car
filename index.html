@@ -8423,21 +8423,38 @@ for (const car of trafficCars) {
     Math.abs(dz) < 3.5;
  
 
-      if (closeEnough) {
-        lastCollisionTime = now;
+      
+if (closeEnough && now - lastCollisionTime > 1200) {
+  lastCollisionTime = now;
 
-        damage.applyDamage(12);
+  // Player car ko traffic car se alag karo
+  const overlapX = 1.8 - Math.abs(dx);
+  const overlapZ = 3.5 - Math.abs(dz);
 
-        if (typeof game.showMessage === "function") {
-          game.showMessage(
-            "💥",
-            "COLLISION!",
-            "Your car has taken damage. Drive carefully."
-          );
-        }
+  if (overlapX < overlapZ) {
+    player.position.x += (dx >= 0 ? 1 : -1) * overlapX;
+  } else {
+    player.position.z += (dz >= 0 ? 1 : -1) * overlapZ;
+  }
 
-        break;
-      }
+  // Speed kam karo
+  if (typeof game.speed !== "undefined") {
+    game.speed = 0;
+  }
+
+  damage.applyDamage(12);
+
+  if (typeof game.showMessage === "function") {
+    game.showMessage(
+      "💥",
+      "COLLISION!",
+      "Impact detected! Slow down and drive carefully."
+    );
+  }
+
+  break;
+}
+ 
     }
   }
 
