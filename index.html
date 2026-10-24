@@ -5635,45 +5635,74 @@ body {
     const delta = Math.min((now - drive.lastTime) / 1000, 0.05);
     drive.lastTime = now;
 
-    if (!drive.paused && game.currentScreen === "race") {
+        if (!drive.paused && game.currentScreen === "race") {
+      const car = game.threeDWorld &&
+        game.threeDWorld.playerCar;
+      const world = game.threeDWorld;
+
+      // 1. REALISTIC ACCELERATION AND BRAKING
       if (drive.accelerating) {
-        drive.speed += 42 * delta;
+        drive.speed += 32 * delta;
       } else {
-        drive.speed -= 9 * delta;
+        drive.speed -= 5 * delta;
       }
 
       if (drive.braking) {
-        drive.speed -= 85 * delta;
+        drive.speed -= 100 * delta;
       }
 
       if (drive.handbrake) {
-        drive.speed -= 65 * delta;
+        drive.speed -= 70 * delta;
       }
 
       drive.speed = Math.max(0, Math.min(520, drive.speed));
 
-      const car = game.threeDWorld &&
-        game.threeDWorld.playerCar;
-
+      // 2. STEERING DEPENDS ON ACTUAL SPEED
       if (car) {
-        if (drive.left) car.position.x -= 3.5 * delta;
-        if (drive.right) car.position.x += 3.5 * delta;
+        const steeringPower =
+          (0.8 + drive.speed / 100) * delta;
 
-        car.position.x = Math.max(-4.8, Math.min(4.8, car.position.x));
+        if (drive.left) {
+          car.position.x -= steeringPower;
+        }
+
+        if (drive.right) {
+          car.position.x += steeringPower;
+        }
+
+        car.position.x = Math.max(
+          -4.8,
+          Math.min(4.8, car.position.x)
+        );
+
+        // Car body turns smoothly while steering
+        const targetRotation =
+          drive.left ? 0.18 :
+          drive.right ? -0.18 : 0;
+
+        car.rotation.y +=
+          (targetRotation - car.rotation.y) *
+          Math.min(delta * 4, 1);
       }
 
-      drive.distance += drive.speed / 3.6 * delta;
+      // 3. REAL DISTANCE CALCULATION
+      drive.distance += (drive.speed / 3.6) * delta;
 
+      // 4. GEAR AND HUD
       drive.gear = drive.speed < 1
         ? 0
-        : Math.min(7, Math.max(1, Math.ceil(drive.speed / 65)));
+        : Math.min(7, Math.max(
+            1,
+            Math.ceil(drive.speed / 65)
+          ));
 
       updateHUD();
 
+      // 5. FINISH LINE
       if (drive.distance >= 2000) {
         finishRace();
       }
-    }
+        }
   }
 
   function finishRace() {
