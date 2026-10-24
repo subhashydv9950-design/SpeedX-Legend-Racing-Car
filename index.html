@@ -5450,17 +5450,52 @@ body {
     renderer.render(scene, camera);
   }
 
+  
   function resizeRenderer() {
     const container = document.getElementById("threeDContainer");
-    if (!container || !renderer || !camera) return;
+    const canvas = document.getElementById("gameCanvas");
+    if (!container || !renderer || !camera || !canvas) return;
 
-    const width = Math.max(container.clientWidth, 1);
-    const height = Math.max(container.clientHeight, 1);
+    const raceScreen = document.getElementById("raceScreen");
+    const raceVisible = raceScreen &&
+      getComputedStyle(raceScreen).display !== "none";
+
+    if (!raceVisible) {
+      const width = Math.max(container.clientWidth, 1);
+      const height = Math.max(container.clientHeight, 1);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
+      return;
+    }
+
+    const width = Math.max(
+      container.clientWidth,
+      window.innerWidth,
+      1
+    );
+    const height = Math.max(
+      container.clientHeight,
+      window.innerHeight,
+      1
+    );
+
+    container.style.position = "absolute";
+    container.style.inset = "0";
+    container.style.width = "100%";
+    container.style.height = "100%";
+
+    canvas.style.position = "absolute";
+    canvas.style.inset = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.display = "block";
 
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
   }
+ 
 
   window.addEventListener("resize", resizeRenderer);
 
