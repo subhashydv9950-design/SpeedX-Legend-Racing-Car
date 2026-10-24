@@ -11135,7 +11135,8 @@ body {
   }
 
   function initialize() {
-    addStatusButton();
+  const button = document.getElementById("superxStatusButton");
+  if (button) button.remove();
   }
 
   if (document.readyState === "loading") {
