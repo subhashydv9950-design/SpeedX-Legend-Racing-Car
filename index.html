@@ -9065,6 +9065,47 @@ body {
     }
   }
 
+  // EXTRA SAVE BUTTON CONNECTION
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("#saveRaceSettingsButton");
+    if (!button) return;
+
+    try {
+      const ids = [
+        "raceSteeringType",
+        "raceControlSize",
+        "raceSteeringSensitivity",
+        "raceControlSide",
+        "raceBrakePosition",
+        "raceCameraMode",
+        "raceCameraDistance",
+        "raceCameraShakeSetting",
+        "raceGraphicsMode",
+        "raceShowMinimap"
+      ];
+
+      const settings = {};
+
+      ids.forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) {
+          settings[id] =
+            el.type === "checkbox" ? el.checked : el.value;
+        }
+      });
+
+      localStorage.setItem(
+        "superxLegendRaceSettingsV1",
+        JSON.stringify(settings)
+      );
+
+      alert("Racing settings saved successfully!");
+    } catch (error) {
+      alert("Settings could not be saved. Please try again.");
+      console.error(error);
+    }
+  });
+ 
   function loadSettings() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
