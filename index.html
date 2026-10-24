@@ -8387,76 +8387,55 @@ body {
 
   let lastCollisionTime = 0;
 
-  function checkTrafficCollisions() {
-    const world = game.threeDWorld;
-    const damage = game.damageSystem;
-    const traffic = game.trafficSystem;
+  
+function checkTrafficCollisions() {
+  const world = game.threeDWorld;
+  const damage = game.damageSystem;
+  const traffic = game.trafficSystem;
 
-    if (
-      !world ||
-      !world.playerCar ||
-      !world.scene ||
-      !damage ||
-      typeof damage.applyDamage !== "function" ||
-      !traffic
-    ) {
-      return;
+  if (!world || !world.playerCar || !traffic) return;
+
+  const player = world.playerCar;
+  const trafficCars = traffic.cars || [];
+  const now = Date.now();
+
+  for (const car of trafficCars) {
+    if (!car || !car.mesh || !car.mesh.position) continue;
+
+    const dx = player.position.x - car.mesh.position.x;
+    const dz = player.position.z - car.mesh.position.z;
+
+    // Check actual overlap zone
+    if (Math.abs(dx) < 1.8 && Math.abs(dz) < 3.5) {
+
+      // Move the colliding traffic car away immediately
+      // so it cannot visibly pass through the player car.
+      car.mesh.position.z = -120 - Math.random() * 50;
+      car.mesh.position.x =
+        typeof car.baseX === "number"
+          ? car.baseX
+          : car.mesh.position.x;
+
+      // Apply damage at most once every 1200 ms
+      if (now - lastCollisionTime >= 1200) {
+        lastCollisionTime = now;
+
+        if (damage && typeof damage.applyDamage === "function") {
+          damage.applyDamage(12);
+        }
+
+        if (typeof game.showMessage === "function") {
+          game.showMessage(
+            "💥",
+            "COLLISION!",
+            "Impact detected! Your car has taken damage."
+          );
+        }
+      }
     }
-
-    const player = world.playerCar;
-    const trafficCars = traffic.cars || [];
-
-    if (!trafficCars.length) return;
-
-    const now = Date.now();
-    if (now - lastCollisionTime < 1800) return;
-
-    
-for (const car of trafficCars) {
-  if (!car || !car.mesh || !car.mesh.position) continue;
-
-  const dx = player.position.x - car.mesh.position.x;
-  const dz = player.position.z - car.mesh.position.z;
-
-  const closeEnough =
-    Math.abs(dx) < 1.8 &&
-    Math.abs(dz) < 3.5;
- 
-
-      
-if (closeEnough && now - lastCollisionTime > 1200) {
-  lastCollisionTime = now;
-
-  // Player car ko traffic car se alag karo
-  const overlapX = 1.8 - Math.abs(dx);
-  const overlapZ = 3.5 - Math.abs(dz);
-
-  if (overlapX < overlapZ) {
-    player.position.x += (dx >= 0 ? 1 : -1) * overlapX;
-  } else {
-    player.position.z += (dz >= 0 ? 1 : -1) * overlapZ;
   }
-
-  // Speed kam karo
-  if (typeof game.speed !== "undefined") {
-    game.speed = 0;
-  }
-
-  damage.applyDamage(12);
-
-  if (typeof game.showMessage === "function") {
-    game.showMessage(
-      "💥",
-      "COLLISION!",
-      "Impact detected! Slow down and drive carefully."
-    );
-  }
-
-  break;
 }
  
-    }
-  }
 
   let collisionLoopStarted = false;
 
