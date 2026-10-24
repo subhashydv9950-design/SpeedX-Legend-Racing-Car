@@ -12913,10 +12913,15 @@ body {
 
 .gameScreen:not(#raceScreen) #careerMapGrid,
 .gameScreen:not(#raceScreen) .mapGrid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-auto-rows: minmax(56px, auto);
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)) !important;
+  grid-auto-rows: minmax(56px, auto) !important;
+  gap: 8px !important;
   overflow: visible !important;
+  width: 100%;
 }
+
+
 
 .gameScreen:not(#raceScreen) .careerModeGrid,
 .gameScreen:not(#raceScreen) .onlineModeGrid,
