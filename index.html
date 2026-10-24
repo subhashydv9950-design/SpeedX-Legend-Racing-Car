@@ -13080,6 +13080,76 @@ body {
 
   <!-- ===== PART 01-A.8: JAVASCRIPT PLACEHOLDER END ===== -->
 
+<!-- SUPERX 3D RACE CANVAS FIX -->
+<script>
+(function () {
+  "use strict";
+
+  function connectRaceCanvas() {
+    const gameCanvas = document.getElementById("gameCanvas");
+    const raceWorld = document.getElementById("raceWorld");
+    const raceCanvas = document.getElementById("raceCanvas");
+    const threeDContainer = document.getElementById("threeDContainer");
+
+    if (!gameCanvas || !raceWorld || !threeDContainer) return;
+
+    // Hide the unused, separate race canvas.
+    if (raceCanvas) {
+      raceCanvas.style.display = "none";
+    }
+
+    function syncCanvas() {
+      const raceScreen = document.getElementById("raceScreen");
+      if (!raceScreen) return;
+
+      const isRacing =
+        getComputedStyle(raceScreen).display !== "none" &&
+        !raceScreen.hidden;
+
+      if (isRacing) {
+        if (gameCanvas.parentElement !== raceWorld) {
+          raceWorld.appendChild(gameCanvas);
+        }
+
+        gameCanvas.style.position = "absolute";
+        gameCanvas.style.inset = "0";
+        gameCanvas.style.width = "100%";
+        gameCanvas.style.height = "100%";
+        gameCanvas.style.display = "block";
+        gameCanvas.style.zIndex = "0";
+        raceWorld.style.background = "transparent";
+      } else if (gameCanvas.parentElement !== threeDContainer) {
+        threeDContainer.appendChild(gameCanvas);
+      }
+    }
+
+    document.addEventListener("click", function () {
+      setTimeout(syncCanvas, 50);
+      setTimeout(syncCanvas, 250);
+    });
+
+    const observer = new MutationObserver(syncCanvas);
+    observer.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class", "hidden"]
+    });
+
+    syncCanvas();
+    setTimeout(syncCanvas, 500);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", connectRaceCanvas, {
+      once: true
+    });
+  } else {
+    connectRaceCanvas();
+  }
+})();
+</script>
+<!-- SUPERX 3D RACE CANVAS FIX END -->
+ 
 
 </body>
 </html>
