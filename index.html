@@ -12902,6 +12902,29 @@ body {
         display: none;
       }
     }
+    
+/* SUPERX: Long menu content and map scrolling */
+.gameScreen:not(#raceScreen) .subScreenContent {
+  min-height: max-content;
+  flex: 0 0 auto;
+  overflow: visible !important;
+}
+
+.gameScreen:not(#raceScreen) #careerMapGrid,
+.gameScreen:not(#raceScreen) .mapGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(56px, auto);
+  overflow: visible !important;
+}
+
+.gameScreen:not(#raceScreen) .careerModeGrid,
+.gameScreen:not(#raceScreen) .onlineModeGrid,
+.gameScreen:not(#raceScreen) .modeGrid {
+  grid-template-rows: none !important;
+  grid-auto-rows: minmax(90px, auto) !important;
+  overflow: visible !important;
+}
+
   `;
 
   document.head.appendChild(css);
