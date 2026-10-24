@@ -13081,6 +13081,49 @@ body {
   <!-- ===== PART 01-A.8: JAVASCRIPT PLACEHOLDER END ===== -->
 
 
+<script>
+(function () {
+  function fixRaceView() {
+    const canvas = document.getElementById("gameCanvas");
+    const world = document.getElementById("raceWorld");
+    const screen = document.getElementById("raceScreen");
+
+    if (!canvas || !world || !screen) return;
+
+    const visible =
+      getComputedStyle(screen).display !== "none" &&
+      !screen.hidden;
+
+    if (!visible) return;
+
+    canvas.style.position = "absolute";
+    canvas.style.left = "0";
+    canvas.style.top = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.display = "block";
+    canvas.style.zIndex = "0";
+
+    world.style.position = "absolute";
+    world.style.inset = "0";
+    world.style.overflow = "hidden";
+
+    if (canvas.parentElement !== world) {
+      world.appendChild(canvas);
+    }
+
+    window.dispatchEvent(new Event("resize"));
+  }
+
+  document.addEventListener("click", function () {
+    setTimeout(fixRaceView, 100);
+    setTimeout(fixRaceView, 500);
+  });
+
+  window.addEventListener("resize", fixRaceView);
+})();
+</script>
+ 
 
 </body>
 </html>
