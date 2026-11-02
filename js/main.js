@@ -473,4 +473,14 @@ if (document.readyState === "loading") {
 // =====================================================
 // SUPERX LEGEND — PART 3 END
 // =====================================================
-    
+    /* ========== PART 10B START ========== */
+
+window.addEventListener("error", function (event) {
+  console.error("SUPERX Error:", event.message);
+});
+
+window.addEventListener("unhandledrejection", function (event) {
+  console.error("SUPERX Promise Error:", event.reason);
+});
+
+/* ========== PART 10B END ========== */
