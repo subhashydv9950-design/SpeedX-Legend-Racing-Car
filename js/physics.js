@@ -1,20 +1,16 @@
-/* =========================================
-   SUPERX LEGEND RACING CAR
-   PART 18 — PLAYER DRIVING PHYSICS
-   FILE: js/physics.js
-========================================= */
+/* SUPERX — PART 22B
+   FILE: js/physics.js */
 
 (() => {
   "use strict";
 
-  const physics = {
+  const P = {
     speed: 0,
     maxSpeed: 240,
     acceleration: 42,
     braking: 100,
-    reverseSpeed: 35,
-    steering: 0,
     steeringPower: 4.5,
+    steering: 0,
     throttle: false,
     brake: false,
     left: false,
@@ -24,209 +20,156 @@
     rpm: 900,
     distance: 0,
     running: false,
+    paused: false,
     lastTime: 0
   };
 
-  function getPlayer() {
-    return window.SuperX3D?.getPlayerCar?.() || null;
+  function setControl(name, value) {
+    if (name in P) P[name] = Boolean(value);
   }
 
-  function getWorld() {
-    return window.SuperX3D?.getWorld?.() || null;
-  }
-
-  function setControl(control, value) {
-    if (!(control in physics)) return;
-    physics[control] = Boolean(value);
+  function releaseControls() {
+    ["throttle", "brake", "left", "right", "handbrake"]
+      .forEach(name => P[name] = false);
   }
 
   function reset() {
-    physics.speed = 0;
-    physics.steering = 0;
-    physics.gear = 1;
-    physics.rpm = 900;
-    physics.distance = 0;
-    physics.throttle = false;
-    physics.brake = false;
-    physics.left = false;
-    physics.right = false;
-    physics.handbrake = false;
+    P.speed = 0;
+    P.steering = 0;
+    P.gear = 1;
+    P.rpm = 900;
+    P.distance = 0;
+    P.lastTime = 0;
+    releaseControls();
   }
 
-  function start() {
+  function startNewRace() {
     reset();
-    physics.running = true;
-    physics.lastTime = 0;
+    P.running = true;
+    P.paused = false;
+  }
+
+  function pause() {
+    P.running = false;
+    P.paused = true;
+    releaseControls();
+    P.lastTime = 0;
+  }
+
+  function resume() {
+    if (!P.paused) return;
+    P.paused = false;
+    P.running = true;
+    P.lastTime = 0;
   }
 
   function stop() {
-    physics.running = false;
-    physics.speed = 0;
-    physics.throttle = false;
-    physics.brake = false;
+    P.running = false;
+    P.paused = false;
+    reset();
   }
 
   function update(dt) {
-    if (!physics.running) return;
+    if (!P.running) return;
+    dt = Math.min(Math.max(dt, 0), 0.05);
 
-    dt = Math.min(Math.max(dt || 0, 0), 0.05);
-
-    const player = getPlayer();
-
-    // Acceleration
-    if (physics.throttle && !physics.brake) {
-      physics.speed += physics.acceleration * dt;
+    if (P.throttle && !P.brake) {
+      P.speed += P.acceleration * dt;
     }
 
-    // Braking
-    if (physics.brake) {
-      physics.speed -= physics.braking * dt;
+    if (P.brake) P.speed -= P.braking * dt;
+    if (P.handbrake) P.speed -= 75 * dt;
+
+    if (!P.throttle && !P.brake && !P.handbrake) {
+      P.speed -= 7 * dt;
     }
 
-    // Handbrake
-    if (physics.handbrake) {
-      physics.speed -= 75 * dt;
-    }
+    P.speed = Math.max(0, Math.min(P.maxSpeed, P.speed));
 
-    // Natural slowdown
-    if (!physics.throttle && !physics.brake) {
-      physics.speed -= 7 * dt;
-    }
+    let direction = (P.right ? 1 : 0) - (P.left ? 1 : 0);
 
-    physics.speed = Math.max(
-      0,
-      Math.min(physics.speed, physics.maxSpeed)
-    );
-
-    // Steering
-    let direction = 0;
-
-    if (physics.left) direction -= 1;
-    if (physics.right) direction += 1;
-
-    if (direction !== 0 && physics.speed > 1) {
-      physics.steering += direction * physics.steeringPower * dt;
+    if (direction) {
+      P.steering += direction * P.steeringPower * dt;
     } else {
-      physics.steering *= Math.max(0, 1 - 5 * dt);
+      P.steering *= Math.max(0, 1 - 5 * dt);
     }
 
-    physics.steering = Math.max(
-      -1,
-      Math.min(1, physics.steering)
-    );
+    P.steering = Math.max(-1, Math.min(1, P.steering));
+
+    const player = window.SuperX3D?.getPlayerCar?.();
 
     if (player) {
-      const movementFactor = Math.max(
-        0.25,
-        physics.speed / 120
-      );
+      const factor = Math.max(0.25, P.speed / 120);
+      player.position.x += P.steering * factor * dt * 4;
+      player.position.x = Math.max(-4.4, Math.min(4.4, player.position.x));
+      player.rotation.y = -P.steering * 0.22;
 
-      player.position.x +=
-        physics.steering * movementFactor * dt * 4;
-
-      player.position.x = Math.max(
-        -4.4,
-        Math.min(4.4, player.position.x)
-      );
-
-      player.rotation.y = -physics.steering * 0.22;
-
-      if (player.userData?.wheels) {
-        player.userData.wheels.forEach(wheel => {
-          wheel.rotation.x -= physics.speed * dt * 0.025;
-        });
-      }
+      player.userData.wheels?.forEach(wheel => {
+        wheel.rotation.x -= P.speed * dt * 0.025;
+      });
     }
 
-    // Gear and RPM
-    if (physics.speed < 1) {
-      physics.gear = 1;
-    } else {
-      physics.gear = Math.min(
-        6,
-        Math.max(1, Math.ceil(physics.speed / 40))
-      );
-    }
+    P.gear = P.speed < 1 ? 1 :
+      Math.min(6, Math.max(1, Math.ceil(P.speed / 40)));
 
-    physics.rpm = Math.round(
-      900 + (physics.speed / physics.maxSpeed) * 6200
-    );
+    P.rpm = Math.round(900 + P.speed / P.maxSpeed * 6200);
+    P.distance += P.speed * dt / 3600;
 
-    physics.distance += physics.speed * dt / 3600;
-
-    // Synchronize world speed
-    window.SuperX3D?.setWorldSpeed?.(physics.speed);
-
-    // Update HUD
+    window.SuperX3D?.setWorldSpeed?.(P.speed);
     updateHUD();
   }
 
   function updateHUD() {
-    const speedElement = document.getElementById("speedValue");
-    const gearElement = document.getElementById("gearValue");
-    const rpmElement = document.getElementById("rpmValue");
+    const speed = document.getElementById("speedValue");
+    const gear = document.getElementById("gearValue");
+    const rpm = document.getElementById("rpmValue");
 
-    if (speedElement) {
-      speedElement.textContent = Math.round(physics.speed);
+    if (speed) speed.textContent = Math.round(P.speed);
+    if (gear) gear.textContent = P.gear;
+    if (rpm) rpm.textContent = P.rpm;
+  }
+
+  function loop(time) {
+    requestAnimationFrame(loop);
+
+    if (!P.running) {
+      P.lastTime = 0;
+      return;
     }
 
-    if (gearElement) {
-      gearElement.textContent = physics.gear;
-    }
+    if (!P.lastTime) P.lastTime = time;
 
-    if (rpmElement) {
-      rpmElement.textContent = physics.rpm;
-    }
+    const dt = Math.min((time - P.lastTime) / 1000, 0.05);
+    P.lastTime = time;
+    update(dt);
   }
 
   function setMaxSpeed(value) {
-    physics.maxSpeed = Math.max(50, Number(value) || 240);
+    P.maxSpeed = Math.max(50, Number(value) || 240);
   }
 
   function setSensitivity(value) {
-    physics.steeringPower = Math.max(
-      1,
-      Math.min(10, Number(value) || 4.5)
-    );
+    P.steeringPower = Math.max(1, Math.min(10, Number(value) || 4.5));
   }
 
   window.SuperXPhysics = {
-    state: physics,
+    state: P,
     setControl,
-    start,
+    start: startNewRace,
+    startNewRace,
+    pause,
+    resume,
     stop,
     reset,
     update,
     setMaxSpeed,
     setSensitivity,
-    getSpeed: () => physics.speed,
-    getDistance: () => physics.distance
+    getSpeed: () => P.speed,
+    getDistance: () => P.distance
   };
 
-  // Physics update loop
-  let previousTime = 0;
-
-  function physicsLoop(time) {
-    requestAnimationFrame(physicsLoop);
-
-    if (!physics.running) {
-      previousTime = time;
-      return;
-    }
-
-    if (!previousTime) previousTime = time;
-
-    const dt = Math.min((time - previousTime) / 1000, 0.05);
-    previousTime = time;
-
-    update(dt);
-  }
-
-  requestAnimationFrame(physicsLoop);
-
+  requestAnimationFrame(loop);
 })();
 
-/* =========================================
-   PART 18 END
-========================================= */
+/* PART 22B END */
 
