@@ -1,7 +1,7 @@
 
 /* =========================================
    SUPERX LEGEND
-   PART 25A — RACE + AUDIO INTEGRATION
+   PART 27B — RACE HUD + PAUSE + RESULTS
    FILE: js/race.js
 ========================================= */
 
@@ -26,7 +26,6 @@
     document.querySelectorAll(".screen").forEach(item => {
       item.classList.remove("active");
     });
-
     $(id)?.classList.add("active");
   }
 
@@ -49,6 +48,16 @@
 
     if ($("speedValue")) {
       $("speedValue").textContent = speed;
+    }
+
+    const physics = window.SuperXPhysics?.state;
+
+    if ($("gearValue")) {
+      $("gearValue").textContent = physics?.gear ?? 1;
+    }
+
+    if ($("rpmValue")) {
+      $("rpmValue").textContent = physics?.rpm ?? 900;
     }
 
     if ($("raceDistance")) {
@@ -129,8 +138,9 @@
     window.SuperXControls?.initialize?.();
     window.SuperXAudio?.startEngine?.();
 
-    updateHUD();
+    $("pauseMenu")?.classList.remove("active");
 
+    updateHUD();
     R.frame = requestAnimationFrame(loop);
   }
 
@@ -140,7 +150,6 @@
     R.paused = true;
 
     cancelAnimationFrame(R.frame);
-
     window.SuperXPhysics?.pause?.();
     window.SuperXTraffic?.pause?.();
     window.SuperXControls?.releaseAll?.();
@@ -233,7 +242,6 @@
     }
   }
 
-  // Compatibility with existing main.js controls.
   function setControl(name, value) {
     const aliases = {
       accelerator: "throttle",
@@ -261,7 +269,13 @@
       showScreen("homeScreen");
     });
 
-    $("finishRaceBtn")?.addEventListener("click", finish);
+    $("resultHomeBtn")?.addEventListener("click", () => {
+      showScreen("homeScreen");
+    });
+
+    $("resultRetryBtn")?.addEventListener("click", () => {
+      start(R.mode);
+    });
   }
 
   window.SuperXRace = {
@@ -285,5 +299,5 @@
 })();
 
 /* =========================================
-   PART 25A END
+   PART 27B END
 ========================================= */
