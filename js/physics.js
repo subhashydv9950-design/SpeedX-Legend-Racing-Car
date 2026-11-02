@@ -1,109 +1,131 @@
 
 /* ==========================================
    SUPERX LEGEND RACING CAR
-   PART 16 — ADVANCED DRIVING PHYSICS
+   PART 18 — ADVANCED PHYSICS SYSTEM
 ========================================== */
 
 (function () {
   "use strict";
 
-  const Physics = {
+  const P = {
     speed: 0,
     rpm: 850,
     gear: "D",
+
     throttle: false,
     brake: false,
     reverse: false,
     handbrake: false,
+
     steering: 0,
     steeringTarget: 0,
+
     lateral: 0,
     yaw: 0,
     distance: 0,
+
     active: false,
     lastTime: 0,
-    acceleration: 30,
-    maxSpeed: 240
+
+    acceleration: 32,
+    maxSpeed: 240,
+    reverseMaxSpeed: 35
   };
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
 
-  function setControl(control, value) {
-    if (!(control in Physics)) return;
+  function setControl(name, value) {
+    if (name === "accelerator") name = "throttle";
 
-    if (typeof Physics[control] === "boolean") {
-      Physics[control] = Boolean(value);
+    if (
+      ["throttle", "brake", "reverse", "handbrake"]
+        .includes(name)
+    ) {
+      P[name] = Boolean(value);
     }
   }
 
   function setSteering(value) {
-    Physics.steeringTarget = clamp(Number(value) || 0, -1, 1);
+    P.steeringTarget = clamp(
+      Number(value) || 0,
+      -1,
+      1
+    );
   }
 
   function update(dt) {
-    const p = Physics;
-
-    const acceleration = p.acceleration;
-    const maxSpeed = p.maxSpeed;
-
-    if (p.reverse) {
-      p.gear = "R";
-      p.speed -= acceleration * 0.55 * dt;
-    } else if (p.throttle) {
-      p.gear = "D";
-      p.speed += acceleration * dt;
+    if (P.reverse) {
+      P.gear = "R";
+      P.speed -= P.acceleration * 0.55 * dt;
+    } else if (P.throttle) {
+      P.gear = "D";
+      P.speed += P.acceleration * dt;
     } else {
-      p.speed *= Math.pow(0.985, dt * 60);
+      P.speed *= Math.pow(0.988, dt * 60);
     }
 
-    if (p.brake) {
-      p.speed -= 75 * dt;
+    if (P.brake) {
+      P.speed -= 80 * dt;
     }
 
-    if (p.handbrake) {
-      p.speed *= Math.pow(0.94, dt * 60);
+    if (P.handbrake) {
+      P.speed *= Math.pow(0.94, dt * 60);
     }
 
-    p.speed = clamp(p.speed, -35, maxSpeed);
+    P.speed = clamp(
+      P.speed,
+      -P.reverseMaxSpeed,
+      P.maxSpeed
+    );
 
-    if (!p.throttle && !p.brake && !p.reverse && Math.abs(p.speed) < 0.5) {
-      p.speed = 0;
+    if (
+      !P.throttle &&
+      !P.brake &&
+      !P.reverse &&
+      Math.abs(P.speed) < 0.5
+    ) {
+      P.speed = 0;
     }
 
-    p.steering +=
-      (p.steeringTarget - p.steering) * Math.min(1, dt * 7);
+    P.steering +=
+      (P.steeringTarget - P.steering) *
+      Math.min(1, dt * 7);
 
-    const steeringPower = Math.min(1, Math.abs(p.speed) / 35);
+    const steeringPower = Math.min(
+      1,
+      Math.abs(P.speed) / 35
+    );
 
-    p.yaw = -p.steering * steeringPower;
+    const direction = P.speed >= 0 ? 1 : -1;
 
-    const direction = p.speed >= 0 ? 1 : -1;
+    P.yaw = -P.steering * steeringPower;
 
-    p.lateral +=
-      p.steering * steeringPower * direction * dt * 3.5;
+    P.lateral +=
+      P.steering *
+      steeringPower *
+      direction *
+      dt *
+      3.5;
 
-    p.lateral = clamp(p.lateral, -4.3, 4.3);
+    P.lateral = clamp(P.lateral, -4.3, 4.3);
 
-    p.distance += Math.abs(p.speed) * dt / 3.6;
+    P.distance += Math.abs(P.speed) * dt / 3.6;
 
-    p.rpm = clamp(
-      850 + Math.abs(p.speed) * 25 +
-      (p.throttle ? 900 : 0),
+    P.rpm = clamp(
+      850 +
+      Math.abs(P.speed) * 25 +
+      (P.throttle ? 900 : 0),
       850,
       9000
     );
 
-    if (Math.abs(p.speed) < 1) {
-      p.gear = p.reverse ? "R" : "D";
-    }
-
-    updateCarPosition();
+    updateCar();
     updateHUD();
   }
 
-  function updateCarPosition() {
+  function updateCar() {
     if (!window.SuperX3D) return;
 
     const world = window.SuperX3D.getWorld();
@@ -116,35 +138,39 @@
 
     if (!car) return;
 
-    car.position.x = Physics.lateral;
-    car.rotation.y = Physics.yaw * 0.18;
+    car.position.x = P.lateral;
+    car.rotation.y = P.yaw * 0.18;
   }
 
   function updateHUD() {
-    const speedElement = document.getElementById("speedValue");
-    const gearElement = document.getElementById("gearValue");
-    const rpmElement = document.getElementById("rpmValue");
+    const speed = document.getElementById("speedValue");
+    const gear = document.getElementById("gearValue");
+    const rpm = document.getElementById("rpmValue");
 
-    if (speedElement) {
-      speedElement.textContent = Math.round(Math.abs(Physics.speed));
+    if (speed) {
+      speed.textContent = Math.round(Math.abs(P.speed));
     }
 
-    if (gearElement) {
-      gearElement.textContent = Physics.gear;
+    if (gear) {
+      gear.textContent = P.gear;
     }
 
-    if (rpmElement) {
-      rpmElement.textContent = Math.round(Physics.rpm);
+    if (rpm) {
+      rpm.textContent = Math.round(P.rpm);
     }
   }
 
   function loop(timestamp) {
-    if (!Physics.active) return;
+    if (!P.active) return;
 
-    if (!Physics.lastTime) Physics.lastTime = timestamp;
+    if (!P.lastTime) P.lastTime = timestamp;
 
-    const dt = Math.min((timestamp - Physics.lastTime) / 1000, 0.05);
-    Physics.lastTime = timestamp;
+    const dt = Math.min(
+      (timestamp - P.lastTime) / 1000,
+      0.05
+    );
+
+    P.lastTime = timestamp;
 
     update(dt);
 
@@ -152,61 +178,65 @@
   }
 
   function start() {
-    if (Physics.active) return;
+    if (P.active) return;
 
-    Physics.active = true;
-    Physics.lastTime = 0;
+    P.active = true;
+    P.lastTime = 0;
 
     requestAnimationFrame(loop);
   }
 
   function stop() {
-    Physics.active = false;
-    Physics.lastTime = 0;
+    P.active = false;
+    P.lastTime = 0;
+
+    P.throttle = false;
+    P.brake = false;
+    P.reverse = false;
+    P.handbrake = false;
+    P.steeringTarget = 0;
   }
 
   function reset() {
-    Physics.speed = 0;
-    Physics.rpm = 850;
-    Physics.gear = "D";
-    Physics.throttle = false;
-    Physics.brake = false;
-    Physics.reverse = false;
-    Physics.handbrake = false;
-    Physics.steering = 0;
-    Physics.steeringTarget = 0;
-    Physics.lateral = 0;
-    Physics.yaw = 0;
-    Physics.distance = 0;
+    stop();
 
+    P.speed = 0;
+    P.rpm = 850;
+    P.gear = "D";
+    P.steering = 0;
+    P.steeringTarget = 0;
+    P.lateral = 0;
+    P.yaw = 0;
+    P.distance = 0;
+
+    updateCar();
     updateHUD();
-    updateCarPosition();
   }
 
   function getState() {
     return {
-      speed: Physics.speed,
-      rpm: Physics.rpm,
-      gear: Physics.gear,
-      distance: Physics.distance,
-      steering: Physics.steering,
-      lateral: Physics.lateral,
-      active: Physics.active
+      speed: P.speed,
+      rpm: P.rpm,
+      gear: P.gear,
+      distance: P.distance,
+      steering: P.steering,
+      lateral: P.lateral,
+      active: P.active
     };
   }
 
   window.SuperXPhysics = {
-    start: start,
-    stop: stop,
-    reset: reset,
-    update: update,
-    setControl: setControl,
-    setSteering: setSteering,
-    getState: getState
+    start,
+    stop,
+    reset,
+    update,
+    setControl,
+    setSteering,
+    getState
   };
 
-  console.log("SUPERX advanced physics loaded.");
+  console.log("SUPERX PART 18 Physics Ready");
 
 })();
 
-/* ========== END OF PART 16 ========== */
+/* ========== END OF PART 18 ========== */
