@@ -1,166 +1,176 @@
 
-/* =========================================
-   SUPERX LEGEND RACING CAR
-   PART 26 — STABLE MOBILE CONTROLS
-   FILE: js/controls.js
-========================================= */
+/* =====================================================
+   SUPERX LEGEND — PART 30 START
+   FILE: js/physics.js
+===================================================== */
 
 (() => {
   "use strict";
 
-  const active = {
+  const P = {
+    speed: 0,
+    maxSpeed: 240,
+    acceleration: 42,
+    braking: 100,
+    steeringPower: 4.5,
+    steering: 0,
     throttle: false,
     brake: false,
     left: false,
     right: false,
-    handbrake: false
+    handbrake: false,
+    gear: 1,
+    rpm: 900,
+    distance: 0,
+    running: false,
+    paused: false
   };
 
-  let initialized = false;
-  const boundButtons = new Set();
-
-  function sendControl(name, value) {
-    if (!(name in active)) return;
-
-    active[name] = Boolean(value);
-
-    window.SuperXPhysics?.setControl?.(
-      name,
-      active[name]
-    );
+  function setControl(name, value) {
+    if (name in P) P[name] = Boolean(value);
   }
 
-  function bindButton(id, control) {
-    const button = document.getElementById(id);
-
-    if (!button || boundButtons.has(id)) return;
-
-    boundButtons.add(id);
-    button.style.touchAction = "none";
-
-    button.addEventListener("contextmenu", event => {
-      event.preventDefault();
-    });
-
-    button.addEventListener("pointerdown", event => {
-      event.preventDefault();
-
-      button.setPointerCapture?.(event.pointerId);
-
-      sendControl(control, true);
-      button.classList.add("control-active");
-    });
-
-    const release = event => {
-      event.preventDefault();
-
-      sendControl(control, false);
-      button.classList.remove("control-active");
-    };
-
-    button.addEventListener("pointerup", release);
-    button.addEventListener("pointercancel", release);
-
-    button.addEventListener("lostpointercapture", () => {
-      sendControl(control, false);
-      button.classList.remove("control-active");
-    });
+  function releaseControls() {
+    ["throttle", "brake", "left", "right", "handbrake"]
+      .forEach(name => P[name] = false);
   }
 
-  function setupMobileControls() {
-    bindButton("acceleratorBtn", "throttle");
-    bindButton("brakeBtn", "brake");
-    bindButton("steerLeft", "left");
-    bindButton("steerRight", "right");
-    bindButton("handbrakeBtn", "handbrake");
+  function reset() {
+    P.speed = 0;
+    P.steering = 0;
+    P.gear = 1;
+    P.rpm = 900;
+    P.distance = 0;
+    releaseControls();
   }
 
-  function setupKeyboard() {
-    const keyMap = {
-      ArrowUp: "throttle",
-      KeyW: "throttle",
-      ArrowDown: "brake",
-      KeyS: "brake",
-      ArrowLeft: "left",
-      KeyA: "left",
-      ArrowRight: "right",
-      KeyD: "right",
-      Space: "handbrake"
-    };
-
-    window.addEventListener("keydown", event => {
-      const control = keyMap[event.code];
-
-      if (!control) return;
-
-      event.preventDefault();
-
-      if (!event.repeat) {
-        sendControl(control, true);
-      }
-    });
-
-    window.addEventListener("keyup", event => {
-      const control = keyMap[event.code];
-
-      if (!control) return;
-
-      event.preventDefault();
-      sendControl(control, false);
-    });
-
-    window.addEventListener("blur", releaseAll);
-
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) releaseAll();
-    });
+  function startNewRace() {
+    reset();
+    P.running = true;
+    P.paused = false;
   }
 
-  function releaseAll() {
-    Object.keys(active).forEach(control => {
-      sendControl(control, false);
-    });
+  function pause() {
+    P.running = false;
+    P.paused = true;
+    releaseControls();
+  }
 
-    document.querySelectorAll(".control-active").forEach(button => {
-      button.classList.remove("control-active");
-    });
+  function resume() {
+    if (!P.paused) return;
+    P.paused = false;
+    P.running = true;
+  }
+
+  function stop() {
+    P.running = false;
+    P.paused = false;
+    reset();
+  }
+
+  function update(dt) {
+    if (!P.running || P.paused) return;
+
+    dt = Math.min(Math.max(Number(dt) || 0, 0), 0.05);
+
+    if (P.throttle && !P.brake) {
+      P.speed += P.acceleration * dt;
+    }
+
+    if (P.brake) {
+      P.speed -= P.braking * dt;
+    }
+
+    if (P.handbrake) {
+      P.speed -= 75 * dt;
+    }
+
+    if (!P.throttle && !P.brake && !P.handbrake) {
+      P.speed -= 7 * dt;
+    }
+
+    P.speed = Math.max(0, Math.min(P.maxSpeed, P.speed));
+
+    const direction =
+      (P.right ? 1 : 0) - (P.left ? 1 : 0);
+
+    if (direction) {
+      P.steering += direction * P.steeringPower * dt;
+    } else {
+      P.steering *= Math.max(0, 1 - 5 * dt);
+    }
+
+    P.steering = Math.max(-1, Math.min(1, P.steering));
+
+    const player = window.SuperX3D?.getPlayerCar?.();
+
+    if (player) {
+      const factor = Math.max(0.25, P.speed / 120);
+
+      player.position.x += P.steering * factor * dt * 4;
+      player.position.x = Math.max(-4.4, Math.min(4.4, player.position.x));
+
+      player.rotation.y = -P.steering * 0.22;
+
+      player.userData.wheels?.forEach(wheel => {
+        wheel.rotation.x -= P.speed * dt * 0.025;
+      });
+    }
+
+    P.gear = P.speed < 1
+      ? 1
+      : Math.min(6, Math.max(1, Math.ceil(P.speed / 40)));
+
+    P.rpm = Math.round(900 + (P.speed / P.maxSpeed) * 6200);
+    P.distance += P.speed * dt / 3600;
+
+    window.SuperX3D?.setWorldSpeed?.(P.speed);
+
+    updateHUD();
+  }
+
+  function updateHUD() {
+    const speed = document.getElementById("speedValue");
+    const gear = document.getElementById("gearValue");
+    const rpm = document.getElementById("rpmValue");
+
+    if (speed) speed.textContent = Math.round(P.speed);
+    if (gear) gear.textContent = P.gear;
+    if (rpm) rpm.textContent = P.rpm;
+  }
+
+  function setMaxSpeed(value) {
+    P.maxSpeed = Math.max(50, Number(value) || 240);
+    P.speed = Math.min(P.speed, P.maxSpeed);
   }
 
   function setSensitivity(value) {
-    window.SuperXPhysics?.setSensitivity?.(value);
-  }
-
-  function initialize() {
-    if (initialized) return;
-
-    initialized = true;
-
-    setupMobileControls();
-    setupKeyboard();
-
-    console.log("SUPERX Controls Initialized.");
-  }
-
-  window.SuperXControls = {
-    initialize,
-    releaseAll,
-    setSensitivity,
-    setControl: sendControl,
-    getState: () => ({ ...active })
-  };
-
-  if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      initialize,
-      { once: true }
+    P.steeringPower = Math.max(
+      1,
+      Math.min(10, Number(value) || 4.5)
     );
-  } else {
-    initialize();
   }
+
+  window.SuperXPhysics = {
+    state: P,
+    setControl,
+    releaseControls,
+    start: startNewRace,
+    startNewRace,
+    pause,
+    resume,
+    stop,
+    reset,
+    update,
+    updateHUD,
+    setMaxSpeed,
+    setSensitivity,
+    getSpeed: () => P.speed,
+    getDistance: () => P.distance
+  };
 
 })();
 
-/* =========================================
-   PART 26 END
-========================================= */
+/* =====================================================
+   SUPERX LEGEND — PART 30 END
+===================================================== */
