@@ -1,202 +1,31 @@
 
-<!-- SUPERX LEGEND — PART 27A START -->
+<!-- SUPERX LEGEND — PART 32 START -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#09080e">
-  <meta name="description" content="SUPERX LEGEND - 3D Racing Experience">
   <title>SUPERX LEGEND</title>
-
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
-  <style>
-    .race-telemetry {
-      position:absolute;
-      z-index:4;
-      top:82px;
-      left:12px;
-      display:flex;
-      gap:8px;
-      pointer-events:none;
-    }
-    .race-stat {
-      min-width:66px;
-      padding:8px 10px;
-      border:1px solid rgba(255,255,255,.15);
-      border-radius:11px;
-      background:rgba(10,8,15,.78);
-      text-align:center;
-      backdrop-filter:blur(8px);
-    }
-    .race-stat span {
-      display:block;
-      color:#aaa0bb;
-      font-size:8px;
-      letter-spacing:1px;
-    }
-    .race-stat strong {
-      display:block;
-      margin-top:4px;
-      font-size:15px;
-    }
-    .race-progress-wrap {
-      position:absolute;
-      z-index:4;
-      top:143px;
-      left:12px;
-      right:12px;
-      height:5px;
-      overflow:hidden;
-      border-radius:10px;
-      background:rgba(255,255,255,.2);
-    }
-    #raceProgress {
-      width:0%;
-      height:100%;
-      border-radius:10px;
-      background:linear-gradient(90deg,#7135d9,#bd8aff);
-      transition:width .15s linear;
-    }
-    .race-distance-label {
-      position:absolute;
-      z-index:4;
-      top:155px;
-      right:14px;
-      color:white;
-      font-size:10px;
-      text-shadow:0 2px 6px #000;
-    }
-    .race-overlay {
-      position:absolute;
-      inset:0;
-      z-index:20;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      background:rgba(5,4,9,.82);
-      backdrop-filter:blur(12px);
-    }
-    .race-overlay.active {
-      display:flex;
-    }
-    .race-overlay-card {
-      width:min(390px,100%);
-      padding:28px 22px;
-      border:1px solid rgba(172,112,255,.35);
-      border-radius:22px;
-      background:linear-gradient(145deg,#21162f,#100e17);
-      text-align:center;
-      box-shadow:0 20px 70px rgba(0,0,0,.5);
-    }
-    .race-overlay-card h2 {
-      margin:0 0 8px;
-      font-size:27px;
-      letter-spacing:2px;
-    }
-    .race-overlay-card p {
-      margin:8px 0 22px;
-      color:#aaa0bb;
-      font-size:12px;
-      line-height:1.6;
-    }
-    .race-overlay-card button {
-      width:100%;
-      margin-top:10px;
-    }
-    .result-screen {
-      position:fixed;
-      inset:0;
-      z-index:60;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      background:
-        radial-gradient(ellipse at 50% 20%,#35204f,#09080e 70%);
-    }
-    .result-screen.active {
-      display:flex;
-    }
-    .result-card {
-      width:min(430px,100%);
-      padding:28px 22px;
-      border:1px solid rgba(172,112,255,.4);
-      border-radius:24px;
-      background:rgba(19,15,28,.96);
-      text-align:center;
-    }
-    .result-trophy {
-      font-size:55px;
-      margin-bottom:12px;
-    }
-    .result-card h1 {
-      margin:0;
-      font-size:27px;
-      letter-spacing:2px;
-    }
-    .result-subtitle {
-      color:#aaa0bb;
-      font-size:11px;
-      margin:9px 0 22px;
-    }
-    .result-stats {
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:8px;
-      margin-bottom:20px;
-    }
-    .result-stat {
-      padding:13px 5px;
-      border:1px solid rgba(255,255,255,.1);
-      border-radius:12px;
-      background:#1b1725;
-    }
-    .result-stat span {
-      display:block;
-      color:#aaa0bb;
-      font-size:8px;
-    }
-    .result-stat strong {
-      display:block;
-      margin-top:7px;
-      font-size:14px;
-      overflow-wrap:anywhere;
-    }
-    @media(max-width:520px) {
-      .race-telemetry {top:77px;gap:5px}
-      .race-stat {min-width:58px;padding:7px 6px}
-      .race-progress-wrap {top:135px}
-      .race-distance-label {top:146px}
-      .race-overlay-card {padding:24px 17px}
-    }
-  </style>
 </head>
 <body>
-
 <main id="gameApp">
 
-  <!-- TOP BAR -->
   <header class="topbar">
-    <button class="icon-btn" id="menuBtn" aria-label="Open menu">☰</button>
+    <button class="icon-btn" id="menuBtn">☰</button>
     <div class="brand">
       <span class="brand-name">SUPERX</span>
       <span class="brand-subtitle">LEGEND</span>
     </div>
     <div class="top-actions">
-      <button class="coin-pill" id="coinsBtn">
-        <span>◈</span>
-        <span id="coinCount">2500</span>
-      </button>
-      <button class="icon-btn" id="languageBtn" aria-label="Change language">文</button>
-      <button class="icon-btn" id="profileBtn" aria-label="Profile">♙</button>
+      <button class="coin-pill" id="coinsBtn">◈ <span id="coinCount">2500</span></button>
+      <button class="icon-btn" id="languageBtn">文</button>
+      <button class="icon-btn" id="profileBtn">♙</button>
     </div>
   </header>
 
-  <!-- HOME SCREEN -->
   <section class="screen active" id="homeScreen">
     <div class="showroom" id="showroom">
       <canvas id="showroomCanvas"></canvas>
@@ -207,14 +36,12 @@
         <p>SUPERSPORT SERIES</p>
       </div>
       <div class="car-switcher">
-        <button id="prevCar" aria-label="Previous car">‹</button>
+        <button id="prevCar">‹</button>
         <span id="carIndex">01 / 35</span>
-        <button id="nextCar" aria-label="Next car">›</button>
+        <button id="nextCar">›</button>
       </div>
-      <button class="primary-btn" id="testDriveBtn">
-        <span>▶</span> TEST DRIVE
-      </button>
-      <div class="showroom-hint">3D SHOWROOM · ROTATE YOUR CAR</div>
+      <button class="primary-btn" id="testDriveBtn">▶ TEST DRIVE</button>
+      <div class="showroom-hint">3D SHOWROOM · SUPERX LEGEND</div>
     </div>
 
     <nav class="main-navigation">
@@ -222,25 +49,21 @@
         <span class="nav-icon">🏎</span>
         <span class="nav-title">GARAGE</span>
         <span class="nav-desc">Cars & Upgrades</span>
-        <span class="nav-arrow">↗</span>
       </button>
       <button class="nav-card career-card" data-screen="careerScreen">
         <span class="nav-icon">🏁</span>
         <span class="nav-title">CAREER</span>
         <span class="nav-desc">Missions & Maps</span>
-        <span class="nav-arrow">↗</span>
       </button>
       <button class="nav-card" data-screen="freeDriveScreen">
         <span class="nav-icon">🌄</span>
         <span class="nav-title">FREE DRIVE</span>
         <span class="nav-desc">Explore the World</span>
-        <span class="nav-arrow">↗</span>
       </button>
       <button class="nav-card" data-screen="onlineScreen">
         <span class="nav-icon">🌐</span>
         <span class="nav-title">ONLINE</span>
         <span class="nav-desc">Race with Friends</span>
-        <span class="nav-arrow">↗</span>
       </button>
     </nav>
     <footer class="home-footer">
@@ -249,14 +72,10 @@
     </footer>
   </section>
 
-  <!-- GARAGE SCREEN -->
   <section class="screen sub-screen" id="garageScreen">
     <div class="screen-heading">
       <button class="back-btn">←</button>
-      <div>
-        <span class="eyebrow">YOUR COLLECTION</span>
-        <h2>GARAGE</h2>
-      </div>
+      <div><span class="eyebrow">YOUR COLLECTION</span><h2>GARAGE</h2></div>
     </div>
     <div class="garage-preview" id="garagePreview">
       <canvas id="garageCanvas"></canvas>
@@ -266,18 +85,9 @@
       </div>
     </div>
     <div class="stat-grid">
-      <div class="stat-card">
-        <span>TOP SPEED</span>
-        <strong id="statSpeed">240 <small>KM/H</small></strong>
-      </div>
-      <div class="stat-card">
-        <span>ACCELERATION</span>
-        <strong id="statAcceleration">70</strong>
-      </div>
-      <div class="stat-card">
-        <span>HANDLING</span>
-        <strong id="statHandling">75</strong>
-      </div>
+      <div class="stat-card"><span>TOP SPEED</span><strong id="statSpeed">240 <small>KM/H</small></strong></div>
+      <div class="stat-card"><span>ACCELERATION</span><strong id="statAcceleration">70</strong></div>
+      <div class="stat-card"><span>HANDLING</span><strong id="statHandling">75</strong></div>
     </div>
     <div class="section-title">PERFORMANCE & CUSTOMIZATION</div>
     <div class="upgrade-grid">
@@ -291,48 +101,36 @@
     <button class="primary-btn wide-btn" id="garageDriveBtn">DRIVE THIS CAR →</button>
   </section>
 
-  <!-- CAREER SCREEN -->
   <section class="screen sub-screen" id="careerScreen">
     <div class="screen-heading">
       <button class="back-btn">←</button>
-      <div>
-        <span class="eyebrow">BUILD YOUR LEGACY</span>
-        <h2>CAREER</h2>
-      </div>
+      <div><span class="eyebrow">BUILD YOUR LEGACY</span><h2>CAREER</h2></div>
     </div>
-    <p class="muted-text">8 WORLDS · 800 MAPS TARGET</p>
+    <p class="muted-text">8 WORLDS · 800 MAPS</p>
     <div class="mode-grid" id="modeGrid"></div>
     <div class="section-title">MAP SELECTION</div>
     <div class="map-grid" id="mapGrid"></div>
     <button class="primary-btn wide-btn" id="startCareerBtn">START RACE →</button>
   </section>
 
-  <!-- FREE DRIVE SCREEN -->
   <section class="screen sub-screen" id="freeDriveScreen">
     <div class="screen-heading">
       <button class="back-btn">←</button>
-      <div>
-        <span class="eyebrow">EXPLORE AT YOUR PACE</span>
-        <h2>FREE DRIVE</h2>
-      </div>
+      <div><span class="eyebrow">EXPLORE AT YOUR PACE</span><h2>FREE DRIVE</h2></div>
     </div>
     <div class="option-list">
-      <button class="option-card" data-world="Village">🌾 Village Roads <span>→</span></button>
-      <button class="option-card" data-world="City">🌆 City & Highway <span>→</span></button>
-      <button class="option-card" data-world="Mountain">⛰ Mountain Roads <span>→</span></button>
-      <button class="option-card" data-world="Snowfall">❄ Snow & Ice <span>→</span></button>
+      <button class="option-card" data-world="Village">🌾 Village Roads →</button>
+      <button class="option-card" data-world="City">🌆 City & Highway →</button>
+      <button class="option-card" data-world="Mountain">⛰ Mountain Roads →</button>
+      <button class="option-card" data-world="Snowfall">❄ Snow & Ice →</button>
     </div>
     <button class="primary-btn wide-btn" id="startFreeDriveBtn">START EXPLORING →</button>
   </section>
 
-  <!-- ONLINE SCREEN -->
   <section class="screen sub-screen" id="onlineScreen">
     <div class="screen-heading">
       <button class="back-btn">←</button>
-      <div>
-        <span class="eyebrow">RACE TOGETHER</span>
-        <h2>ONLINE</h2>
-      </div>
+      <div><span class="eyebrow">RACE TOGETHER</span><h2>ONLINE</h2></div>
     </div>
     <div class="online-panel">
       <div class="online-symbol">🌐</div>
@@ -344,37 +142,25 @@
     </div>
   </section>
 
-  <!-- RACE SCREEN -->
   <section class="screen race-screen" id="raceScreen">
     <canvas id="raceCanvas"></canvas>
 
     <div class="race-topbar">
       <button class="icon-btn" id="pauseBtn">Ⅱ</button>
       <div class="race-speed">
-        <strong id="raceSpeed">0</strong>
-        <span>KM/H</span>
+        <strong id="raceSpeed">0</strong><span>KM/H</span>
       </div>
       <button class="icon-btn" id="cameraBtn">◉</button>
     </div>
 
-    <div class="race-telemetry">
-      <div class="race-stat">
-        <span>GEAR</span>
-        <strong id="gearValue">1</strong>
-      </div>
-      <div class="race-stat">
-        <span>RPM</span>
-        <strong id="rpmValue">900</strong>
-      </div>
+    <div class="race-hud-info">
+      <span>GEAR <strong id="gearValue">1</strong></span>
+      <span>RPM <strong id="rpmValue">900</strong></span>
+      <span id="raceDistance">0.00 km</span>
     </div>
-
-    <span id="speedValue" hidden>0</span>
-
-    <div class="race-progress-wrap">
+    <div class="race-progress-track">
       <div id="raceProgress"></div>
     </div>
-    <div class="race-distance-label" id="raceDistance">0.00 km</div>
-
     <div class="race-message" id="raceMessage">READY</div>
 
     <div class="race-hud-bottom">
@@ -390,46 +176,28 @@
       <button class="small-control" id="hornBtn">HORN</button>
     </div>
 
-    <!-- PAUSE MENU -->
     <div class="race-overlay" id="pauseMenu">
-      <div class="race-overlay-card">
-        <div class="result-trophy">Ⅱ</div>
+      <div class="dialog-box">
+        <span class="eyebrow">SUPERX LEGEND</span>
         <h2>RACE PAUSED</h2>
-        <p>Your race is paused. Resume whenever you're ready.</p>
-        <button class="primary-btn" id="resumeBtn">RESUME RACE</button>
-        <button class="secondary-btn" id="exitRaceBtn">EXIT TO HOME</button>
+        <button class="primary-btn wide-btn" id="resumeBtn">RESUME</button>
+        <button class="secondary-btn wide-btn" id="exitRaceBtn">EXIT TO HOME</button>
+      </div>
+    </div>
+
+    <div class="race-overlay" id="resultScreen">
+      <div class="dialog-box">
+        <span class="eyebrow">RACE COMPLETED</span>
+        <h2>LEGENDARY DRIVE!</h2>
+        <p>Distance: <strong id="resultDistance">0 km</strong></p>
+        <p>Time: <strong id="resultTime">0 sec</strong></p>
+        <p>Reward: ◈ <strong id="rewardValue">0</strong></p>
+        <button class="primary-btn wide-btn" id="retryRaceBtn">RACE AGAIN</button>
+        <button class="secondary-btn wide-btn" id="resultHomeBtn">HOME</button>
       </div>
     </div>
   </section>
 
-  <!-- RESULT SCREEN -->
-  <section class="screen result-screen" id="resultScreen">
-    <div class="result-card">
-      <div class="result-trophy">🏆</div>
-      <h1>RACE COMPLETE</h1>
-      <p class="result-subtitle">YOU HAVE FINISHED THE RACE</p>
-
-      <div class="result-stats">
-        <div class="result-stat">
-          <span>DISTANCE</span>
-          <strong id="resultDistance">0 km</strong>
-        </div>
-        <div class="result-stat">
-          <span>TIME</span>
-          <strong id="resultTime">0 sec</strong>
-        </div>
-        <div class="result-stat">
-          <span>REWARD</span>
-          <strong>◈ <span id="rewardValue">0</span></strong>
-        </div>
-      </div>
-
-      <button class="primary-btn" id="resultRetryBtn">RACE AGAIN</button>
-      <button class="secondary-btn" id="resultHomeBtn">BACK TO HOME</button>
-    </div>
-  </section>
-
-  <!-- MENU DRAWER -->
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <aside class="menu-drawer" id="menuDrawer">
     <div class="drawer-heading">
@@ -448,7 +216,6 @@
     <button class="drawer-item" id="aboutBtn">ⓘ About</button>
   </aside>
 
-  <!-- GENERAL DIALOG -->
   <div class="dialog-backdrop" id="dialogBackdrop">
     <div class="dialog-box">
       <button class="icon-btn dialog-close" id="dialogClose">✕</button>
@@ -457,24 +224,18 @@
     </div>
   </div>
 
-  <!-- GLOBAL STATUS -->
   <div class="toast" id="toast"></div>
-
 </main>
 
-<!-- GAME SCRIPTS -->
 <script src="js/world.js"></script>
 <script src="js/physics.js"></script>
 <script src="js/traffic.js"></script>
 <script src="js/controls.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/audio-events.js"></script>
 <script src="js/race.js"></script>
 <script src="js/main.js"></script>
 <script src="js/progress.js"></script>
-
-<!-- AUDIO SYSTEM -->
-<script src="js/audio.js"></script>
-<script src="js/audio-events.js"></script>
-
 </body>
 </html>
-<!-- SUPERX LEGEND — PART 27A END -->
+<!-- SUPERX LEGEND — PART 32 END -->
