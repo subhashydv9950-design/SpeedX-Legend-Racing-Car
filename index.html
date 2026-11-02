@@ -1,5 +1,5 @@
 
-<!-- SUPERX LEGEND — PART 1 START -->
+<!-- SUPERX LEGEND — UPDATED INDEX.HTML START -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,281 +14,272 @@
 
   <link rel="stylesheet" href="style.css">
 
-  <!-- Three.js 3D engine -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
 
-  <!-- MAIN GAME APP -->
-  <main id="gameApp">
+<main id="gameApp">
 
-    <!-- TOP BAR -->
-    <header class="topbar">
-      <button class="icon-btn" id="menuBtn"
-              aria-label="Open menu">☰</button>
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="Open menu">☰</button>
 
-      <div class="brand">
-        <span class="brand-name">SUPERX</span>
-        <span class="brand-subtitle">LEGEND</span>
-      </div>
+    <div class="brand">
+      <span class="brand-name">SUPERX</span>
+      <span class="brand-subtitle">LEGEND</span>
+    </div>
 
-      <div class="top-actions">
-        <button class="coin-pill" id="coinsBtn">
-          <span>◈</span>
-          <span id="coinCount">2500</span>
-        </button>
-        <button class="icon-btn" id="languageBtn"
-                aria-label="Change language">文</button>
-        <button class="icon-btn" id="profileBtn"
-                aria-label="Profile">♙</button>
-      </div>
-    </header>
-
-    <!-- HOME SCREEN -->
-    <section class="screen active" id="homeScreen">
-
-      <!-- 3D SHOWROOM -->
-      <div class="showroom" id="showroom">
-        <canvas id="showroomCanvas"></canvas>
-
-        <div class="showroom-glow"></div>
-
-        <div class="showroom-label">
-          <span class="eyebrow">YOUR WORLD. YOUR LEGEND.</span>
-          <h1 id="carName">NIGHTFALL GT</h1>
-          <p>SUPERSPORT SERIES</p>
-        </div>
-
-        <div class="car-switcher">
-          <button id="prevCar" aria-label="Previous car">‹</button>
-          <span id="carIndex">01 / 35</span>
-          <button id="nextCar" aria-label="Next car">›</button>
-        </div>
-
-        <button class="primary-btn" id="testDriveBtn">
-          <span>▶</span> TEST DRIVE
-        </button>
-
-        <div class="showroom-hint">
-          3D SHOWROOM · ROTATE YOUR CAR
-        </div>
-      </div>
-
-      <!-- MAIN NAVIGATION -->
-      <nav class="main-navigation">
-
-        <button class="nav-card garage-card"
-                data-screen="garageScreen">
-          <span class="nav-icon">🏎</span>
-          <span class="nav-title">GARAGE</span>
-          <span class="nav-desc">Cars & Upgrades</span>
-          <span class="nav-arrow">↗</span>
-        </button>
-
-        <button class="nav-card career-card"
-                data-screen="careerScreen">
-          <span class="nav-icon">🏁</span>
-          <span class="nav-title">CAREER</span>
-          <span class="nav-desc">Missions & Maps</span>
-          <span class="nav-arrow">↗</span>
-        </button>
-
-        <button class="nav-card"
-                data-screen="freeDriveScreen">
-          <span class="nav-icon">🌄</span>
-          <span class="nav-title">FREE DRIVE</span>
-          <span class="nav-desc">Explore the World</span>
-          <span class="nav-arrow">↗</span>
-        </button>
-
-        <button class="nav-card"
-                data-screen="onlineScreen">
-          <span class="nav-icon">🌐</span>
-          <span class="nav-title">ONLINE</span>
-          <span class="nav-desc">Race with Friends</span>
-          <span class="nav-arrow">↗</span>
-        </button>
-
-      </nav>
-
-      <footer class="home-footer">
-        <span>SUPERX LEGEND</span>
-        <span>DRIVE BEYOND LIMITS</span>
-      </footer>
-    </section>
-
-    <!-- GARAGE SCREEN -->
-    <section class="screen sub-screen" id="garageScreen">
-      <div class="screen-heading">
-        <button class="back-btn">←</button>
-        <div>
-          <span class="eyebrow">YOUR COLLECTION</span>
-          <h2>GARAGE</h2>
-        </div>
-      </div>
-
-      <div class="garage-preview" id="garagePreview">
-        <canvas id="garageCanvas"></canvas>
-        <div class="garage-car-info">
-          <h2 id="garageCarName">NIGHTFALL GT</h2>
-          <p id="garageCarStatus">UNLOCKED</p>
-        </div>
-      </div>
-
-      <div class="stat-grid">
-        <div class="stat-card">
-          <span>TOP SPEED</span>
-          <strong id="statSpeed">240 <small>KM/H</small></strong>
-        </div>
-        <div class="stat-card">
-          <span>ACCELERATION</span>
-          <strong id="statAcceleration">70</strong>
-        </div>
-        <div class="stat-card">
-          <span>HANDLING</span>
-          <strong id="statHandling">75</strong>
-        </div>
-      </div>
-
-      <div class="section-title">PERFORMANCE & CUSTOMIZATION</div>
-
-      <div class="upgrade-grid">
-        <button class="upgrade-card" data-upgrade="engine">⚙️<span>Engine</span></button>
-        <button class="upgrade-card" data-upgrade="gearbox">🔩<span>Gearbox</span></button>
-        <button class="upgrade-card" data-upgrade="brakes">🛑<span>Brakes</span></button>
-        <button class="upgrade-card" data-upgrade="tyres">⭕<span>Tyres</span></button>
-        <button class="upgrade-card" data-upgrade="paint">🎨<span>Paint</span></button>
-        <button class="upgrade-card" data-upgrade="body">🚘<span>Body Kit</span></button>
-      </div>
-
-      <button class="primary-btn wide-btn" id="garageDriveBtn">
-        DRIVE THIS CAR →
+    <div class="top-actions">
+      <button class="coin-pill" id="coinsBtn">
+        <span>◈</span>
+        <span id="coinCount">2500</span>
       </button>
-    </section>
+      <button class="icon-btn" id="languageBtn" aria-label="Change language">文</button>
+      <button class="icon-btn" id="profileBtn" aria-label="Profile">♙</button>
+    </div>
+  </header>
 
-    <!-- CAREER SCREEN -->
-    <section class="screen sub-screen" id="careerScreen">
-      <div class="screen-heading">
-        <button class="back-btn">←</button>
-        <div>
-          <span class="eyebrow">BUILD YOUR LEGACY</span>
-          <h2>CAREER</h2>
-        </div>
+  <!-- HOME SCREEN -->
+  <section class="screen active" id="homeScreen">
+    <div class="showroom" id="showroom">
+      <canvas id="showroomCanvas"></canvas>
+      <div class="showroom-glow"></div>
+
+      <div class="showroom-label">
+        <span class="eyebrow">YOUR WORLD. YOUR LEGEND.</span>
+        <h1 id="carName">NIGHTFALL GT</h1>
+        <p>SUPERSPORT SERIES</p>
       </div>
-      <p class="muted-text">8 WORLDS · 800 MAPS TARGET</p>
-      <div class="mode-grid" id="modeGrid"></div>
-      <div class="section-title">MAP SELECTION</div>
-      <div class="map-grid" id="mapGrid"></div>
-      <button class="primary-btn wide-btn" id="startCareerBtn">
-        START RACE →
+
+      <div class="car-switcher">
+        <button id="prevCar" aria-label="Previous car">‹</button>
+        <span id="carIndex">01 / 35</span>
+        <button id="nextCar" aria-label="Next car">›</button>
+      </div>
+
+      <button class="primary-btn" id="testDriveBtn">
+        <span>▶</span> TEST DRIVE
       </button>
-    </section>
 
-    <!-- FREE DRIVE SCREEN -->
-    <section class="screen sub-screen" id="freeDriveScreen">
-      <div class="screen-heading">
-        <button class="back-btn">←</button>
-        <div>
-          <span class="eyebrow">EXPLORE AT YOUR PACE</span>
-          <h2>FREE DRIVE</h2>
-        </div>
-      </div>
-      <div class="option-list">
-        <button class="option-card" data-world="Village">🌾 Village Roads <span>→</span></button>
-        <button class="option-card" data-world="City">🌆 City & Highway <span>→</span></button>
-        <button class="option-card" data-world="Mountain">⛰ Mountain Roads <span>→</span></button>
-        <button class="option-card" data-world="Snowfall">❄ Snow & Ice <span>→</span></button>
-      </div>
-      <button class="primary-btn wide-btn" id="startFreeDriveBtn">
-        START EXPLORING →
-      </button>
-    </section>
-
-    <!-- ONLINE SCREEN -->
-    <section class="screen sub-screen" id="onlineScreen">
-      <div class="screen-heading">
-        <button class="back-btn">←</button>
-        <div>
-          <span class="eyebrow">RACE TOGETHER</span>
-          <h2>ONLINE</h2>
-        </div>
-      </div>
-      <div class="online-panel">
-        <div class="online-symbol">🌐</div>
-        <h2>YOUR NEXT RACE AWAITS</h2>
-        <p>Online multiplayer requires a connected game server.</p>
-        <button class="secondary-btn" id="quickJoinBtn">QUICK JOIN</button>
-        <button class="secondary-btn" id="createRoomBtn">CREATE ROOM</button>
-        <p class="muted-text" id="onlineStatus">SERVER NOT CONNECTED</p>
-      </div>
-    </section>
-
-    <!-- RACE SCREEN -->
-    <section class="screen race-screen" id="raceScreen">
-      <canvas id="raceCanvas"></canvas>
-
-      <div class="race-topbar">
-        <button class="icon-btn" id="pauseBtn">Ⅱ</button>
-        <div class="race-speed">
-          <strong id="raceSpeed">0</strong>
-          <span>KM/H</span>
-        </div>
-        <button class="icon-btn" id="cameraBtn">◉</button>
-      </div>
-
-      <div class="race-message" id="raceMessage">READY</div>
-
-      <div class="race-hud-bottom">
-        <button class="control-btn" id="steerLeft">◀</button>
-        <button class="control-btn" id="brakeBtn">BRAKE</button>
-        <button class="control-btn accelerator" id="acceleratorBtn">GO ▲</button>
-        <button class="control-btn" id="steerRight">▶</button>
-      </div>
-
-      <div class="race-extra-controls">
-        <button class="small-control" id="reverseBtn">R</button>
-        <button class="small-control" id="handbrakeBtn">HB</button>
-        <button class="small-control" id="hornBtn">HORN</button>
-      </div>
-    </section>
-
-    <!-- MENU DRAWER -->
-    <div class="drawer-backdrop" id="drawerBackdrop"></div>
-    <aside class="menu-drawer" id="menuDrawer">
-      <div class="drawer-heading">
-        <strong>SUPERX LEGEND</strong>
-        <button class="icon-btn" id="closeMenuBtn">✕</button>
-      </div>
-      <button class="drawer-item" data-screen="homeScreen">⌂ Home</button>
-      <button class="drawer-item" data-screen="garageScreen">🏎 Garage</button>
-      <button class="drawer-item" data-screen="careerScreen">🏁 Career</button>
-      <button class="drawer-item" data-screen="freeDriveScreen">🌄 Free Drive</button>
-      <button class="drawer-item" data-screen="onlineScreen">🌐 Online</button>
-      <button class="drawer-item" id="settingsBtn">⚙ Settings</button>
-      <button class="drawer-item" id="aboutBtn">ⓘ About</button>
-    </aside>
-
-    <!-- GENERAL DIALOG -->
-    <div class="dialog-backdrop" id="dialogBackdrop">
-      <div class="dialog-box">
-        <button class="icon-btn dialog-close" id="dialogClose">✕</button>
-        <h2 id="dialogTitle">SUPERX LEGEND</h2>
-        <div id="dialogContent"></div>
+      <div class="showroom-hint">
+        3D SHOWROOM · ROTATE YOUR CAR
       </div>
     </div>
 
-    <!-- GLOBAL STATUS -->
-    <div class="toast" id="toast"></div>
+    <nav class="main-navigation">
+      <button class="nav-card garage-card" data-screen="garageScreen">
+        <span class="nav-icon">🏎</span>
+        <span class="nav-title">GARAGE</span>
+        <span class="nav-desc">Cars & Upgrades</span>
+        <span class="nav-arrow">↗</span>
+      </button>
 
-  </main>
+      <button class="nav-card career-card" data-screen="careerScreen">
+        <span class="nav-icon">🏁</span>
+        <span class="nav-title">CAREER</span>
+        <span class="nav-desc">Missions & Maps</span>
+        <span class="nav-arrow">↗</span>
+      </button>
 
-  <!-- GAME SCRIPTS — added in later parts -->
-  
-<!-- ========================================
- SUPERX LEGEND RACING CAR
- PART 9 — JAVASCRIPT MODULE CONNECTION
-======================================== -->
+      <button class="nav-card" data-screen="freeDriveScreen">
+        <span class="nav-icon">🌄</span>
+        <span class="nav-title">FREE DRIVE</span>
+        <span class="nav-desc">Explore the World</span>
+        <span class="nav-arrow">↗</span>
+      </button>
 
+      <button class="nav-card" data-screen="onlineScreen">
+        <span class="nav-icon">🌐</span>
+        <span class="nav-title">ONLINE</span>
+        <span class="nav-desc">Race with Friends</span>
+        <span class="nav-arrow">↗</span>
+      </button>
+    </nav>
+
+    <footer class="home-footer">
+      <span>SUPERX LEGEND</span>
+      <span>DRIVE BEYOND LIMITS</span>
+    </footer>
+  </section>
+
+  <!-- GARAGE SCREEN -->
+  <section class="screen sub-screen" id="garageScreen">
+    <div class="screen-heading">
+      <button class="back-btn">←</button>
+      <div>
+        <span class="eyebrow">YOUR COLLECTION</span>
+        <h2>GARAGE</h2>
+      </div>
+    </div>
+
+    <div class="garage-preview" id="garagePreview">
+      <canvas id="garageCanvas"></canvas>
+      <div class="garage-car-info">
+        <h2 id="garageCarName">NIGHTFALL GT</h2>
+        <p id="garageCarStatus">UNLOCKED</p>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span>TOP SPEED</span>
+        <strong id="statSpeed">240 <small>KM/H</small></strong>
+      </div>
+      <div class="stat-card">
+        <span>ACCELERATION</span>
+        <strong id="statAcceleration">70</strong>
+      </div>
+      <div class="stat-card">
+        <span>HANDLING</span>
+        <strong id="statHandling">75</strong>
+      </div>
+    </div>
+
+    <div class="section-title">PERFORMANCE & CUSTOMIZATION</div>
+
+    <div class="upgrade-grid">
+      <button class="upgrade-card" data-upgrade="engine">⚙️<span>Engine</span></button>
+      <button class="upgrade-card" data-upgrade="gearbox">🔩<span>Gearbox</span></button>
+      <button class="upgrade-card" data-upgrade="brakes">🛑<span>Brakes</span></button>
+      <button class="upgrade-card" data-upgrade="tyres">⭕<span>Tyres</span></button>
+      <button class="upgrade-card" data-upgrade="paint">🎨<span>Paint</span></button>
+      <button class="upgrade-card" data-upgrade="body">🚘<span>Body Kit</span></button>
+    </div>
+
+    <button class="primary-btn wide-btn" id="garageDriveBtn">
+      DRIVE THIS CAR →
+    </button>
+  </section>
+
+  <!-- CAREER SCREEN -->
+  <section class="screen sub-screen" id="careerScreen">
+    <div class="screen-heading">
+      <button class="back-btn">←</button>
+      <div>
+        <span class="eyebrow">BUILD YOUR LEGACY</span>
+        <h2>CAREER</h2>
+      </div>
+    </div>
+
+    <p class="muted-text">8 WORLDS · 800 MAPS TARGET</p>
+    <div class="mode-grid" id="modeGrid"></div>
+    <div class="section-title">MAP SELECTION</div>
+    <div class="map-grid" id="mapGrid"></div>
+
+    <button class="primary-btn wide-btn" id="startCareerBtn">
+      START RACE →
+    </button>
+  </section>
+
+  <!-- FREE DRIVE SCREEN -->
+  <section class="screen sub-screen" id="freeDriveScreen">
+    <div class="screen-heading">
+      <button class="back-btn">←</button>
+      <div>
+        <span class="eyebrow">EXPLORE AT YOUR PACE</span>
+        <h2>FREE DRIVE</h2>
+      </div>
+    </div>
+
+    <div class="option-list">
+      <button class="option-card" data-world="Village">🌾 Village Roads <span>→</span></button>
+      <button class="option-card" data-world="City">🌆 City & Highway <span>→</span></button>
+      <button class="option-card" data-world="Mountain">⛰ Mountain Roads <span>→</span></button>
+      <button class="option-card" data-world="Snowfall">❄ Snow & Ice <span>→</span></button>
+    </div>
+
+    <button class="primary-btn wide-btn" id="startFreeDriveBtn">
+      START EXPLORING →
+    </button>
+  </section>
+
+  <!-- ONLINE SCREEN -->
+  <section class="screen sub-screen" id="onlineScreen">
+    <div class="screen-heading">
+      <button class="back-btn">←</button>
+      <div>
+        <span class="eyebrow">RACE TOGETHER</span>
+        <h2>ONLINE</h2>
+      </div>
+    </div>
+
+    <div class="online-panel">
+      <div class="online-symbol">🌐</div>
+      <h2>YOUR NEXT RACE AWAITS</h2>
+      <p>Online multiplayer requires a connected game server.</p>
+      <button class="secondary-btn" id="quickJoinBtn">QUICK JOIN</button>
+      <button class="secondary-btn" id="createRoomBtn">CREATE ROOM</button>
+      <p class="muted-text" id="onlineStatus">SERVER NOT CONNECTED</p>
+    </div>
+  </section>
+
+  <!-- RACE SCREEN -->
+  <section class="screen race-screen" id="raceScreen">
+    <canvas id="raceCanvas"></canvas>
+
+    <div class="race-topbar">
+      <button class="icon-btn" id="pauseBtn">Ⅱ</button>
+      <div class="race-speed">
+        <strong id="raceSpeed">0</strong>
+        <span>KM/H</span>
+      </div>
+      <button class="icon-btn" id="cameraBtn">◉</button>
+    </div>
+
+    <div class="race-message" id="raceMessage">READY</div>
+
+    <div class="race-hud-bottom">
+      <button class="control-btn" id="steerLeft">◀</button>
+      <button class="control-btn" id="brakeBtn">BRAKE</button>
+      <button class="control-btn accelerator" id="acceleratorBtn">GO ▲</button>
+      <button class="control-btn" id="steerRight">▶</button>
+    </div>
+
+    <div class="race-extra-controls">
+      <button class="small-control" id="reverseBtn">R</button>
+      <button class="small-control" id="handbrakeBtn">HB</button>
+      <button class="small-control" id="hornBtn">HORN</button>
+    </div>
+  </section>
+
+  <!-- MENU DRAWER -->
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <aside class="menu-drawer" id="menuDrawer">
+    <div class="drawer-heading">
+      <strong>SUPERX LEGEND</strong>
+      <button class="icon-btn" id="closeMenuBtn">✕</button>
+    </div>
+
+    <button class="drawer-item" data-screen="homeScreen">⌂ Home</button>
+    <button class="drawer-item" data-screen="garageScreen">🏎 Garage</button>
+    <button class="drawer-item" data-screen="careerScreen">🏁 Career</button>
+    <button class="drawer-item" data-screen="freeDriveScreen">🌄 Free Drive</button>
+    <button class="drawer-item" data-screen="onlineScreen">🌐 Online</button>
+
+    <div class="section-title">AUDIO SETTINGS</div>
+    <button class="drawer-item" id="musicToggle">🔇 Music OFF</button>
+    <button class="drawer-item" id="soundToggle">🔊 Sound ON</button>
+
+    <button class="drawer-item" id="settingsBtn">⚙ Settings</button>
+    <button class="drawer-item" id="aboutBtn">ⓘ About</button>
+  </aside>
+
+  <!-- GENERAL DIALOG -->
+  <div class="dialog-backdrop" id="dialogBackdrop">
+    <div class="dialog-box">
+      <button class="icon-btn dialog-close" id="dialogClose">✕</button>
+      <h2 id="dialogTitle">SUPERX LEGEND</h2>
+      <div id="dialogContent"></div>
+    </div>
+  </div>
+
+  <!-- GLOBAL STATUS -->
+  <div class="toast" id="toast"></div>
+
+</main>
+
+<!-- GAME SCRIPTS -->
 <script src="js/world.js"></script>
 <script src="js/physics.js"></script>
 <script src="js/traffic.js"></script>
@@ -296,12 +287,11 @@
 <script src="js/race.js"></script>
 <script src="js/main.js"></script>
 <script src="js/progress.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/audio-integration.js"></script>
-  <script src="js/audio-events.js"></script>
-<!-- ========== END OF PART 9 ========== -->
-  
+
+<!-- AUDIO SYSTEM -->
+<script src="js/audio.js"></script>
+<script src="js/audio-events.js"></script>
 
 </body>
 </html>
-<!-- SUPERX LEGEND — PART 1 END -->
+<!-- SUPERX LEGEND — UPDATED INDEX.HTML END -->
