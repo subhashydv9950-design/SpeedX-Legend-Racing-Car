@@ -1,0 +1,654 @@
+
+/* ==================================================
+   SUPERX LEGEND
+   FILE 04 — GAME HUD & CONTROLS
+   START
+================================================== */
+
+/* RACE SCREEN */
+
+.race-page {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #08080d;
+}
+
+.race-world {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, #171c32 0%, #55546a 42%, #24202b 100%);
+}
+
+#raceCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.race-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse, transparent 48%, rgba(0,0,0,.45));
+}
+
+
+/* TOP HUD */
+
+.race-top-hud {
+  position: absolute;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: max(12px, env(safe-area-inset-top)) 14px 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.race-top-hud button {
+  pointer-events: auto;
+}
+
+.race-pause-button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 12px;
+  background: rgba(12,10,18,.7);
+  backdrop-filter: blur(10px);
+  font-size: 17px;
+}
+
+.race-info-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.race-mode-label {
+  color: white;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 5px black;
+}
+
+.race-timer {
+  padding: 6px 12px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px;
+  background: rgba(12,10,18,.72);
+  font-size: 14px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.race-map-box {
+  width: 90px;
+  height: 90px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,.6);
+  border-radius: 13px;
+  background: rgba(10,10,16,.65);
+  backdrop-filter: blur(8px);
+}
+
+#raceMiniMap {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+
+/* SPEEDOMETER */
+
+.speedometer-panel {
+  position: absolute;
+  z-index: 12;
+  right: 15px;
+  bottom: 125px;
+  width: 125px;
+  height: 125px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(190,130,255,.45);
+  border-radius: 50%;
+  background: rgba(10,8,17,.76);
+  box-shadow: 0 0 25px rgba(151,71,255,.2);
+  backdrop-filter: blur(10px);
+}
+
+.speed-value {
+  font-size: 37px;
+  font-weight: 1000;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.speed-unit {
+  margin-top: 4px;
+  color: var(--purple-light);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.gear-display {
+  margin-top: 6px;
+  color: #ffd16b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.rpm-container {
+  position: absolute;
+  bottom: -7px;
+  left: 15%;
+  width: 70%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #40384b;
+}
+
+.rpm-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #46e6a5, #ffd16b, #ff536d);
+}
+
+
+/* RACE PROGRESS */
+
+.race-progress-panel {
+  position: absolute;
+  z-index: 10;
+  top: 115px;
+  left: 50%;
+  width: min(210px, 55%);
+  padding: 9px 12px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  background: rgba(10,8,17,.65);
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.race-progress-panel strong {
+  display: block;
+  font-size: 13px;
+}
+
+.race-progress-panel span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
+.race-progress-track {
+  height: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #40384b;
+}
+
+.race-progress-track span {
+  width: 0%;
+  height: 100%;
+  margin: 0;
+  background: linear-gradient(90deg, var(--purple), var(--pink));
+}
+
+
+/* CONTROL BUTTONS */
+
+.race-controls {
+  position: absolute;
+  z-index: 15;
+  inset: 0;
+  pointer-events: none;
+}
+
+.race-controls button {
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.steering-controls {
+  position: absolute;
+  left: 18px;
+  bottom: max(25px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.steering-button {
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 18px;
+  background: rgba(15,12,23,.75);
+  box-shadow: 0 5px 15px rgba(0,0,0,.25);
+  backdrop-filter: blur(8px);
+  font-size: 28px;
+}
+
+.steering-button:active,
+.steering-button.pressed {
+  border-color: var(--purple-light);
+  background: rgba(120,55,197,.8);
+}
+
+.pedals-controls {
+  position: absolute;
+  right: 18px;
+  bottom: max(25px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.pedal-button {
+  width: 62px;
+  height: 83px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 15px;
+  background: rgba(15,12,23,.78);
+  backdrop-filter: blur(8px);
+  font-size: 23px;
+}
+
+.pedal-button span {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.pedal-button.accelerator {
+  border-color: rgba(70,230,165,.45);
+  background: rgba(18,80,62,.65);
+}
+
+.pedal-button.brake {
+  border-color: rgba(255,83,109,.4);
+  background: rgba(100,25,42,.65);
+}
+
+.pedal-button:active,
+.pedal-button.pressed {
+  filter: brightness(1.5);
+  transform: scale(.96);
+}
+
+
+/* EXTRA DRIVING CONTROLS */
+
+.extra-controls {
+  position: absolute;
+  z-index: 16;
+  top: 50%;
+  right: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  transform: translateY(-50%);
+}
+
+.extra-control-button {
+  width: 39px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 12px;
+  background: rgba(12,10,18,.72);
+  font-size: 16px;
+}
+
+.extra-control-button.active {
+  border-color: var(--purple-light);
+  background: rgba(120,55,197,.75);
+}
+
+
+/* CAMERA BUTTON */
+
+.camera-switch-button {
+  position: absolute;
+  z-index: 16;
+  top: 115px;
+  right: 16px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.25);
+  border-radius: 12px;
+  background: rgba(12,10,18,.72);
+  font-size: 17px;
+}
+
+
+/* PAUSE MENU */
+
+.race-pause-overlay,
+.race-result-overlay {
+  position: absolute;
+  z-index: 100;
+  inset: 0;
+  padding: 20px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.78);
+  backdrop-filter: blur(10px);
+}
+
+.race-pause-overlay.open,
+.race-result-overlay.open {
+  display: flex;
+}
+
+.race-pause-panel,
+.race-result-panel {
+  width: min(100%, 360px);
+  padding: 27px 22px;
+  border: 1px solid rgba(151,71,255,.3);
+  border-radius: 20px;
+  background: linear-gradient(145deg, #241a34, #100e18);
+  text-align: center;
+}
+
+.race-pause-panel h2,
+.race-result-panel h2 {
+  margin-bottom: 8px;
+  font-size: 25px;
+  font-weight: 1000;
+}
+
+.race-pause-panel p,
+.race-result-panel p {
+  margin-bottom: 22px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.pause-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pause-menu-buttons button,
+.result-menu-buttons button {
+  width: 100%;
+  min-height: 45px;
+  border-radius: 10px;
+  background: var(--panel-light);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.pause-menu-buttons button:first-child,
+.result-menu-buttons button:first-child {
+  background: linear-gradient(110deg, #7837c5, #bd45cb);
+}
+
+
+/* RACE RESULT */
+
+.result-reward {
+  margin: 18px 0;
+  color: #ffd16b;
+  font-size: 29px;
+  font-weight: 1000;
+}
+
+.result-stat-grid {
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.result-stat {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.05);
+}
+
+.result-stat strong {
+  display: block;
+  font-size: 17px;
+}
+
+.result-stat span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
+.result-menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+
+/* CONTROL CUSTOMIZATION */
+
+.control-settings-panel {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--panel);
+}
+
+.control-settings-row {
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.control-settings-row:last-child {
+  border-bottom: 0;
+}
+
+.control-settings-row label {
+  color: #d6cde1;
+  font-size: 11px;
+}
+
+.control-settings-row input[type="range"] {
+  width: 45%;
+  accent-color: var(--purple);
+}
+
+
+/* STEERING WHEEL OPTION */
+
+.steering-wheel-control {
+  position: absolute;
+  left: 22px;
+  bottom: 25px;
+  width: 115px;
+  height: 115px;
+  display: none;
+  place-items: center;
+  border: 9px solid rgba(255,255,255,.5);
+  border-radius: 50%;
+  background: rgba(10,10,15,.3);
+  box-shadow: 0 0 15px rgba(0,0,0,.3);
+  font-size: 40px;
+  touch-action: none;
+}
+
+.steering-wheel-control.visible {
+  display: grid;
+}
+
+
+/* KEYBOARD HELP */
+
+.keyboard-help {
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  bottom: 15px;
+  display: flex;
+  gap: 12px;
+  color: white;
+  font-size: 9px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.keyboard-help span {
+  padding: 6px 9px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 6px;
+  background: rgba(0,0,0,.5);
+}
+
+
+/* LANDSCAPE AND SMALL DEVICES */
+
+@media (max-width: 600px) {
+
+  .keyboard-help {
+    display: none;
+  }
+
+  .race-map-box {
+    width: 72px;
+    height: 72px;
+  }
+
+  .speedometer-panel {
+    right: 12px;
+    bottom: 125px;
+    width: 105px;
+    height: 105px;
+  }
+
+  .speed-value {
+    font-size: 31px;
+  }
+
+  .steering-controls {
+    left: 12px;
+    gap: 7px;
+  }
+
+  .steering-button {
+    width: 57px;
+    height: 60px;
+    border-radius: 15px;
+  }
+
+  .pedals-controls {
+    right: 12px;
+    gap: 7px;
+  }
+
+  .pedal-button {
+    width: 54px;
+    height: 72px;
+  }
+
+  .extra-controls {
+    right: 10px;
+  }
+
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+
+  .race-top-hud {
+    padding-top: 6px;
+  }
+
+  .race-map-box {
+    width: 58px;
+    height: 58px;
+  }
+
+  .speedometer-panel {
+    right: 12px;
+    bottom: 90px;
+    width: 85px;
+    height: 85px;
+  }
+
+  .speed-value {
+    font-size: 25px;
+  }
+
+  .steering-controls,
+  .pedals-controls {
+    bottom: 12px;
+  }
+
+  .steering-button {
+    width: 53px;
+    height: 53px;
+  }
+
+  .pedal-button {
+    width: 50px;
+    height: 60px;
+  }
+
+  .race-progress-panel {
+    top: 75px;
+  }
+
+  .camera-switch-button {
+    top: 75px;
+  }
+
+}
+
+
+/* ==================================================
+   SUPERX LEGEND
+   FILE 04 — GAME HUD & CONTROLS
+   END
+================================================== */
+    
