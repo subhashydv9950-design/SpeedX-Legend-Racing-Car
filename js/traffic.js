@@ -1,210 +1,151 @@
 
-/* =========================================
-   SUPERX LEGEND RACING CAR
-   PART 19 — AI TRAFFIC + COLLISION
-   FILE: js/traffic.js
-========================================= */
+/* SUPERX — PART 22C
+   FILE: js/traffic.js */
 
 (() => {
   "use strict";
 
-  const traffic = {
+  const A = {
     cars: [],
     running: false,
-    spawnTimer: 0,
-    spawnInterval: 2.5,
+    timer: 0,
+    interval: 2.5,
     maxCars: 9,
-    collisionCooldown: 0
+    cooldown: 0
   };
 
   const lanes = [-3.5, 0, 3.5];
 
-  function getWorld() {
-    return window.SuperX3D?.getWorld?.() || null;
+  function world() {
+    return window.SuperX3D?.getWorld?.();
   }
 
-  function getPlayer() {
-    return window.SuperX3D?.getPlayerCar?.() || null;
+  function player() {
+    return window.SuperX3D?.getPlayerCar?.();
   }
 
-  function createTrafficCar() {
+  function spawn() {
+    const scene = world();
+    if (!scene || A.cars.length >= A.maxCars) return;
+
     const car = window.SuperX3D?.createCar?.(
       Math.floor(Math.random() * 10)
     );
+    if (!car) return;
 
-    if (!car) return null;
+    const lane = lanes[Math.floor(Math.random() * lanes.length)];
 
-    car.scale.set(0.9, 0.9, 0.9);
+    // Avoid spawning directly on the player.
+    if (Math.abs(lane - (player()?.position.x || 0)) < 1.5) {
+      car.position.x = lane === 0 ? 3.5 : 0;
+    } else {
+      car.position.x = lane;
+    }
 
-    car.position.set(
-      lanes[Math.floor(Math.random() * lanes.length)],
-      0,
-      -100 - Math.random() * 60
-    );
-
+    car.position.z = -90 - Math.random() * 70;
     car.userData.trafficSpeed = 45 + Math.random() * 85;
     car.userData.trafficLane = car.position.x;
     car.userData.isTrafficCar = true;
 
-    return car;
+    scene.add(car);
+    A.cars.push(car);
   }
 
-  function spawnCar() {
-    const world = getWorld();
-
-    if (!world || traffic.cars.length >= traffic.maxCars) {
-      return;
-    }
-
-    const car = createTrafficCar();
-    if (!car) return;
-
-    world.add(car);
-    traffic.cars.push(car);
+  function remove(car) {
+    world()?.remove(car);
+    A.cars = A.cars.filter(item => item !== car);
   }
 
-  function removeCar(car, world) {
-    if (world) world.remove(car);
-
-    const index = traffic.cars.indexOf(car);
-
-    if (index !== -1) {
-      traffic.cars.splice(index, 1);
-    }
+  function collide(p, car) {
+    return Math.abs(p.position.x - car.position.x) < 1.65 &&
+      Math.abs(p.position.z - car.position.z) < 3.2;
   }
 
-  function checkCollision(player, aiCar) {
-    if (!player || !aiCar) return false;
+  function collision() {
+    if (A.cooldown > 0) return;
+    A.cooldown = 1.2;
 
-    const dx = Math.abs(player.position.x - aiCar.position.x);
-    const dz = Math.abs(player.position.z - aiCar.position.z);
-
-    return dx < 1.65 && dz < 3.2;
-  }
-
-  function handleCollision() {
-    if (traffic.collisionCooldown > 0) return;
-
-    traffic.collisionCooldown = 1.2;
-
-    const physics = window.SuperXPhysics;
-
-    if (physics?.state) {
-      physics.state.speed = Math.max(
-        0,
-        physics.state.speed * 0.45
-      );
-    }
+    const physics = window.SuperXPhysics?.state;
+    if (physics) physics.speed = Math.max(0, physics.speed * 0.45);
 
     window.SuperXAudio?.playCollision?.();
-
-    window.dispatchEvent(
-      new CustomEvent("superx:collision")
-    );
-  }
-
-  function update(dt) {
-    if (!traffic.running) return;
-
-    dt = Math.min(Math.max(dt || 0, 0), 0.05);
-
-    const world = getWorld();
-    const player = getPlayer();
-
-    if (!world || !player) return;
-
-    traffic.spawnTimer += dt;
-    traffic.collisionCooldown = Math.max(
-      0,
-      traffic.collisionCooldown - dt
-    );
-
-    if (traffic.spawnTimer >= traffic.spawnInterval) {
-      traffic.spawnTimer = 0;
-      spawnCar();
-    }
-
-    const playerSpeed =
-      window.SuperXPhysics?.getSpeed?.() || 0;
-
-    for (const car of [...traffic.cars]) {
-      const aiSpeed = car.userData.trafficSpeed;
-
-      // Relative movement of AI traffic
-      const relativeSpeed = (playerSpeed - aiSpeed) * 0.018;
-
-      car.position.z += relativeSpeed * dt * 5;
-
-      // Small lane-keeping adjustment
-      const targetX = car.userData.trafficLane;
-
-      car.position.x +=
-        (targetX - car.position.x) * Math.min(1, dt * 2);
-
-      // Wheel rotation
-      if (car.userData.wheels) {
-        car.userData.wheels.forEach(wheel => {
-          wheel.rotation.x += aiSpeed * dt * 0.025;
-        });
-      }
-
-      // Collision
-      if (checkCollision(player, car)) {
-        handleCollision();
-      }
-
-      // Remove cars that have passed or gone far away
-      if (
-        car.position.z > 25 ||
-        car.position.z < -240
-      ) {
-        removeCar(car, world);
-      }
-    }
+    window.dispatchEvent(new CustomEvent("superx:collision"));
   }
 
   function start() {
-    stop();
+    if (A.running) return;
+    A.running = true;
+    A.timer = 0;
 
-    traffic.running = true;
-    traffic.spawnTimer = 0;
-
-    // Initial traffic
-    for (let i = 0; i < 4; i++) {
-      spawnCar();
+    if (A.cars.length === 0) {
+      for (let i = 0; i < 4; i++) spawn();
     }
+  }
+
+  function pause() {
+    A.running = false;
+  }
+
+  function resume() {
+    A.running = true;
   }
 
   function stop() {
-    const world = getWorld();
+    A.running = false;
+    A.timer = 0;
+    A.cooldown = 0;
+    [...A.cars].forEach(remove);
+  }
 
-    traffic.running = false;
-    traffic.spawnTimer = 0;
-    traffic.collisionCooldown = 0;
+  function update(dt) {
+    if (!A.running) return;
 
-    for (const car of [...traffic.cars]) {
-      removeCar(car, world);
+    dt = Math.min(Math.max(dt, 0), 0.05);
+
+    const scene = world();
+    const p = player();
+    if (!scene || !p) return;
+
+    A.timer += dt;
+    A.cooldown = Math.max(0, A.cooldown - dt);
+
+    if (A.timer >= A.interval) {
+      A.timer = 0;
+      spawn();
+    }
+
+    const playerSpeed = window.SuperXPhysics?.getSpeed?.() || 0;
+
+    for (const car of [...A.cars]) {
+      const relative = (playerSpeed - car.userData.trafficSpeed) * 0.018;
+      car.position.z += relative * dt * 5;
+
+      car.position.x +=
+        (car.userData.trafficLane - car.position.x) *
+        Math.min(1, dt * 2);
+
+      if (collide(p, car)) collision();
+
+      if (car.position.z > 25 || car.position.z < -240) {
+        remove(car);
+      }
     }
   }
 
-  function setTrafficCount(count) {
-    traffic.maxCars = Math.max(
-      1,
-      Math.min(15, Number(count) || 9)
-    );
+  function setTrafficCount(value) {
+    A.maxCars = Math.max(1, Math.min(15, Number(value) || 9));
   }
 
   window.SuperXTraffic = {
     start,
+    pause,
+    resume,
     stop,
     update,
-    spawnCar,
+    spawn,
     setTrafficCount,
-    getCars: () => traffic.cars
+    getCars: () => A.cars
   };
-
 })();
 
-/* =========================================
-   PART 19 END
-========================================= */
+/* PART 22C END */
