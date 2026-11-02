@@ -1,6 +1,7 @@
-
-/* SUPERX — PART 22B
-   FILE: js/physics.js */
+/* =====================================================
+   SUPERX LEGEND — PART 30 START
+   FILE: js/physics.js
+===================================================== */
 
 (() => {
   "use strict";
@@ -21,8 +22,7 @@
     rpm: 900,
     distance: 0,
     running: false,
-    paused: false,
-    lastTime: 0
+    paused: false
   };
 
   function setControl(name, value) {
@@ -40,7 +40,6 @@
     P.gear = 1;
     P.rpm = 900;
     P.distance = 0;
-    P.lastTime = 0;
     releaseControls();
   }
 
@@ -54,14 +53,12 @@
     P.running = false;
     P.paused = true;
     releaseControls();
-    P.lastTime = 0;
   }
 
   function resume() {
     if (!P.paused) return;
     P.paused = false;
     P.running = true;
-    P.lastTime = 0;
   }
 
   function stop() {
@@ -71,15 +68,21 @@
   }
 
   function update(dt) {
-    if (!P.running) return;
-    dt = Math.min(Math.max(dt, 0), 0.05);
+    if (!P.running || P.paused) return;
+
+    dt = Math.min(Math.max(Number(dt) || 0, 0), 0.05);
 
     if (P.throttle && !P.brake) {
       P.speed += P.acceleration * dt;
     }
 
-    if (P.brake) P.speed -= P.braking * dt;
-    if (P.handbrake) P.speed -= 75 * dt;
+    if (P.brake) {
+      P.speed -= P.braking * dt;
+    }
+
+    if (P.handbrake) {
+      P.speed -= 75 * dt;
+    }
 
     if (!P.throttle && !P.brake && !P.handbrake) {
       P.speed -= 7 * dt;
@@ -87,7 +90,8 @@
 
     P.speed = Math.max(0, Math.min(P.maxSpeed, P.speed));
 
-    let direction = (P.right ? 1 : 0) - (P.left ? 1 : 0);
+    const direction =
+      (P.right ? 1 : 0) - (P.left ? 1 : 0);
 
     if (direction) {
       P.steering += direction * P.steeringPower * dt;
@@ -101,8 +105,10 @@
 
     if (player) {
       const factor = Math.max(0.25, P.speed / 120);
+
       player.position.x += P.steering * factor * dt * 4;
       player.position.x = Math.max(-4.4, Math.min(4.4, player.position.x));
+
       player.rotation.y = -P.steering * 0.22;
 
       player.userData.wheels?.forEach(wheel => {
@@ -110,13 +116,15 @@
       });
     }
 
-    P.gear = P.speed < 1 ? 1 :
-      Math.min(6, Math.max(1, Math.ceil(P.speed / 40)));
+    P.gear = P.speed < 1
+      ? 1
+      : Math.min(6, Math.max(1, Math.ceil(P.speed / 40)));
 
-    P.rpm = Math.round(900 + P.speed / P.maxSpeed * 6200);
+    P.rpm = Math.round(900 + (P.speed / P.maxSpeed) * 6200);
     P.distance += P.speed * dt / 3600;
 
     window.SuperX3D?.setWorldSpeed?.(P.speed);
+
     updateHUD();
   }
 
@@ -130,32 +138,22 @@
     if (rpm) rpm.textContent = P.rpm;
   }
 
-  function loop(time) {
-    requestAnimationFrame(loop);
-
-    if (!P.running) {
-      P.lastTime = 0;
-      return;
-    }
-
-    if (!P.lastTime) P.lastTime = time;
-
-    const dt = Math.min((time - P.lastTime) / 1000, 0.05);
-    P.lastTime = time;
-    update(dt);
-  }
-
   function setMaxSpeed(value) {
     P.maxSpeed = Math.max(50, Number(value) || 240);
+    P.speed = Math.min(P.speed, P.maxSpeed);
   }
 
   function setSensitivity(value) {
-    P.steeringPower = Math.max(1, Math.min(10, Number(value) || 4.5));
+    P.steeringPower = Math.max(
+      1,
+      Math.min(10, Number(value) || 4.5)
+    );
   }
 
   window.SuperXPhysics = {
     state: P,
     setControl,
+    releaseControls,
     start: startNewRace,
     startNewRace,
     pause,
@@ -163,13 +161,16 @@
     stop,
     reset,
     update,
+    updateHUD,
     setMaxSpeed,
     setSensitivity,
     getSpeed: () => P.speed,
     getDistance: () => P.distance
   };
 
-  requestAnimationFrame(loop);
 })();
 
-/* PART 22B END */
+/* =====================================================
+   SUPERX LEGEND — PART 30 END
+===================================================== */
+
