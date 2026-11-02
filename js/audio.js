@@ -1,188 +1,276 @@
-
-/* ========================================
+/* =========================================
    SUPERX LEGEND RACING CAR
-   PART 12 — ENGINE & SOUND SYSTEM
-======================================== */
+   PART 23 — COMPLETE AUDIO SYSTEM
+   FILE: js/audio.js
+========================================= */
 
-(function () {
+(() => {
   "use strict";
 
-  let audioContext = null;
-  let engineOscillator = null;
+  let context = null;
+  let master = null;
+  let engineOsc = null;
   let engineGain = null;
-  let masterGain = null;
-  let audioEnabled = true;
-  let engineRunning = false;
+  let engineFilter = null;
+  let musicTimer = null;
 
-  function initAudio() {
+  const settings = {
+    sound: true,
+    music: false,
+    engine: false,
+    volume: 0.65
+  };
+
+  function initializeAudio() {
+    if (context) {
+      if (context.state === "suspended") context.resume();
+      return;
+    }
+
     const AudioContextClass =
       window.AudioContext || window.webkitAudioContext;
 
-    if (!AudioContextClass) return false;
+    if (!AudioContextClass) return;
 
-    if (!audioContext) {
-      audioContext = new AudioContextClass();
+    context = new AudioContextClass();
 
-      masterGain = audioContext.createGain();
-      masterGain.gain.value = 0.35;
-      masterGain.connect(audioContext.destination);
-
-      engineOscillator = audioContext.createOscillator();
-      engineOscillator.type = "sawtooth";
-      engineOscillator.frequency.value = 45;
-
-      engineGain = audioContext.createGain();
-      engineGain.gain.value = 0;
-
-      engineOscillator.connect(engineGain);
-      engineGain.connect(masterGain);
-      engineOscillator.start();
-    }
-
-    if (audioContext.state === "suspended") {
-      audioContext.resume();
-    }
-
-    return true;
+    master = context.createGain();
+    master.gain.value = settings.volume;
+    master.connect(context.destination);
   }
 
-  function setEnabled(enabled) {
-    audioEnabled = Boolean(enabled);
+  function tone(frequency, duration, type = "sine", volume = 0.2) {
+    if (!settings.sound) return;
 
-    if (masterGain && audioContext) {
-      masterGain.gain.setTargetAtTime(
-        audioEnabled ? 0.35 : 0,
-        audioContext.currentTime,
-        0.08
-      );
-    }
+    initializeAudio();
+    if (!context) return;
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(volume, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      context.currentTime + duration
+    );
+
+    oscillator.connect(gain);
+    gain.connect(master);
+
+    oscillator.start();
+    oscillator.stop(context.currentTime + duration);
   }
 
   function startEngine() {
-    if (!initAudio()) return;
+    initializeAudio();
 
-    engineRunning = true;
+    if (!context || engineOsc) return;
+
+    engineOsc = context.createOscillator();
+    engineGain = context.createGain();
+    engineFilter = context.createBiquadFilter();
+
+    engineOsc.type = "sawtooth";
+    engineOsc.frequency.value = 55;
+
+    engineFilter.type = "lowpass";
+    engineFilter.frequency.value = 180;
+
+    engineGain.gain.value = 0.001;
+
+    engineOsc.connect(engineFilter);
+    engineFilter.connect(engineGain);
+    engineGain.connect(master);
+
+    engineOsc.start();
+
+    settings.engine = true;
+  }
+
+  function updateEngine(speed = 0, rpm = 900) {
+    if (!engineOsc || !context || !settings.engine) return;
+
+    const frequency = 45 + Math.max(0, speed) * 1.1;
+
+    engineOsc.frequency.setTargetAtTime(
+      frequency,
+      context.currentTime,
+      0.08
+    );
+
+    engineFilter.frequency.setTargetAtTime(
+      Math.min(900, 120 + rpm * 0.12),
+      context.currentTime,
+      0.08
+    );
+
     engineGain.gain.setTargetAtTime(
-      audioEnabled ? 0.055 : 0,
-      audioContext.currentTime,
-      0.25
+      settings.sound ? 0.07 : 0,
+      context.currentTime,
+      0.08
     );
   }
 
   function stopEngine() {
-    if (!audioContext || !engineGain) return;
+    if (!engineOsc) return;
 
-    engineRunning = false;
-    engineGain.gain.setTargetAtTime(
+    try {
+      engineOsc.stop();
+      engineOsc.disconnect();
+      engineGain.disconnect();
+      engineFilter.disconnect();
+    } catch (error) {}
+
+    engineOsc = null;
+    engineGain = null;
+    engineFilter = null;
+
+    settings.engine = false;
+  }
+
+  function playHorn() {
+    tone(390, 0.45, "sawtooth", 0.3);
+  }
+
+  function playCollision() {
+    tone(90, 0.25, "triangle", 0.35);
+    setTimeout(() => tone(55, 0.2, "sawtooth", 0.2), 100);
+  }
+
+  function playGear() {
+    tone(420, 0.08, "square", 0.12);
+  }
+
+  function playButton() {
+    tone(650, 0.06, "sine", 0.1);
+  }
+
+  function playBrake() {
+    tone(170, 0.12, "triangle", 0.12);
+  }
+
+  function setVolume(value) {
+    settings.volume = Math.max(
       0,
-      audioContext.currentTime,
-      0.12
-    );
-  }
-
-  function updateEngine(speed, rpm) {
-    if (!audioContext || !engineOscillator || !engineRunning) return;
-
-    const safeRPM = Math.max(800, Math.min(9000, Number(rpm) || 800));
-    const frequency = 35 + safeRPM / 55;
-
-    engineOscillator.frequency.setTargetAtTime(
-      frequency,
-      audioContext.currentTime,
-      0.08
+      Math.min(1, Number(value))
     );
 
-    const volume = Math.min(
-      0.12,
-      0.025 + Math.max(0, Number(speed) || 0) / 1500
-    );
-
-    engineGain.gain.setTargetAtTime(
-      audioEnabled ? volume : 0,
-      audioContext.currentTime,
-      0.1
-    );
+    if (master) {
+      master.gain.setTargetAtTime(
+        settings.volume,
+        context.currentTime,
+        0.05
+      );
+    }
   }
 
-  function playTone(frequency, duration, volume, type) {
-    if (!audioEnabled || !initAudio()) return;
+  function setSound(enabled) {
+    settings.sound = Boolean(enabled);
 
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-
-    oscillator.type = type || "sine";
-    oscillator.frequency.value = frequency;
-    gain.gain.setValueAtTime(volume || 0.08, audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(
-      0.001,
-      audioContext.currentTime + duration
-    );
-
-    oscillator.connect(gain);
-    gain.connect(masterGain);
-
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + duration);
+    if (!settings.sound) {
+      stopEngine();
+    } else {
+      const physics = window.SuperXPhysics?.state;
+      if (physics?.running) {
+        startEngine();
+      }
+    }
   }
 
-  function horn() {
-    if (!initAudio() || !audioEnabled) return;
+  function setMusic(enabled) {
+    settings.music = Boolean(enabled);
 
-    playTone(390, 0.35, 0.12, "sawtooth");
-    playTone(490, 0.35, 0.09, "square");
-  }
-
-  function collision() {
-    playTone(90, 0.25, 0.18, "sawtooth");
-    playTone(55, 0.4, 0.12, "triangle");
-  }
-
-  function gearShift() {
-    playTone(180, 0.12, 0.07, "triangle");
-  }
-
-  function buttonSound() {
-    playTone(620, 0.07, 0.035, "sine");
-  }
-
-  // Connect existing buttons if they are present.
-  document.addEventListener("DOMContentLoaded", function () {
-    const hornButton = document.getElementById("hornBtn");
-    const musicButton = document.getElementById("musicBtn");
-
-    if (hornButton) {
-      hornButton.addEventListener("click", horn);
+    if (!settings.music) {
+      stopMusic();
+      return;
     }
 
-    if (musicButton) {
-      musicButton.addEventListener("click", function () {
-        setEnabled(!audioEnabled);
-        musicButton.textContent = audioEnabled ? "🔊" : "🔇";
-      });
+    startMusic();
+  }
+
+  function startMusic() {
+    initializeAudio();
+
+    if (!context || musicTimer) return;
+
+    const notes = [261, 329, 392, 329, 293, 349, 440, 349];
+    let index = 0;
+
+    musicTimer = setInterval(() => {
+      if (!settings.music || !settings.sound) return;
+
+      tone(notes[index % notes.length], 0.3, "sine", 0.045);
+      index++;
+    }, 420);
+  }
+
+  function stopMusic() {
+    if (musicTimer) {
+      clearInterval(musicTimer);
+      musicTimer = null;
+    }
+  }
+
+  function toggleSound() {
+    setSound(!settings.sound);
+  }
+
+  function toggleMusic() {
+    setMusic(!settings.music);
+  }
+
+  // Update engine from existing physics state.
+  let previousGear = null;
+
+  function audioLoop() {
+    const physics = window.SuperXPhysics?.state;
+
+    if (physics && settings.engine) {
+      updateEngine(physics.speed, physics.rpm);
+
+      if (
+        previousGear !== null &&
+        previousGear !== physics.gear
+      ) {
+        playGear();
+      }
+
+      previousGear = physics.gear;
     }
 
-    // Browsers require an interaction before audio can start.
-    document.addEventListener("pointerdown", function unlockAudio() {
-      initAudio();
-      document.removeEventListener("pointerdown", unlockAudio);
-    }, { once: true });
-  });
+    requestAnimationFrame(audioLoop);
+  }
 
   window.SuperXAudio = {
-    init: initAudio,
-    enable: () => setEnabled(true),
-    disable: () => setEnabled(false),
-    toggle: () => setEnabled(!audioEnabled),
+    initializeAudio,
     startEngine,
     stopEngine,
     updateEngine,
-    horn,
-    collision,
-    gearShift,
-    buttonSound,
-    isEnabled: () => audioEnabled
+    playHorn,
+    playCollision,
+    playGear,
+    playButton,
+    playBrake,
+    setVolume,
+    setSound,
+    setMusic,
+    toggleSound,
+    toggleMusic,
+    getSettings: () => ({ ...settings })
   };
+
+  window.addEventListener("pointerdown", initializeAudio, {
+    once: true
+  });
+
+  requestAnimationFrame(audioLoop);
 
 })();
 
-/* ========== END OF PART 12 ========== */
+/* =========================================
+   PART 23 END
+========================================= */
+
