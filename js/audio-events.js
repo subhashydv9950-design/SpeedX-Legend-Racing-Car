@@ -1,7 +1,6 @@
-
 /* =========================================
-   SUPERX LEGEND RACING CAR
-   PART 24 — AUDIO EVENTS
+   SUPERX LEGEND
+   PART 25B — AUDIO EVENT CONNECTION
    FILE: js/audio-events.js
 ========================================= */
 
@@ -10,25 +9,17 @@
 
   function setupAudioEvents() {
     const audio = window.SuperXAudio;
+
     if (!audio) return;
 
-    const hornButtons = [
-      "hornBtn",
-      "hornButton"
-    ];
+    const musicButton =
+      document.getElementById("musicToggle");
 
-    hornButtons.forEach(id => {
-      const button = document.getElementById(id);
+    const soundButton =
+      document.getElementById("soundToggle");
 
-      if (button) {
-        button.addEventListener("pointerdown", () => {
-          audio.playHorn();
-        });
-      }
-    });
-
-    const musicButton = document.getElementById("musicToggle");
-    const soundButton = document.getElementById("soundToggle");
+    const brakeButton =
+      document.getElementById("brakeBtn");
 
     if (musicButton) {
       musicButton.addEventListener("click", () => {
@@ -52,20 +43,31 @@
       });
     }
 
+    if (brakeButton) {
+      brakeButton.addEventListener(
+        "pointerdown",
+        () => audio.playBrake()
+      );
+    }
+
     document.addEventListener("click", event => {
       const button = event.target.closest("button");
 
       if (!button) return;
 
-      if (
-        button.id !== "hornBtn" &&
-        button.id !== "hornButton" &&
-        button.id !== "musicToggle" &&
-        button.id !== "soundToggle"
-      ) {
+      const excluded = [
+        "hornBtn",
+        "musicToggle",
+        "soundToggle",
+        "brakeBtn"
+      ];
+
+      if (!excluded.includes(button.id)) {
         audio.playButton();
       }
     });
+
+    console.log("SUPERX Audio Events Connected.");
   }
 
   if (document.readyState === "loading") {
@@ -81,5 +83,6 @@
 })();
 
 /* =========================================
-   PART 24 END
+   PART 25B END
 ========================================= */
+
