@@ -1,7 +1,7 @@
 
 /* =========================================
    SUPERX LEGEND RACING CAR
-   PART 20 — MOBILE + KEYBOARD CONTROLS
+   PART 26 — STABLE MOBILE CONTROLS
    FILE: js/controls.js
 ========================================= */
 
@@ -16,37 +16,51 @@
     handbrake: false
   };
 
+  let initialized = false;
+  const boundButtons = new Set();
+
   function sendControl(name, value) {
-    active[name] = value;
+    if (!(name in active)) return;
+
+    active[name] = Boolean(value);
 
     window.SuperXPhysics?.setControl?.(
       name,
-      value
+      active[name]
     );
   }
 
   function bindButton(id, control) {
     const button = document.getElementById(id);
-    if (!button) return;
 
+    if (!button || boundButtons.has(id)) return;
+
+    boundButtons.add(id);
     button.style.touchAction = "none";
+
+    button.addEventListener("contextmenu", event => {
+      event.preventDefault();
+    });
 
     button.addEventListener("pointerdown", event => {
       event.preventDefault();
 
       button.setPointerCapture?.(event.pointerId);
+
       sendControl(control, true);
       button.classList.add("control-active");
     });
 
     const release = event => {
       event.preventDefault();
+
       sendControl(control, false);
       button.classList.remove("control-active");
     };
 
     button.addEventListener("pointerup", release);
     button.addEventListener("pointercancel", release);
+
     button.addEventListener("lostpointercapture", () => {
       sendControl(control, false);
       button.classList.remove("control-active");
@@ -56,15 +70,9 @@
   function setupMobileControls() {
     bindButton("acceleratorBtn", "throttle");
     bindButton("brakeBtn", "brake");
-    bindButton("leftBtn", "left");
-    bindButton("rightBtn", "right");
-    bindButton("handbrakeBtn", "handbrake");
-
-    // Alternative IDs
-    bindButton("gasButton", "throttle");
-    bindButton("breakButton", "brake");
     bindButton("steerLeft", "left");
     bindButton("steerRight", "right");
+    bindButton("handbrakeBtn", "handbrake");
   }
 
   function setupKeyboard() {
@@ -102,11 +110,19 @@
     });
 
     window.addEventListener("blur", releaseAll);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) releaseAll();
+    });
   }
 
   function releaseAll() {
     Object.keys(active).forEach(control => {
       sendControl(control, false);
+    });
+
+    document.querySelectorAll(".control-active").forEach(button => {
+      button.classList.remove("control-active");
     });
   }
 
@@ -115,23 +131,29 @@
   }
 
   function initialize() {
+    if (initialized) return;
+
+    initialized = true;
+
     setupMobileControls();
     setupKeyboard();
 
-    console.log("SUPERX controls initialized.");
+    console.log("SUPERX Controls Initialized.");
   }
 
   window.SuperXControls = {
     initialize,
     releaseAll,
     setSensitivity,
-    setControl: sendControl
+    setControl: sendControl,
+    getState: () => ({ ...active })
   };
 
   if (document.readyState === "loading") {
     document.addEventListener(
       "DOMContentLoaded",
-      initialize
+      initialize,
+      { once: true }
     );
   } else {
     initialize();
@@ -140,5 +162,5 @@
 })();
 
 /* =========================================
-   PART 20 END
+   PART 26 END
 ========================================= */
