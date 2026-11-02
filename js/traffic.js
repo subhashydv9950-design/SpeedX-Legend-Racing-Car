@@ -1,320 +1,210 @@
-/* ==========================================
-   SUPERX LEGEND RACING CAR
-   PART 17 — COMPLETE TRAFFIC SYSTEM
-   Traffic + Collision + Sound
-========================================== */
 
-(function () {
+/* =========================================
+   SUPERX LEGEND RACING CAR
+   PART 19 — AI TRAFFIC + COLLISION
+   FILE: js/traffic.js
+========================================= */
+
+(() => {
   "use strict";
 
-  const Traffic = {
+  const traffic = {
     cars: [],
-    active: false,
-    lastSpawn: 0,
-    spawnInterval: 2200,
-    lastCollision: 0,
-    playerHit: false,
-    maxCars: 10
+    running: false,
+    spawnTimer: 0,
+    spawnInterval: 2.5,
+    maxCars: 9,
+    collisionCooldown: 0
   };
 
-  const LANES = [-3.6, -1.8, 0, 1.8, 3.6];
+  const lanes = [-3.5, 0, 3.5];
 
   function getWorld() {
-    if (!window.SuperX3D) return null;
-
-    return window.SuperX3D.getWorld();
+    return window.SuperX3D?.getWorld?.() || null;
   }
 
-  function getPlayerCar() {
-    const world = getWorld();
-    if (!world) return null;
-
-    return (
-      world.playerCar ||
-      world.raceCar ||
-      world.car ||
-      null
-    );
+  function getPlayer() {
+    return window.SuperX3D?.getPlayerCar?.() || null;
   }
 
-  function getSpeed() {
-    if (!window.SuperXPhysics) return 0;
-
-    const state = window.SuperXPhysics.getState();
-    return Math.abs(Number(state.speed) || 0);
-  }
-
-  function createCar() {
-    const world = getWorld();
-
-    if (!world || !window.THREE) return null;
-
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-
-    const colors = [
-      0xe53935,
-      0xffffff,
-      0x1976d2,
-      0xf9a825,
-      0x43a047,
-      0x8e24aa
-    ];
-
-    const bodyMaterial = new THREE.MeshStandardMaterial({
-      color: colors[Math.floor(Math.random() * colors.length)],
-      metalness: 0.45,
-      roughness: 0.4
-    });
-
-    const glassMaterial = new THREE.MeshStandardMaterial({
-      color: 0x172535,
-      roughness: 0.2
-    });
-
-    const wheelMaterial = new THREE.MeshStandardMaterial({
-      color: 0x151515
-    });
-
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(1.55, 0.5, 3.1),
-      bodyMaterial
+  function createTrafficCar() {
+    const car = window.SuperX3D?.createCar?.(
+      Math.floor(Math.random() * 10)
     );
 
-    body.position.y = 0.65;
-    group.add(body);
+    if (!car) return null;
 
-    const cabin = new THREE.Mesh(
-      new THREE.BoxGeometry(1.2, 0.55, 1.5),
-      glassMaterial
-    );
+    car.scale.set(0.9, 0.9, 0.9);
 
-    cabin.position.set(0, 1.15, -0.15);
-    group.add(cabin);
-
-    const wheelGeometry = new THREE.CylinderGeometry(
-      0.34, 0.34, 0.22, 12
-    );
-
-    [
-      [-0.8, 0.35, 1],
-      [0.8, 0.35, 1],
-      [-0.8, 0.35, -1],
-      [0.8, 0.35, -1]
-    ].forEach(function (position) {
-      const wheel = new THREE.Mesh(
-        wheelGeometry,
-        wheelMaterial
-      );
-
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(...position);
-      group.add(wheel);
-    });
-
-    const lightMaterial = new THREE.MeshBasicMaterial({
-      color: 0xfff0c0
-    });
-
-    [-0.48, 0.48].forEach(function (x) {
-      const light = new THREE.Mesh(
-        new THREE.BoxGeometry(0.25, 0.12, 0.06),
-        lightMaterial
-      );
-
-      light.position.set(x, 0.72, 1.56);
-      group.add(light);
-    });
-
-    const lane = LANES[
-      Math.floor(Math.random() * LANES.length)
-    ];
-
-    group.position.set(
-      lane,
+    car.position.set(
+      lanes[Math.floor(Math.random() * lanes.length)],
       0,
-      -100 - Math.random() * 80
+      -100 - Math.random() * 60
     );
 
-    group.userData.speed = 30 + Math.random() * 65;
-    group.userData.lane = lane;
-    group.userData.hit = false;
+    car.userData.trafficSpeed = 45 + Math.random() * 85;
+    car.userData.trafficLane = car.position.x;
+    car.userData.isTrafficCar = true;
 
-    world.add(group);
-
-    return group;
+    return car;
   }
 
   function spawnCar() {
-    if (Traffic.cars.length >= Traffic.maxCars) return;
-
-    const car = createCar();
-
-    if (car) {
-      Traffic.cars.push(car);
-    }
-  }
-
-  function collisionSound() {
-    const now = Date.now();
-
-    if (now - Traffic.lastCollision < 1000) return;
-
-    Traffic.lastCollision = now;
-
-    if (window.SuperXAudio) {
-      window.SuperXAudio.collision();
-    }
-  }
-
-  function detectCollision(car, player) {
-    if (!car || !player) return false;
-
-    const xDistance = Math.abs(
-      car.position.x - player.position.x
-    );
-
-    const zDistance = Math.abs(
-      car.position.z - player.position.z
-    );
-
-    return xDistance < 1.5 && zDistance < 2.6;
-  }
-
-  function handleCollision(car) {
-    if (Traffic.playerHit) return;
-
-    Traffic.playerHit = true;
-
-    collisionSound();
-
-    if (window.SuperXPhysics) {
-      window.SuperXPhysics.setControl("brake", true);
-    }
-
-    if (car) {
-      car.userData.speed = 0;
-    }
-
-    setTimeout(function () {
-      if (window.SuperXPhysics) {
-        window.SuperXPhysics.setControl("brake", false);
-      }
-
-      Traffic.playerHit = false;
-    }, 350);
-  }
-
-  function removeCar(index) {
     const world = getWorld();
-    const car = Traffic.cars[index];
 
+    if (!world || traffic.cars.length >= traffic.maxCars) {
+      return;
+    }
+
+    const car = createTrafficCar();
     if (!car) return;
 
+    world.add(car);
+    traffic.cars.push(car);
+  }
+
+  function removeCar(car, world) {
     if (world) world.remove(car);
 
-    car.traverse(function (object) {
-      if (!object.isMesh) return;
+    const index = traffic.cars.indexOf(car);
 
-      if (object.geometry) {
-        object.geometry.dispose();
-      }
+    if (index !== -1) {
+      traffic.cars.splice(index, 1);
+    }
+  }
 
-      if (object.material) {
-        if (Array.isArray(object.material)) {
-          object.material.forEach(function (m) {
-            m.dispose();
-          });
-        } else {
-          object.material.dispose();
-        }
-      }
-    });
+  function checkCollision(player, aiCar) {
+    if (!player || !aiCar) return false;
 
-    Traffic.cars.splice(index, 1);
+    const dx = Math.abs(player.position.x - aiCar.position.x);
+    const dz = Math.abs(player.position.z - aiCar.position.z);
+
+    return dx < 1.65 && dz < 3.2;
+  }
+
+  function handleCollision() {
+    if (traffic.collisionCooldown > 0) return;
+
+    traffic.collisionCooldown = 1.2;
+
+    const physics = window.SuperXPhysics;
+
+    if (physics?.state) {
+      physics.state.speed = Math.max(
+        0,
+        physics.state.speed * 0.45
+      );
+    }
+
+    window.SuperXAudio?.playCollision?.();
+
+    window.dispatchEvent(
+      new CustomEvent("superx:collision")
+    );
   }
 
   function update(dt) {
-    if (!Traffic.active) return;
+    if (!traffic.running) return;
+
+    dt = Math.min(Math.max(dt || 0, 0), 0.05);
 
     const world = getWorld();
-    if (!world) return;
+    const player = getPlayer();
 
-    const player = getPlayerCar();
-    const speed = getSpeed();
+    if (!world || !player) return;
 
-    dt = Math.min(Math.max(dt || 0.016, 0), 0.05);
+    traffic.spawnTimer += dt;
+    traffic.collisionCooldown = Math.max(
+      0,
+      traffic.collisionCooldown - dt
+    );
 
-    const now = performance.now();
-
-    if (now - Traffic.lastSpawn > Traffic.spawnInterval) {
+    if (traffic.spawnTimer >= traffic.spawnInterval) {
+      traffic.spawnTimer = 0;
       spawnCar();
-      Traffic.lastSpawn = now;
     }
 
-    for (let i = Traffic.cars.length - 1; i >= 0; i--) {
-      const car = Traffic.cars[i];
+    const playerSpeed =
+      window.SuperXPhysics?.getSpeed?.() || 0;
 
-      const relativeSpeed =
-        8 + speed * 0.45 - car.userData.speed * 0.12;
+    for (const car of [...traffic.cars]) {
+      const aiSpeed = car.userData.trafficSpeed;
 
-      car.position.z += relativeSpeed * dt;
+      // Relative movement of AI traffic
+      const relativeSpeed = (playerSpeed - aiSpeed) * 0.018;
+
+      car.position.z += relativeSpeed * dt * 5;
+
+      // Small lane-keeping adjustment
+      const targetX = car.userData.trafficLane;
 
       car.position.x +=
-        (car.userData.lane - car.position.x) *
-        Math.min(1, dt * 2);
+        (targetX - car.position.x) * Math.min(1, dt * 2);
 
-      if (detectCollision(car, player)) {
-        handleCollision(car);
+      // Wheel rotation
+      if (car.userData.wheels) {
+        car.userData.wheels.forEach(wheel => {
+          wheel.rotation.x += aiSpeed * dt * 0.025;
+        });
       }
 
-      if (car.position.z > 25) {
-        removeCar(i);
+      // Collision
+      if (checkCollision(player, car)) {
+        handleCollision();
+      }
+
+      // Remove cars that have passed or gone far away
+      if (
+        car.position.z > 25 ||
+        car.position.z < -240
+      ) {
+        removeCar(car, world);
       }
     }
   }
 
   function start() {
-    clear();
+    stop();
 
-    Traffic.active = true;
-    Traffic.lastSpawn = performance.now();
+    traffic.running = true;
+    traffic.spawnTimer = 0;
+
+    // Initial traffic
+    for (let i = 0; i < 4; i++) {
+      spawnCar();
+    }
   }
 
   function stop() {
-    Traffic.active = false;
-  }
+    const world = getWorld();
 
-  function clear() {
-    Traffic.active = false;
+    traffic.running = false;
+    traffic.spawnTimer = 0;
+    traffic.collisionCooldown = 0;
 
-    for (let i = Traffic.cars.length - 1; i >= 0; i--) {
-      removeCar(i);
+    for (const car of [...traffic.cars]) {
+      removeCar(car, world);
     }
-
-    Traffic.playerHit = false;
   }
 
-  function getState() {
-    return {
-      active: Traffic.active,
-      count: Traffic.cars.length,
-      playerHit: Traffic.playerHit
-    };
+  function setTrafficCount(count) {
+    traffic.maxCars = Math.max(
+      1,
+      Math.min(15, Number(count) || 9)
+    );
   }
 
   window.SuperXTraffic = {
     start,
     stop,
-    clear,
     update,
     spawnCar,
-    getState
+    setTrafficCount,
+    getCars: () => traffic.cars
   };
-
-  console.log("SUPERX PART 17 Traffic System Ready");
 
 })();
 
-/* ========== END OF PART 17 ========== */
-
+/* =========================================
+   PART 19 END
+========================================= */
