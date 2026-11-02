@@ -5,6 +5,28 @@
    FILE: js/traffic.js
 ========================================== */
 
+/* ========================================
+   SUPERX LEGEND RACING CAR
+   PART 15A — COLLISION SOUND HELPER
+======================================== */
+
+let superxLastCollisionSound = 0;
+
+function playSuperXCollisionSound() {
+  const now = Date.now();
+
+  // Repeated sound ko control karo.
+  if (now - superxLastCollisionSound < 900) return;
+
+  superxLastCollisionSound = now;
+
+  if (window.SuperXAudio) {
+    window.SuperXAudio.collision();
+  }
+}
+
+/* ========== END OF PART 15A ========== */
+
 (() => {
   "use strict";
 
