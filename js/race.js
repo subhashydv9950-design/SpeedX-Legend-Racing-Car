@@ -1,5 +1,9 @@
-/* SUPERX — PART 22D
-   FILE: js/race.js */
+
+/* =========================================
+   SUPERX LEGEND
+   PART 25A — RACE + AUDIO INTEGRATION
+   FILE: js/race.js
+========================================= */
 
 (() => {
   "use strict";
@@ -18,10 +22,11 @@
 
   const $ = id => document.getElementById(id);
 
-  function screen(id) {
+  function showScreen(id) {
     document.querySelectorAll(".screen").forEach(item => {
       item.classList.remove("active");
     });
+
     $(id)?.classList.add("active");
   }
 
@@ -33,11 +38,17 @@
     }
   }
 
-  function hud() {
-    const speed = window.SuperXPhysics?.getSpeed?.() || 0;
+  function updateHUD() {
+    const speed = Math.round(
+      window.SuperXPhysics?.getSpeed?.() || 0
+    );
+
+    if ($("raceSpeed")) {
+      $("raceSpeed").textContent = speed;
+    }
 
     if ($("speedValue")) {
-      $("speedValue").textContent = Math.round(speed);
+      $("speedValue").textContent = speed;
     }
 
     if ($("raceDistance")) {
@@ -45,7 +56,11 @@
         (R.distance / 1000).toFixed(2) + " km";
     }
 
-    const progress = Math.min(100, R.distance / R.target * 100);
+    const progress = Math.min(
+      100,
+      (R.distance / R.target) * 100
+    );
+
     if ($("raceProgress")) {
       $("raceProgress").style.width = progress + "%";
     }
@@ -55,15 +70,23 @@
     if (!R.active || R.paused) return;
 
     if (!R.lastTime) R.lastTime = time;
-    const dt = Math.min((time - R.lastTime) / 1000, 0.05);
+
+    const dt = Math.min(
+      (time - R.lastTime) / 1000,
+      0.05
+    );
+
     R.lastTime = time;
 
-    const speed = window.SuperXPhysics?.getSpeed?.() || 0;
+    const speed =
+      window.SuperXPhysics?.getSpeed?.() || 0;
+
     R.distance += speed * dt / 3.6;
     R.elapsed += dt;
 
     window.SuperXTraffic?.update?.(dt);
-    hud();
+
+    updateHUD();
 
     if (R.distance >= R.target) {
       finish();
@@ -81,9 +104,14 @@
     R.elapsed = 0;
     R.lastTime = 0;
     R.reward = 0;
-    R.target = mode === "free" ? 100000 : 5000;
 
-    const scene = window.SuperX3D?.startRaceWorld?.();
+    R.target =
+      mode === "free" || mode === "freeDrive"
+        ? 100000
+        : 5000;
+
+    const scene =
+      window.SuperX3D?.startRaceWorld?.();
 
     if (!scene) {
       toast("3D Race World load nahi hua.");
@@ -93,14 +121,16 @@
     R.active = true;
     R.paused = false;
 
-    screen("raceScreen");
+    showScreen("raceScreen");
 
+    window.SuperXAudio?.initializeAudio?.();
     window.SuperXPhysics?.startNewRace?.();
     window.SuperXTraffic?.start?.();
     window.SuperXControls?.initialize?.();
     window.SuperXAudio?.startEngine?.();
 
-    hud();
+    updateHUD();
+
     R.frame = requestAnimationFrame(loop);
   }
 
@@ -108,6 +138,7 @@
     if (!R.active || R.paused) return;
 
     R.paused = true;
+
     cancelAnimationFrame(R.frame);
 
     window.SuperXPhysics?.pause?.();
@@ -126,6 +157,7 @@
 
     window.SuperXPhysics?.resume?.();
     window.SuperXTraffic?.resume?.();
+    window.SuperXAudio?.initializeAudio?.();
     window.SuperXAudio?.startEngine?.();
 
     $("pauseMenu")?.classList.remove("active");
@@ -133,9 +165,18 @@
     R.frame = requestAnimationFrame(loop);
   }
 
+  function togglePause() {
+    if (R.paused) {
+      resume();
+    } else {
+      pause();
+    }
+  }
+
   function stop() {
     R.active = false;
     R.paused = false;
+
     cancelAnimationFrame(R.frame);
 
     window.SuperXPhysics?.stop?.();
@@ -152,6 +193,7 @@
 
     R.active = false;
     R.paused = false;
+
     cancelAnimationFrame(R.frame);
 
     window.SuperXPhysics?.stop?.();
@@ -160,7 +202,10 @@
     window.SuperX3D?.stopRaceWorld?.();
     window.SuperXAudio?.stopEngine?.();
 
-    R.reward = Math.max(100, Math.round(R.distance / 10));
+    R.reward = Math.max(
+      100,
+      Math.round(R.distance / 10)
+    );
 
     if (typeof window.updateCoins === "function") {
       window.updateCoins(R.reward);
@@ -181,20 +226,39 @@
     }
 
     if ($("resultScreen")) {
-      screen("resultScreen");
+      showScreen("resultScreen");
     } else {
-      screen("homeScreen");
+      showScreen("homeScreen");
       toast("Race complete! " + R.reward + " coins");
     }
   }
 
+  // Compatibility with existing main.js controls.
+  function setControl(name, value) {
+    const aliases = {
+      accelerator: "throttle",
+      gas: "throttle",
+      reverse: "brake"
+    };
+
+    const control = aliases[name] || name;
+
+    window.SuperXPhysics?.setControl?.(
+      control,
+      value
+    );
+  }
+
+  function horn() {
+    window.SuperXAudio?.playHorn?.();
+  }
+
   function bind() {
-    $("pauseBtn")?.addEventListener("click", pause);
     $("resumeBtn")?.addEventListener("click", resume);
 
     $("exitRaceBtn")?.addEventListener("click", () => {
       stop();
-      screen("homeScreen");
+      showScreen("homeScreen");
     });
 
     $("finishRaceBtn")?.addEventListener("click", finish);
@@ -204,8 +268,11 @@
     start,
     pause,
     resume,
+    togglePause,
     stop,
     finish,
+    setControl,
+    horn,
     getState: () => ({ ...R })
   };
 
@@ -214,7 +281,9 @@
   } else {
     bind();
   }
+
 })();
 
-/* PART 22D END */
-
+/* =========================================
+   PART 25A END
+========================================= */
