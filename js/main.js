@@ -432,27 +432,17 @@ function bindNavigation() {
     });
 }
 
-function startRace(source) {
-  if (!SuperX.unlockedCars.includes(SuperX.selectedCar)) {
-    showToast("Select an unlocked car first.");
-    return;
-  }
+/* PART 9B — CONNECT GAME TO RACE MANAGER */
 
-  SuperX.isRacing = true;
-  showScreen("raceScreen");
-
-  if (window.SuperXRace?.start) {
-    window.SuperXRace.start({
-      source,
-      car: getSelectedCar(),
-      carIndex: SuperX.selectedCar,
-      mode: MAP_MODES[SuperX.selectedMode],
-      map: SuperX.selectedMap
-    });
+function startRace(mode = "career") {
+  if (window.SuperXRace) {
+    window.SuperXRace.start(mode);
   } else {
-    showToast("Race engine will be connected in the next parts.");
+    showToast("Race system load nahi hua.");
   }
 }
+
+/* END PART 9B */
 
 function initSuperX() {
   renderModeGrid();
