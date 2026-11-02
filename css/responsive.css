@@ -1,0 +1,705 @@
+
+/* =========================================================
+   SUPERX LEGEND
+   FILE 05 — RESPONSIVE DESIGN
+   PART START
+   Mobile / Tablet / Desktop / Landscape
+========================================================= */
+
+
+/* 1. GLOBAL RESPONSIVE FOUNDATION */
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,
+body {
+  width: 100%;
+  min-width: 280px;
+  min-height: 100%;
+}
+
+body {
+  overscroll-behavior-x: none;
+}
+
+button,
+a,
+input,
+select {
+  touch-action: manipulation;
+}
+
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+canvas {
+  max-width: 100%;
+}
+
+.page-content {
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* 2. LARGE DESKTOP — 1200px+ */
+
+@media (min-width: 1200px) {
+
+  .main-header {
+    height: 76px;
+    padding-left: max(6%, calc((100% - 1400px) / 2));
+    padding-right: max(6%, calc((100% - 1400px) / 2));
+  }
+
+  .brand-main {
+    font-size: 25px;
+  }
+
+  .home-showroom {
+    height: min(760px, 82vh);
+    min-height: 560px;
+  }
+
+  .showroom-top-info {
+    left: 8%;
+    right: 8%;
+  }
+
+  .showroom-car-details {
+    left: 10%;
+    bottom: 125px;
+  }
+
+  .showroom-selector,
+  .test-drive-button {
+    right: 10%;
+  }
+
+  .home-menu-section,
+  .home-player-section {
+    max-width: 1400px;
+  }
+
+  .mode-card {
+    min-height: 150px;
+    padding: 22px;
+  }
+
+  .mode-card-text h3 {
+    font-size: 15px;
+  }
+
+  .mode-card-text p {
+    font-size: 10px;
+  }
+
+  .page-content {
+    padding-top: 35px;
+  }
+
+  .garage-showcase {
+    min-height: 400px;
+  }
+
+}
+
+
+/* 3. LAPTOP — 769px TO 1199px */
+
+@media (min-width: 769px) and (max-width: 1199px) {
+
+  .home-showroom {
+    height: min(680px, 78vh);
+  }
+
+  .main-mode-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mode-card {
+    min-height: 125px;
+    padding: 14px;
+  }
+
+  .mode-card-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mode-card-text h3 {
+    font-size: 12px;
+  }
+
+  .mode-card-text p {
+    font-size: 9px;
+  }
+
+  .page-content {
+    padding-left: 35px;
+    padding-right: 35px;
+  }
+
+  .car-collection-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .world-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .environment-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+}
+
+
+/* 4. TABLET — 601px TO 768px */
+
+@media (min-width: 601px) and (max-width: 768px) {
+
+  :root {
+    --header-height: 68px;
+  }
+
+  .main-header {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .home-showroom {
+    height: 590px;
+    min-height: 520px;
+  }
+
+  .showroom-car-details {
+    left: 5%;
+    bottom: 115px;
+  }
+
+  .showroom-selector {
+    right: 5%;
+    bottom: 115px;
+  }
+
+  .test-drive-button {
+    right: 5%;
+    bottom: 38px;
+  }
+
+  .main-mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-player-section {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .car-collection-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .world-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .environment-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .map-level-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  .page-content {
+    padding-left: 25px;
+    padding-right: 25px;
+  }
+
+}
+
+
+/* 5. MOBILE — UP TO 600px */
+
+@media (max-width: 600px) {
+
+  :root {
+    --header-height: 62px;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  .main-header {
+    height: var(--header-height);
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .menu-button {
+    width: 37px;
+    height: 37px;
+    padding: 9px;
+  }
+
+  .brand-main {
+    font-size: 19px;
+  }
+
+  .brand-sub {
+    font-size: 8px;
+    letter-spacing: 5px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .coin-display {
+    height: 32px;
+  }
+
+  .header-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .home-showroom {
+    height: min(620px, 76dvh);
+    min-height: 445px;
+  }
+
+  .showroom-top-info {
+    top: 17px;
+    left: 4%;
+    right: 4%;
+  }
+
+  .showroom-tag,
+  .showroom-series {
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+
+  .showroom-car-details {
+    left: 5%;
+    bottom: 113px;
+  }
+
+  .showroom-car-details h1 {
+    font-size: clamp(25px, 7vw, 38px);
+  }
+
+  .car-category {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .car-specifications {
+    gap: 19px;
+  }
+
+  .car-specifications span {
+    font-size: 7px;
+  }
+
+  .car-specifications strong {
+    font-size: 11px;
+  }
+
+  .showroom-selector {
+    right: 4%;
+    bottom: 112px;
+    gap: 7px;
+  }
+
+  .car-arrow {
+    width: 31px;
+    height: 31px;
+    font-size: 21px;
+  }
+
+  .car-selector-info span:first-child {
+    font-size: 8px;
+  }
+
+  .car-selector-info span:last-child {
+    font-size: 7px;
+  }
+
+  .test-drive-button {
+    right: 4%;
+    bottom: 35px;
+    min-width: 130px;
+    height: 39px;
+    font-size: 9px;
+  }
+
+  .showroom-footer {
+    left: 4%;
+    right: 4%;
+    bottom: 13px;
+    font-size: 6px;
+  }
+
+  .home-menu-section {
+    padding: 26px 4% 17px;
+  }
+
+  .section-heading h2 {
+    font-size: 21px;
+  }
+
+  .main-mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .mode-card {
+    min-height: 103px;
+    padding: 11px;
+    gap: 8px;
+    border-radius: 13px;
+  }
+
+  .mode-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 18px;
+  }
+
+  .mode-card-text h3 {
+    font-size: 10px;
+  }
+
+  .mode-card-text p {
+    font-size: 8px;
+    line-height: 1.4;
+  }
+
+  .home-player-section {
+    padding: 8px 4% 25px;
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .player-summary-card {
+    min-height: 65px;
+    padding: 12px;
+  }
+
+  .home-footer {
+    padding: 22px 4%;
+  }
+
+  .page-header {
+    min-height: 60px;
+    padding: 10px 4%;
+  }
+
+  .page-header-title h1 {
+    font-size: 16px;
+  }
+
+  .page-content {
+    min-height: calc(100dvh - 60px);
+    padding: 20px 4% 35px;
+  }
+
+  .page-intro h2 {
+    font-size: 22px;
+  }
+
+  .page-intro p {
+    font-size: 11px;
+  }
+
+  .garage-showcase {
+    min-height: 230px;
+  }
+
+  .car-collection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .car-card-image {
+    min-height: 95px;
+    font-size: 43px;
+  }
+
+  .car-card-details {
+    padding: 10px;
+  }
+
+  .world-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .world-card {
+    min-height: 150px;
+  }
+
+  .environment-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .environment-card {
+    min-height: 130px;
+  }
+
+  .map-level-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .online-hero {
+    min-height: 205px;
+    padding: 19px;
+  }
+
+  .online-hero h2 {
+    font-size: 25px;
+  }
+
+  .online-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .side-menu {
+    width: min(310px, 87vw);
+    padding-top: max(20px, var(--safe-top));
+    padding-bottom: max(18px, var(--safe-bottom));
+  }
+
+}
+
+
+/* 6. VERY SMALL MOBILE — UP TO 360px */
+
+@media (max-width: 360px) {
+
+  .main-header {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .brand-main {
+    font-size: 16px;
+    letter-spacing: 1px;
+  }
+
+  .brand-sub {
+    font-size: 7px;
+    letter-spacing: 4px;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+
+  .coin-display {
+    min-width: 58px;
+    height: 29px;
+    padding: 0 6px;
+    gap: 3px;
+    font-size: 9px;
+  }
+
+  .header-icon {
+    width: 29px;
+    height: 29px;
+    font-size: 13px;
+  }
+
+  .menu-button {
+    width: 33px;
+    height: 33px;
+  }
+
+  .home-showroom {
+    min-height: 425px;
+  }
+
+  .showroom-car-details {
+    left: 4%;
+    bottom: 112px;
+  }
+
+  .showroom-car-details h1 {
+    font-size: 24px;
+  }
+
+  .showroom-selector {
+    right: 3%;
+    bottom: 55px;
+  }
+
+  .test-drive-button {
+    right: 4%;
+    bottom: 10px;
+    min-width: 116px;
+    height: 34px;
+    font-size: 8px;
+  }
+
+  .showroom-footer {
+    display: none;
+  }
+
+  .main-mode-grid {
+    gap: 7px;
+  }
+
+  .mode-card {
+    min-height: 92px;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .mode-card-icon {
+    width: 31px;
+    height: 31px;
+    font-size: 16px;
+  }
+
+  .mode-card-text h3 {
+    font-size: 9px;
+  }
+
+  .mode-card-text p {
+    font-size: 7px;
+  }
+
+  .map-level-grid {
+    gap: 5px;
+  }
+
+  .map-level {
+    border-radius: 6px;
+    font-size: 9px;
+  }
+
+}
+
+
+/* 7. MOBILE LANDSCAPE */
+
+@media (max-width: 900px) and (orientation: landscape) {
+
+  .home-showroom {
+    height: calc(100dvh - var(--header-height));
+    min-height: 330px;
+  }
+
+  .showroom-top-info {
+    top: 12px;
+  }
+
+  .showroom-car-details {
+    left: 5%;
+    bottom: 75px;
+  }
+
+  .showroom-car-details h1 {
+    font-size: 25px;
+  }
+
+  .showroom-selector {
+    right: 5%;
+    bottom: 75px;
+  }
+
+  .test-drive-button {
+    right: 5%;
+    bottom: 20px;
+    height: 34px;
+  }
+
+  .showroom-footer {
+    display: none;
+  }
+
+  .home-menu-section {
+    padding-top: 20px;
+  }
+
+}
+
+
+/* 8. TOUCH DEVICES */
+
+@media (hover: none) and (pointer: coarse) {
+
+  .mode-card,
+  .car-arrow,
+  .header-icon,
+  .side-menu-link,
+  .primary-button,
+  .secondary-button {
+    transition: transform .15s ease, background .15s ease;
+  }
+
+  .mode-card:active,
+  .primary-button:active,
+  .secondary-button:active {
+    transform: scale(.97);
+  }
+
+}
+
+
+/* 9. ACCESSIBILITY */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+
+}
+
+
+/* 10. SAFE AREA SUPPORT */
+
+@supports (padding: max(0px)) {
+
+  .main-header {
+    padding-top: max(0px, var(--safe-top));
+  }
+
+  .home-footer {
+    padding-bottom: max(25px, var(--safe-bottom));
+  }
+
+  .race-page {
+    padding-bottom: var(--safe-bottom);
+  }
+
+}
+
+
+/* =========================================================
+   SUPERX LEGEND
+   FILE 05 — RESPONSIVE DESIGN
+   PART END
+========================================================= */
