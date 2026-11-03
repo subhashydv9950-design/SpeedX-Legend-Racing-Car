@@ -1,24 +1,29 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 91
    FILE: js/vehicle-lap-timer.js
    START: VEHICLE LAP TIMER SYSTEM
-   ========================================================= */
+========================================================= */
 
 (function () {
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const STORAGE_KEY = "superx_lap_timer_v1";
+  const STORAGE_KEY = "superx_lap_timer_v2";
 
   const MAX_LAPS = 500;
   const MAX_SECTORS = 10;
 
   let session = null;
   let history = {};
-  let timerFrame = null;
   let lastUpdate = 0;
+  let animationFrame = null;
+  let initialized = false;
+
+  function emit(name, detail) {
+    window.dispatchEvent(new CustomEvent("sx:" + name, {
+      detail: detail || {}
+    }));
+  }
 
   function getCarId() {
     const car = SX.getSelectedCar
@@ -33,31 +38,25 @@
   }
 
   function formatTime(milliseconds) {
-    const ms = Math.max(0, milliseconds || 0);
-
+    const ms = Math.max(0, Number(milliseconds) || 0);
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
-    const centiseconds = Math.floor(
-      (ms % 1000) / 10
-    );
+    const centiseconds = Math.floor((ms % 1000) / 10);
 
     return (
-      String(minutes).padStart(2, "0") +
-      ":" +
-      String(seconds).padStart(2, "0") +
-      "." +
+      String(minutes).padStart(2, "0") + ":" +
+      String(seconds).padStart(2, "0") + "." +
       String(centiseconds).padStart(2, "0")
     );
   }
 
   function save() {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(history)
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+      return true;
     } catch (error) {
       console.warn("[SUPERX LapTimer] Save failed:", error);
+      return false;
     }
   }
 
@@ -67,18 +66,15 @@
         localStorage.getItem(STORAGE_KEY) || "{}"
       );
 
-      history =
-        saved && typeof saved === "object" &&
-        !Array.isArray(saved)
-          ? saved
-          : {};
+      history = saved && typeof saved === "object" &&
+        !Array.isArray(saved) ? saved : {};
     } catch (error) {
       history = {};
     }
   }
 
-  function getCarHistory() {
-    const id = getCarId();
+  function getCarHistory(carId) {
+    const id = carId || getCarId();
 
     if (!history[id]) {
       history[id] = {
@@ -100,24 +96,24 @@
     }
 
     const settings = options || {};
+    const now = performance.now();
 
     session = {
       id: "lap_" + Date.now(),
       carId: getCarId(),
       status: "running",
-      startedAt: performance.now(),
+      startedAt: now,
       currentLap: 1,
-      lapStartedAt: performance.now(),
+      lapStartedAt: now,
       completedLaps: [],
       sectors: [],
-      sectorStartedAt: performance.now(),
+      sectorStartedAt: now,
       sectorIndex: 0,
       sectorCount: Math.max(
         1,
-        Math.min(
-          MAX_SECTORS,
+        Math.min(MAX_SECTORS, Math.floor(
           Number(settings.sectorCount) || 3
-        )
+        ))
       ),
       lastLapTime: null,
       bestLap: null,
@@ -125,19 +121,13 @@
       pauseStartedAt: null
     };
 
-    const record = getCarHistory();
-    record.totalRaces += 1;
-
+    getCarHistory(session.carId).totalRaces++;
     save();
 
-    window.dispatchEvent(
-      new CustomEvent("sx:lap-session-started", {
-        detail: {
-          sessionId: session.id,
-          carId: session.carId
-        }
-      })
-    );
+    emit("lap-session-started", {
+      sessionId: session.id,
+      carId: session.carId
+    });
 
     return {
       success: true,
@@ -154,9 +144,7 @@
 
     return Math.max(
       0,
-      now -
-      session.lapStartedAt -
-      session.pausedDuration
+      now - session.lapStartedAt - session.pausedDuration
     );
   }
 
@@ -169,12 +157,7 @@
 
     if (now - lastUpdate >= 50) {
       lastUpdate = now;
-
-      window.dispatchEvent(
-        new CustomEvent("sx:lap-timer-update", {
-          detail: getState()
-        })
-      );
+      emit("lap-timer-update", getState());
     }
 
     return getState();
@@ -188,35 +171,37 @@
       };
     }
 
+    if (session.sectorIndex >= session.sectorCount) {
+      return {
+        success: false,
+        message: "All sectors are already completed."
+      };
+    }
+
     const now = performance.now();
+    const elapsed = now - session.sectorStartedAt;
 
-    const elapsed =
-      now -
-      session.sectorStartedAt;
-
-    session.sectors.push({
+    const sector = {
       number: session.sectorIndex + 1,
       milliseconds: elapsed,
       time: formatTime(elapsed)
-    });
+    };
 
-    session.sectorIndex += 1;
+    session.sectors.push(sector);
+    session.sectorIndex++;
     session.sectorStartedAt = now;
 
-    window.dispatchEvent(
-      new CustomEvent("sx:lap-sector-completed", {
-        detail: {
-          sector: session.sectorIndex,
-          milliseconds: elapsed
-        }
-      })
-    );
+    emit("lap-sector-completed", {
+      sector: sector.number,
+      milliseconds: elapsed,
+      time: sector.time
+    });
 
     return {
       success: true,
-      sector: session.sectorIndex,
+      sector: sector.number,
       milliseconds: elapsed,
-      formatted: formatTime(elapsed)
+      formatted: sector.time
     };
   }
 
@@ -229,35 +214,31 @@
     }
 
     const now = performance.now();
+    const lapTime = getElapsed(now);
 
-    const lapTime =
-      now -
-      session.lapStartedAt -
-      session.pausedDuration;
+    if (lapTime <= 0) {
+      return {
+        success: false,
+        message: "Invalid lap time."
+      };
+    }
 
     const lap = {
       number: session.currentLap,
       milliseconds: lapTime,
       time: formatTime(lapTime),
-      sectors: session.sectors.map(
-        sector => ({ ...sector })
-      ),
+      sectors: session.sectors.map(sector => ({ ...sector })),
       completedAt: Date.now()
     };
 
     session.completedLaps.push(lap);
     session.lastLapTime = lapTime;
 
-    const previousBest = session.bestLap;
-
-    if (
-      previousBest === null ||
-      lapTime < previousBest
-    ) {
+    if (session.bestLap === null || lapTime < session.bestLap) {
       session.bestLap = lapTime;
     }
 
-    const record = getCarHistory();
+    const record = getCarHistory(session.carId);
 
     record.laps.unshift({
       ...lap,
@@ -268,11 +249,10 @@
       record.laps.length = MAX_LAPS;
     }
 
-    if (
-      record.bestLap === null ||
-      record.bestLap === undefined ||
-      lapTime < record.bestLap
-    ) {
+    const isPersonalBest =
+      record.bestLap === null || lapTime < record.bestLap;
+
+    if (isPersonalBest) {
       record.bestLap = lapTime;
     }
 
@@ -280,19 +260,13 @@
 
     const result = {
       ...lap,
-      isPersonalBest:
-        record.bestLap === lapTime,
-      isSessionBest:
-        session.bestLap === lapTime
+      isPersonalBest,
+      isSessionBest: lapTime === session.bestLap
     };
 
-    window.dispatchEvent(
-      new CustomEvent("sx:lap-completed", {
-        detail: result
-      })
-    );
+    emit("lap-completed", result);
 
-    session.currentLap += 1;
+    session.currentLap++;
     session.lapStartedAt = now;
     session.sectorStartedAt = now;
     session.sectorIndex = 0;
@@ -306,31 +280,32 @@
   }
 
   function pause() {
-    if (!session || session.status !== "running") {
-      return false;
-    }
+    if (!session || session.status !== "running") return false;
 
     session.status = "paused";
     session.pauseStartedAt = performance.now();
+
+    emit("lap-session-paused", {
+      sessionId: session.id
+    });
 
     return true;
   }
 
   function resume() {
-    if (!session || session.status !== "paused") {
-      return false;
-    }
+    if (!session || session.status !== "paused") return false;
 
     const now = performance.now();
-
-    const pauseDuration =
-      now - session.pauseStartedAt;
+    const pauseDuration = now - session.pauseStartedAt;
 
     session.pausedDuration += pauseDuration;
     session.sectorStartedAt += pauseDuration;
-
     session.pauseStartedAt = null;
     session.status = "running";
+
+    emit("lap-session-resumed", {
+      sessionId: session.id
+    });
 
     return true;
   }
@@ -351,23 +326,18 @@
       bestLapFormatted: session.bestLap !== null
         ? formatTime(session.bestLap)
         : "--:--.--",
-      laps: session.completedLaps.map(
-        lap => ({ ...lap })
-      ),
+      laps: session.completedLaps.map(lap => ({ ...lap })),
       finishedAt: Date.now()
     };
 
-    session.status = "finished";
+    const sessionId = session.id;
     session = null;
 
-    window.dispatchEvent(
-      new CustomEvent("sx:lap-session-finished", {
-        detail: finished
-      })
-    );
+    emit("lap-session-finished", finished);
 
     return {
       success: true,
+      sessionId,
       result: finished
     };
   }
@@ -375,19 +345,18 @@
   function resetSession() {
     if (!session) return false;
 
+    const sessionId = session.id;
     session = null;
 
-    window.dispatchEvent(
-      new CustomEvent("sx:lap-session-reset")
-    );
+    emit("lap-session-reset", {
+      sessionId: sessionId
+    });
 
     return true;
   }
 
   function getAverageLap() {
-    if (!session || !session.completedLaps.length) {
-      return null;
-    }
+    if (!session || !session.completedLaps.length) return null;
 
     const total = session.completedLaps.reduce(
       (sum, lap) => sum + lap.milliseconds,
@@ -413,6 +382,8 @@
     return {
       active: true,
       status: session.status,
+      sessionId: session.id,
+      carId: session.carId,
       currentLap: session.currentLap,
       elapsed,
       formatted: formatTime(elapsed),
@@ -426,21 +397,19 @@
         : "--:--.--",
       completedLaps: session.completedLaps.length,
       sectorsCompleted: session.sectorIndex,
-      sectorCount: session.sectorCount
+      sectorCount: session.sectorCount,
+      paused: session.status === "paused"
     };
   }
 
   function getHistory(limit) {
     const record = getCarHistory();
-
     const count = Number.isInteger(limit) && limit > 0
       ? limit
       : record.laps.length;
 
     return {
-      laps: record.laps.slice(0, count).map(
-        lap => ({ ...lap })
-      ),
+      laps: record.laps.slice(0, count).map(lap => ({ ...lap })),
       bestLap: record.bestLap,
       bestLapFormatted: record.bestLap !== null
         ? formatTime(record.bestLap)
@@ -457,21 +426,35 @@
     record.totalRaces = 0;
 
     save();
+    emit("lap-history-cleared", { carId: getCarId() });
 
     return true;
   }
 
-  function init() {
-    load();
-
-    if (!timerFrame) {
-      const loop = () => {
-        update();
-        timerFrame = requestAnimationFrame(loop);
-      };
-
-      timerFrame = requestAnimationFrame(loop);
+  function destroy() {
+    if (animationFrame !== null) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
     }
+
+    session = null;
+    initialized = false;
+  }
+
+  function init() {
+    if (initialized) return api;
+
+    load();
+    initialized = true;
+
+    const loop = function () {
+      if (!initialized) return;
+
+      update();
+      animationFrame = requestAnimationFrame(loop);
+    };
+
+    animationFrame = requestAnimationFrame(loop);
 
     return api;
   }
@@ -490,17 +473,14 @@
     getHistory,
     getAverageLap,
     clearHistory,
-    formatTime
+    formatTime,
+    destroy
   };
 
   SX.vehicleLapTimer = api;
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      init,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }
@@ -509,5 +489,5 @@
 
 /* =========================================================
    END: VEHICLE LAP TIMER SYSTEM — FILE 91
-   ========================================================= */
-      
+========================================================= */
+
