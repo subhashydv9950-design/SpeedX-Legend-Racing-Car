@@ -1,9 +1,7 @@
-
 /* =========================================================
-   SUPERX LEGEND — FILE 73
+   SUPERX LEGEND — FILE 73 START
    FILE: js/vehicle-animation.js
-   PURPOSE: Vehicle suspension, wheel and body animations
-   START
+   PURPOSE: Advanced Vehicle Animation System
 ========================================================= */
 
 (function (window) {
@@ -13,8 +11,8 @@
 
   const VehicleAnimation = {
     vehicle: null,
+    body: null,
     wheels: [],
-    suspensionPoints: [],
     initialized: false,
 
     state: {
@@ -38,30 +36,29 @@
     },
 
     init(options = {}) {
-      this.vehicle = options.vehicle || null;
+      if (!options.vehicle) return false;
 
-      if (!this.vehicle) return false;
+      this.destroy();
 
-      this.wheels = [];
-      this.suspensionPoints = [];
+      this.vehicle = options.vehicle;
+      this.body = options.body || options.vehicle;
 
-      const wheelObjects = options.wheels || [];
+      this.bodyOriginalPosition =
+        this.body.position.clone();
 
-      wheelObjects.forEach(wheel => {
-        if (!wheel || !wheel.rotation) return;
+      this.bodyOriginalRotation =
+        this.body.rotation.clone();
 
-        this.wheels.push({
-          object: wheel,
-          originalRotation: wheel.rotation.clone(),
-          front: wheel.userData?.front !== false,
-          side: wheel.userData?.side || "left"
-        });
-      });
+      const wheelObjects = options.wheels ||
+        options.vehicle.userData?.wheels || [];
 
-      const body = options.body || this.vehicle;
-
-      this.bodyOriginalRotation = body.rotation.clone();
-      this.body = body;
+      this.wheels = wheelObjects.map(wheel => ({
+        object: wheel,
+        originalPosition: wheel.position.clone(),
+        originalRotation: wheel.rotation.clone(),
+        front: wheel.userData?.front !== false,
+        side: wheel.userData?.side || "left"
+      }));
 
       this.initialized = true;
 
@@ -69,41 +66,31 @@
     },
 
     setInput(data = {}) {
-      if (Number.isFinite(data.speed)) {
-        this.state.speed = Math.max(0, data.speed);
-      }
+      const limits = {
+        speed: [0, 520],
+        steering: [-1, 1],
+        throttle: [0, 1],
+        brake: [0, 1],
+        suspension: [-1, 1]
+      };
 
-      if (Number.isFinite(data.steering)) {
-        this.state.steering = Math.max(
-          -1,
-          Math.min(1, data.steering)
+      Object.entries(limits).forEach(([key, range]) => {
+        const value = Number(data[key]);
+
+        if (!Number.isFinite(value)) return;
+
+        this.state[key] = Math.max(
+          range[0],
+          Math.min(range[1], value)
         );
-      }
-
-      if (Number.isFinite(data.throttle)) {
-        this.state.throttle = Math.max(
-          0,
-          Math.min(1, data.throttle)
-        );
-      }
-
-      if (Number.isFinite(data.brake)) {
-        this.state.brake = Math.max(
-          0,
-          Math.min(1, data.brake)
-        );
-      }
-
-      if (Number.isFinite(data.suspension)) {
-        this.state.suspension = data.suspension;
-      }
+      });
     },
 
     update(deltaTime = 0.016) {
       if (!this.initialized) return;
 
       const dt = Math.min(
-        Math.max(deltaTime, 0),
+        Math.max(Number(deltaTime) || 0, 0),
         0.05
       );
 
@@ -115,7 +102,7 @@
       const speedMeters = this.state.speed / 3.6;
 
       this.state.wheelRotation +=
-        (speedMeters / this.settings.wheelRadius) * dt;
+        speedMeters / this.settings.wheelRadius * dt;
 
       this.wheels.forEach(wheel => {
         const object = wheel.object;
@@ -136,22 +123,25 @@
     updateBody(dt) {
       if (!this.body) return;
 
-      const steeringTarget =
+      const speedFactor = Math.min(
+        1,
+        this.state.speed / 120
+      );
+
+      const rollTarget =
         -this.state.steering *
-        Math.min(1, this.state.speed / 120) *
+        speedFactor *
         this.settings.bodyRollStrength;
 
-      const brakingTarget =
-        this.state.brake *
-        this.settings.bodyPitchStrength;
-
-      const accelerationTarget =
-        this.state.throttle *
-        this.settings.bodyPitchStrength *
-        0.5;
-
       const pitchTarget =
-        brakingTarget - accelerationTarget;
+        (
+          this.state.brake -
+          this.state.throttle * 0.5
+        ) * this.settings.bodyPitchStrength;
+
+      const suspensionTarget =
+        this.state.suspension *
+        this.settings.suspensionStrength;
 
       const smoothing = Math.min(
         1,
@@ -159,7 +149,7 @@
       );
 
       this.state.bodyRoll += (
-        steeringTarget - this.state.bodyRoll
+        rollTarget - this.state.bodyRoll
       ) * smoothing;
 
       this.state.bodyPitch += (
@@ -173,34 +163,60 @@
       this.body.rotation.x =
         this.bodyOriginalRotation.x +
         this.state.bodyPitch;
+
+      this.body.position.y =
+        this.bodyOriginalPosition.y +
+        suspensionTarget;
     },
 
     setSettings(options = {}) {
       Object.keys(this.settings).forEach(key => {
-        if (Number.isFinite(options[key])) {
-          this.settings[key] = Math.max(
-            0,
-            options[key]
-          );
-        }
+        const value = Number(options[key]);
+
+        if (!Number.isFinite(value)) return;
+
+        this.settings[key] = Math.max(
+          0,
+          Math.min(100, value)
+        );
       });
+
+      this.settings.wheelRadius = Math.max(
+        0.1,
+        this.settings.wheelRadius
+      );
 
       return { ...this.settings };
     },
 
     reset() {
-      if (this.body && this.bodyOriginalRotation) {
+      if (!this.initialized) return;
+
+      if (this.body) {
+        this.body.position.copy(
+          this.bodyOriginalPosition
+        );
+
         this.body.rotation.copy(
           this.bodyOriginalRotation
         );
       }
 
       this.wheels.forEach(wheel => {
+        wheel.object.position.copy(
+          wheel.originalPosition
+        );
+
         wheel.object.rotation.copy(
           wheel.originalRotation
         );
       });
 
+      this.state.speed = 0;
+      this.state.steering = 0;
+      this.state.throttle = 0;
+      this.state.brake = 0;
+      this.state.suspension = 0;
       this.state.wheelRotation = 0;
       this.state.bodyRoll = 0;
       this.state.bodyPitch = 0;
@@ -215,12 +231,15 @@
     },
 
     destroy() {
-      this.reset();
+      if (this.initialized) {
+        this.reset();
+      }
 
       this.vehicle = null;
       this.body = null;
       this.wheels = [];
-      this.suspensionPoints = [];
+      this.bodyOriginalPosition = null;
+      this.bodyOriginalRotation = null;
       this.initialized = false;
     }
   };
@@ -230,7 +249,7 @@
 })(window);
 
 /* =========================================================
-   SUPERX LEGEND — FILE 73
+   SUPERX LEGEND — FILE 73 END
    FILE: js/vehicle-animation.js
-   END
 ========================================================= */
+
