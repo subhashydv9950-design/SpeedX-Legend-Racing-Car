@@ -1,24 +1,6 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 103
    FILE: js/vehicle-race-analysis.js
-
-   MODULE: VEHICLE RACE PERFORMANCE ANALYSIS
-
-   RESPONSIBILITY:
-   - Analyze completed lap times
-   - Calculate consistency
-   - Calculate pace improvement
-   - Estimate penalty impact
-   - Generate performance grades
-   - Store analysis reports
-
-   DOES NOT:
-   - Control the race
-   - Modify player rewards
-   - Change race standings
-   - Apply vehicle upgrades
-
    START: VEHICLE RACE ANALYSIS
    ========================================================= */
 
@@ -26,22 +8,14 @@
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const STORAGE_KEY = "superx_race_analysis_v1";
+  const STORAGE_KEY = "superx_race_analysis_v2";
   const MAX_REPORTS = 50;
 
   let reports = [];
 
-  /* ---------------------------------------------------------
-     1. HELPERS
-     --------------------------------------------------------- */
-
-  function toNumber(value, fallback) {
+  function number(value, fallback = 0) {
     const result = Number(value);
-
-    return Number.isFinite(result)
-      ? result
-      : fallback;
+    return Number.isFinite(result) ? result : fallback;
   }
 
   function clamp(value, min, max) {
@@ -53,107 +27,64 @@
   }
 
   function average(values) {
-    if (!values.length) return 0;
-
-    return values.reduce(
-      (sum, value) => sum + value,
-      0
-    ) / values.length;
+    return values.length
+      ? values.reduce((sum, value) => sum + value, 0) / values.length
+      : 0;
   }
 
-  function standardDeviation(values) {
+  function deviation(values) {
     if (values.length < 2) return 0;
-
     const mean = average(values);
-
-    const variance = average(
-      values.map(value => Math.pow(value - mean, 2))
-    );
-
-    return Math.sqrt(variance);
+    return Math.sqrt(average(values.map(value => (value - mean) ** 2)));
   }
 
   function makeId() {
-    return "SX-ANALYSIS-" +
-      Date.now().toString(36) +
-      "-" +
-      Math.floor(Math.random() * 100000).toString(36);
+    return "SX-ANALYSIS-" + Date.now().toString(36) +
+      "-" + Math.random().toString(36).slice(2, 8);
   }
-
-  /* ---------------------------------------------------------
-     2. STORAGE
-     --------------------------------------------------------- */
 
   function load() {
     try {
-      const saved = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "[]"
-      );
-
-      reports = Array.isArray(saved)
-        ? saved.slice(-MAX_REPORTS)
-        : [];
-
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      reports = Array.isArray(saved) ? saved.slice(-MAX_REPORTS) : [];
       return true;
-
     } catch (error) {
       reports = [];
-
-      console.warn(
-        "[SUPERX Analysis] History load failed.",
-        error
-      );
-
+      console.warn("[SUPERX Analysis] Load failed:", error);
       return false;
     }
   }
 
   function save() {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(reports.slice(-MAX_REPORTS))
-      );
-
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reports.slice(-MAX_REPORTS)));
       return true;
-
     } catch (error) {
-      console.warn(
-        "[SUPERX Analysis] History save failed.",
-        error
-      );
-
+      console.warn("[SUPERX Analysis] Save failed:", error);
       return false;
     }
   }
 
-  /* ---------------------------------------------------------
-     3. NORMALIZE LAP DATA
-     --------------------------------------------------------- */
-
   function normalizeLaps(input) {
     if (!Array.isArray(input)) return [];
 
-    return input
-      .slice(0, 100)
-      .map((item, index) => {
-        const value = typeof item === "object"
-          ? item.time
-          : item;
+    return input.slice(0, 100).map((item, index) => {
+      const raw = item && typeof item === "object"
+        ? item.time
+        : item;
 
-        return {
-          lap: index + 1,
-          time: Math.max(0, toNumber(value, 0))
-        };
-      })
-      .filter(item => item.time > 0);
+      return {
+        lap: item && typeof item === "object" && Number.isFinite(Number(item.lap))
+          ? Math.max(1, Math.floor(Number(item.lap)))
+          : index + 1,
+        time: Math.max(0, number(raw))
+      };
+    }).filter(item => item.time > 0);
   }
 
-  /* ---------------------------------------------------------
-     4. LAP PERFORMANCE
-     --------------------------------------------------------- */
+  function analyzeLaps(input) {
+    const laps = normalizeLaps(input);
 
-  function analyzeLaps(laps) {
     if (!laps.length) {
       return {
         count: 0,
@@ -168,39 +99,18 @@
     }
 
     const times = laps.map(item => item.time);
-
     const best = Math.min(...times);
     const worst = Math.max(...times);
     const avg = average(times);
-    const deviation = standardDeviation(times);
+    const spread = deviation(times);
 
     const consistency = avg > 0
-      ? clamp(
-          100 - (deviation / avg) * 100,
-          0,
-          100
-        )
+      ? clamp(100 - spread / avg * 100, 0, 100)
       : 0;
 
-    let improvement = 0;
-
-    if (times.length >= 2) {
-      const first = times[0];
-      const last = times[times.length - 1];
-
-      improvement = first > 0
-        ? ((first - last) / first) * 100
-        : 0;
-    }
-
-    const details = laps.map(item => ({
-      lap: item.lap,
-      time: item.time,
-      differenceFromBest: item.time - best,
-      differenceFromAverage: item.time - avg,
-      isBest: item.time === best,
-      isWorst: item.time === worst
-    }));
+    const improvement = times.length > 1 && times[0] > 0
+      ? ((times[0] - times[times.length - 1]) / times[0]) * 100
+      : 0;
 
     return {
       count: laps.length,
@@ -208,224 +118,129 @@
       worst,
       average: avg,
       consistency,
-      deviation,
+      deviation: spread,
       improvement,
-      lapDetails: details
+      lapDetails: laps.map(item => ({
+        lap: item.lap,
+        time: item.time,
+        differenceFromBest: item.time - best,
+        differenceFromAverage: item.time - avg,
+        isBest: item.time === best,
+        isWorst: item.time === worst
+      }))
     };
   }
 
-  /* ---------------------------------------------------------
-     5. PENALTY ANALYSIS
-     --------------------------------------------------------- */
-
-  function analyzePenalties(data) {
-    const input = data || {};
-
-    const totalPenalty = Math.max(
-      0,
-      toNumber(input.totalPenalty, 0)
-    );
-
-    const incidents = Math.max(
-      0,
-      Math.floor(toNumber(input.incidents, 0))
-    );
-
-    const adjustedTime = Math.max(
-      0,
-      toNumber(input.adjustedTime, 0)
-    );
+  function analyzePenalties(input) {
+    const data = input || {};
+    const totalPenalty = Math.max(0, number(data.totalPenalty));
+    const incidents = Math.max(0, Math.floor(number(data.incidents)));
+    const adjustedTime = Math.max(0, number(data.adjustedTime));
 
     return {
       totalPenalty,
       incidents,
       adjustedTime,
-      penaltyImpact: totalPenalty > 0
-        ? Math.min(100, (totalPenalty / 60000) * 100)
-        : 0
+      penaltyImpact: Math.min(100, totalPenalty / 60000 * 100)
     };
   }
 
-  /* ---------------------------------------------------------
-     6. PERFORMANCE GRADE
-     --------------------------------------------------------- */
-
   function calculateGrade(lapData, penaltyData) {
-    const consistency = lapData.consistency;
+    const laps = lapData || {};
+    const penalties = penaltyData || {};
 
-    let score = consistency * 0.65;
+    let score = number(laps.consistency) * 0.65;
 
-    if (lapData.improvement > 0) {
-      score += Math.min(
-        15,
-        lapData.improvement * 3
-      );
+    if (number(laps.improvement) > 0) {
+      score += Math.min(15, number(laps.improvement) * 3);
     }
 
-    if (lapData.count >= 3) {
-      score += 10;
-    }
+    if (number(laps.count) >= 3) score += 10;
 
-    score -= penaltyData.penaltyImpact * 0.2;
-
-    score = Math.round(
-      clamp(score, 0, 100)
-    );
+    score -= number(penalties.penaltyImpact) * 0.2;
+    score = Math.round(clamp(score, 0, 100));
 
     let grade = "D";
-
     if (score >= 95) grade = "S";
     else if (score >= 85) grade = "A";
     else if (score >= 70) grade = "B";
     else if (score >= 55) grade = "C";
 
-    return {
-      score,
-      grade
-    };
+    return { score, grade };
   }
-
-  /* ---------------------------------------------------------
-     7. GENERATE ANALYSIS
-     --------------------------------------------------------- */
 
   function analyze(options) {
     const data = options || {};
-
     const laps = normalizeLaps(data.laps);
 
     if (!laps.length) {
-      return {
-        success: false,
-        message: "Valid lap times are required."
-      };
+      return { success: false, message: "Valid lap times are required." };
     }
 
     const lapData = analyzeLaps(laps);
-
-    const penaltyData = analyzePenalties(
-      data.penalties
-    );
-
-    const gradeData = calculateGrade(
-      lapData,
-      penaltyData
-    );
+    const penaltyData = analyzePenalties(data.penalties);
+    const performance = calculateGrade(lapData, penaltyData);
 
     const report = {
       reportId: makeId(),
-
-      raceId: String(data.raceId || "")
-        .slice(0, 100),
-
-      mapName: String(data.mapName || "Unknown Track")
-        .slice(0, 100),
-
-      carId: String(data.carId || "unknown")
-        .slice(0, 80),
-
+      raceId: String(data.raceId || "").slice(0, 100),
+      mapName: String(data.mapName || "Unknown Track").slice(0, 100),
+      carId: String(data.carId || "unknown").slice(0, 80),
       createdAt: Date.now(),
-
       lapAnalysis: lapData,
-
       penaltyAnalysis: penaltyData,
-
-      performance: gradeData
+      performance
     };
 
     reports.push(report);
-
-    if (reports.length > MAX_REPORTS) {
-      reports.shift();
-    }
+    if (reports.length > MAX_REPORTS) reports.shift();
 
     const saved = save();
 
-    window.dispatchEvent(
-      new CustomEvent("sx:race-analysis-created", {
-        detail: {
-          report: clone(report),
-          saved
-        }
-      })
-    );
+    window.dispatchEvent(new CustomEvent("sx:race-analysis-created", {
+      detail: { report: clone(report), saved }
+    }));
 
-    return {
-      success: true,
-      saved,
-      report: clone(report)
-    };
+    return { success: true, saved, report: clone(report) };
   }
-
-  /* ---------------------------------------------------------
-     8. COMPARISON
-     --------------------------------------------------------- */
 
   function compareReports(firstId, secondId) {
-    const first = reports.find(
-      item => item.reportId === firstId
-    );
-
-    const second = reports.find(
-      item => item.reportId === secondId
-    );
+    const first = reports.find(item => item.reportId === firstId);
+    const second = reports.find(item => item.reportId === secondId);
 
     if (!first || !second) {
-      return {
-        success: false,
-        message: "One or both reports were not found."
-      };
+      return { success: false, message: "One or both reports were not found." };
     }
 
-    const firstAverage =
-      first.lapAnalysis.average;
-
-    const secondAverage =
-      second.lapAnalysis.average;
+    const firstAverage = first.lapAnalysis.average;
+    const secondAverage = second.lapAnalysis.average;
 
     return {
       success: true,
-
-      averageTimeDifference:
-        secondAverage - firstAverage,
-
+      averageTimeDifference: secondAverage - firstAverage,
       consistencyDifference:
-        second.lapAnalysis.consistency -
-        first.lapAnalysis.consistency,
-
+        second.lapAnalysis.consistency - first.lapAnalysis.consistency,
       scoreDifference:
-        second.performance.score -
-        first.performance.score,
-
-      fasterReport:
-        firstAverage < secondAverage
-          ? first.reportId
-          : secondAverage < firstAverage
-            ? second.reportId
-            : null
+        second.performance.score - first.performance.score,
+      fasterReport: firstAverage < secondAverage
+        ? first.reportId
+        : secondAverage < firstAverage
+          ? second.reportId
+          : null
     };
   }
-
-  /* ---------------------------------------------------------
-     9. HISTORY
-     --------------------------------------------------------- */
 
   function getAll() {
     return clone(reports.slice().reverse());
   }
 
   function getReport(id) {
-    const report = reports.find(
-      item => item.reportId === id
-    );
-
+    const report = reports.find(item => item.reportId === id);
     return report ? clone(report) : null;
   }
 
   function getLatest() {
-    if (!reports.length) return null;
-
-    return clone(reports[reports.length - 1]);
+    return reports.length ? clone(reports[reports.length - 1]) : null;
   }
 
   function getSummary() {
@@ -440,48 +255,25 @@
 
     return {
       totalReports: reports.length,
-
-      averageScore: Math.round(
-        average(
-          reports.map(item => item.performance.score)
-        )
-      ),
-
-      averageConsistency: Math.round(
-        average(
-          reports.map(
-            item => item.lapAnalysis.consistency
-          )
-        )
-      ),
-
+      averageScore: Math.round(average(
+        reports.map(item => number(item.performance && item.performance.score))
+      )),
+      averageConsistency: Math.round(average(
+        reports.map(item => number(item.lapAnalysis && item.lapAnalysis.consistency))
+      )),
       bestScore: Math.max(
-        ...reports.map(
-          item => item.performance.score
-        )
+        ...reports.map(item => number(item.performance && item.performance.score))
       )
     };
   }
 
-  /* ---------------------------------------------------------
-     10. CLEAR HISTORY
-     --------------------------------------------------------- */
-
   function clearHistory() {
     reports = [];
-
     const saved = save();
 
-    window.dispatchEvent(
-      new CustomEvent("sx:race-analysis-cleared")
-    );
-
+    window.dispatchEvent(new CustomEvent("sx:race-analysis-cleared"));
     return saved;
   }
-
-  /* ---------------------------------------------------------
-     11. PUBLIC API
-     --------------------------------------------------------- */
 
   load();
 
@@ -491,14 +283,13 @@
     analyzePenalties,
     calculateGrade,
     compareReports,
-
     getAll,
     getReport,
     getLatest,
     getSummary,
-
     clearHistory,
-    reload: load
+    reload: load,
+    save
   };
 
 })();
@@ -506,4 +297,3 @@
 /* =========================================================
    END: VEHICLE RACE ANALYSIS — FILE 103
    ========================================================= */
-   
