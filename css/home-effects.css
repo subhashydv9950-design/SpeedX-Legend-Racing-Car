@@ -1,0 +1,389 @@
+
+/* =====================================================
+   SUPERX LEGEND RACING
+   FILE: css/home-effects.css
+   PREMIUM VISUAL EFFECTS
+   START
+===================================================== */
+
+/* PREMIUM PAGE ENTRANCE */
+
+.home-page {
+  animation: sxPageReveal 1s ease both;
+}
+
+@keyframes sxPageReveal {
+  from {
+    opacity: 0;
+    filter: brightness(.55);
+  }
+  to {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+/* HEADER GLASS EFFECT */
+
+.main-header {
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: 0 12px 35px rgba(0,0,0,.18);
+}
+
+.brand-main {
+  text-shadow: 0 0 22px rgba(160,115,255,.35);
+}
+
+/* SHOWROOM LIGHT ANIMATION */
+
+.showroom-light-left {
+  animation: sxLightLeft 8s ease-in-out infinite alternate;
+}
+
+.showroom-light-right {
+  animation: sxLightRight 9s ease-in-out infinite alternate;
+}
+
+@keyframes sxLightLeft {
+  from {
+    transform: translate(0, 0) scale(.9);
+    opacity: .65;
+  }
+  to {
+    transform: translate(35px, 20px) scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes sxLightRight {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-30px, -25px) scale(1.2);
+  }
+}
+
+/* SHOWROOM FLOOR */
+
+.stage-ring {
+  animation: sxRingGlow 4s ease-in-out infinite alternate;
+}
+
+@keyframes sxRingGlow {
+  from {
+    opacity: .45;
+    box-shadow:
+      0 0 25px rgba(139,92,246,.08),
+      inset 0 0 20px rgba(139,92,246,.05);
+  }
+  to {
+    opacity: 1;
+    box-shadow:
+      0 0 55px rgba(139,92,246,.28),
+      inset 0 0 40px rgba(139,92,246,.14);
+  }
+}
+
+/* CAR INFORMATION */
+
+.home-car-info {
+  animation: sxCarInfoIn .85s .2s ease both;
+}
+
+@keyframes sxCarInfoIn {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.home-car-info h1 {
+  text-shadow:
+    0 4px 15px rgba(0,0,0,.8),
+    0 0 35px rgba(160,115,255,.12);
+}
+
+/* CAR STATS */
+
+.home-car-stats {
+  overflow: hidden;
+  border-color: rgba(185,154,255,.20);
+}
+
+.home-car-stats > div {
+  transition:
+    background .25s ease,
+    transform .25s ease;
+}
+
+.home-car-stats > div:hover {
+  background: rgba(139,92,246,.15);
+}
+
+/* CAR SELECTOR */
+
+.showroom-selector {
+  box-shadow:
+    0 12px 40px rgba(0,0,0,.35),
+    0 0 25px rgba(139,92,246,.08);
+  transition:
+    border-color .25s ease,
+    box-shadow .25s ease;
+}
+
+.showroom-selector:hover {
+  border-color: rgba(185,154,255,.45);
+  box-shadow:
+    0 12px 45px rgba(0,0,0,.42),
+    0 0 28px rgba(139,92,246,.15);
+}
+
+.car-arrow {
+  display: grid;
+  place-items: center;
+  transition:
+    transform .2s ease,
+    background .2s ease,
+    box-shadow .2s ease;
+}
+
+.car-arrow:active {
+  transform: scale(.88);
+  box-shadow: 0 0 18px rgba(139,92,246,.35);
+}
+
+/* LOCK STATUS */
+
+#homeCarStatus {
+  transition: color .25s ease;
+}
+
+#homeCarStatus.is-locked {
+  color: #ff657b;
+}
+
+#homeCarStatus.is-unlocked {
+  color: #a98bff;
+}
+
+/* TEST DRIVE BUTTON */
+
+.test-drive-button {
+  position: absolute;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow: 0 8px 28px rgba(103,65,190,.24);
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    border-color .25s ease;
+}
+
+.test-drive-button::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255,255,255,.22) 48%,
+    transparent 75%
+  );
+  transform: translateX(-120%);
+  transition: transform .65s ease;
+}
+
+.test-drive-button:hover::before {
+  transform: translateX(120%);
+}
+
+.test-drive-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 38px rgba(123,79,220,.38);
+}
+
+/* GAME MODE CARDS */
+
+.home-mode-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transform: translateZ(0);
+  transition:
+    transform .28s ease,
+    border-color .28s ease,
+    background .28s ease,
+    box-shadow .28s ease;
+}
+
+.home-mode-card::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 110%,
+    rgba(139,92,246,.30),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+
+.home-mode-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(185,154,255,.55);
+  background: rgba(35,27,52,.92);
+  box-shadow: 0 15px 35px rgba(0,0,0,.28);
+}
+
+.home-mode-card:hover::before {
+  opacity: 1;
+}
+
+.home-mode-icon {
+  display: inline-block;
+  transition: transform .3s ease;
+}
+
+.home-mode-card:hover .home-mode-icon {
+  transform: translateY(-4px) scale(1.12);
+}
+
+/* PLAYER PANEL */
+
+.home-player-mini {
+  transition: border-color .25s ease;
+}
+
+.home-player-mini:hover {
+  border-color: rgba(185,154,255,.4);
+}
+
+/* SIDE MENU POLISH */
+
+.side-menu {
+  box-shadow: 25px 0 70px rgba(0,0,0,.48);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.side-menu-link {
+  transition:
+    background .22s ease,
+    color .22s ease,
+    padding-left .22s ease;
+}
+
+.side-menu-link:hover {
+  padding-left: 24px;
+  color: #d5c2ff;
+  background: rgba(139,92,246,.13);
+}
+
+.menu-backdrop {
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* AUDIO BUTTONS */
+
+.side-menu-audio button {
+  transition:
+    border-color .2s ease,
+    background .2s ease,
+    transform .2s ease;
+}
+
+.side-menu-audio button:active {
+  transform: scale(.97);
+}
+
+.side-menu-audio button.audio-disabled strong {
+  color: #ff7185;
+}
+
+/* GLOBAL BUTTON FEEDBACK */
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #b99aff;
+  outline-offset: 4px;
+}
+
+/* TOAST ANIMATION */
+
+.toast-message {
+  animation: sxToastIn .3s ease both;
+}
+
+@keyframes sxToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* MOBILE TOUCH POLISH */
+
+@media (max-width: 768px) {
+  .home-mode-card:hover {
+    transform: none;
+  }
+
+  .home-mode-card:active {
+    transform: scale(.97);
+  }
+
+  .test-drive-button:hover {
+    transform: none;
+  }
+
+  .test-drive-button:active {
+    transform: scale(.97);
+  }
+
+  .showroom-light {
+    filter: blur(65px);
+  }
+}
+
+/* REDUCED MOTION ACCESSIBILITY */
+
+@media (prefers-reduced-motion: reduce) {
+  .home-page,
+  .home-car-info,
+  .showroom-light-left,
+  .showroom-light-right,
+  .stage-ring {
+    animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* =====================================================
+   FILE: css/home-effects.css
+   END
+===================================================== */
