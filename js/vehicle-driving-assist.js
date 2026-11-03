@@ -1,16 +1,15 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 87
    FILE: js/vehicle-driving-assist.js
-   START: VEHICLE DRIVING ASSIST SYSTEM
-   ========================================================= */
+   PURPOSE: ABS, Traction, Stability, Launch & Cruise Control
+   START
+========================================================= */
 
-(function () {
+(function (window) {
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const STORAGE_KEY = "superx_driving_assist_v1";
+  const STORAGE_KEY = "superx_driving_assist_v2";
 
   const DEFAULT_SETTINGS = {
     abs: true,
@@ -33,6 +32,7 @@
     brakePressure: 0,
     throttleLimit: 1,
     steeringCorrection: 0,
+    cruiseThrottle: 0,
     lastSpeed: 0
   };
 
@@ -40,24 +40,27 @@
     return Math.max(min, Math.min(max, value));
   }
 
+  function number(value, fallback = 0) {
+    const result = Number(value);
+    return Number.isFinite(result) ? result : fallback;
+  }
+
   function save() {
     try {
-      localStorage.setItem(
+      window.localStorage?.setItem(
         STORAGE_KEY,
         JSON.stringify(settings)
       );
+      return true;
     } catch (error) {
-      console.warn(
-        "[SUPERX Driving Assist] Save failed:",
-        error
-      );
+      return false;
     }
   }
 
   function load() {
     try {
       const saved = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "null"
+        window.localStorage?.getItem(STORAGE_KEY) || "null"
       );
 
       if (saved && typeof saved === "object") {
@@ -70,6 +73,18 @@
       settings = { ...DEFAULT_SETTINGS };
     }
 
+    settings.assistStrength = clamp(
+      number(settings.assistStrength, 0.7),
+      0,
+      1
+    );
+
+    settings.cruiseSpeed = clamp(
+      number(settings.cruiseSpeed, 100),
+      30,
+      300
+    );
+
     return getSettings();
   }
 
@@ -81,27 +96,30 @@
       "launchControl"
     ];
 
-    if (!allowed.includes(name)) {
-      return false;
-    }
+    if (!allowed.includes(name)) return false;
 
     settings[name] = Boolean(enabled);
 
-    if (
-      name === "launchControl" &&
-      !settings.launchControl
-    ) {
-      state.launchActive = false;
+    if (!settings[name]) {
+      if (name === "launchControl") state.launchActive = false;
+      if (name === "tractionControl") {
+        state.tractionActive = false;
+        state.throttleLimit = 1;
+      }
+      if (name === "stabilityControl") {
+        state.stabilityActive = false;
+        state.steeringCorrection = 0;
+      }
+      if (name === "abs") state.absActive = false;
     }
 
     save();
+    dispatch("settings-changed", getSettings());
 
     return true;
   }
 
   function setCruiseControl(enabled, speed) {
-    settings.cruiseControl = Boolean(enabled);
-
     if (Number.isFinite(Number(speed))) {
       settings.cruiseSpeed = clamp(
         Number(speed),
@@ -110,10 +128,18 @@
       );
     }
 
-    state.cruiseActive =
-      settings.cruiseControl;
+    settings.cruiseControl = Boolean(enabled);
+    state.cruiseActive = settings.cruiseControl;
+
+    if (!settings.cruiseControl) {
+      state.cruiseThrottle = 0;
+    }
 
     save();
+    dispatch("cruise-changed", {
+      enabled: settings.cruiseControl,
+      speed: settings.cruiseSpeed
+    });
 
     return state.cruiseActive;
   }
@@ -122,7 +148,7 @@
     if (!settings.cruiseControl) return false;
 
     settings.cruiseSpeed = clamp(
-      settings.cruiseSpeed + Number(amount || 0),
+      settings.cruiseSpeed + number(amount),
       30,
       300
     );
@@ -132,7 +158,7 @@
     return settings.cruiseSpeed;
   }
 
-  function activateLaunchControl(speed) {
+  function activateLaunchControl(speed = 0) {
     if (!settings.launchControl) {
       return {
         success: false,
@@ -140,7 +166,7 @@
       };
     }
 
-    if (Number(speed) > 5) {
+    if (Math.abs(number(speed)) > 5) {
       return {
         success: false,
         message: "Vehicle speed is too high."
@@ -148,6 +174,8 @@
     }
 
     state.launchActive = true;
+
+    dispatch("launch-activated", {});
 
     return {
       success: true,
@@ -157,71 +185,62 @@
 
   function deactivateLaunchControl() {
     state.launchActive = false;
+    dispatch("launch-deactivated", {});
     return true;
   }
 
-  function calculateABS(input) {
+  function calculateABS(brake, speed) {
     if (!settings.abs) {
       state.absActive = false;
-      return input.brake;
+      return brake;
     }
 
-    const lockRisk = clamp(
-      input.brake * input.speedFactor,
-      0,
-      1
-    );
+    const speedFactor = clamp(speed / 160, 0, 1);
+    const lockRisk = brake * speedFactor;
 
     state.absActive = lockRisk > 0.55;
 
-    if (state.absActive) {
-      return input.brake * 0.78;
-    }
-
-    return input.brake;
+    return state.absActive
+      ? brake * 0.78
+      : brake;
   }
 
-  function calculateTraction(input) {
+  function calculateTraction(throttle, wheelSlip) {
     if (!settings.tractionControl) {
       state.tractionActive = false;
       state.throttleLimit = 1;
-      return input.throttle;
+      return throttle;
     }
 
-    const slip = Math.abs(input.wheelSlip || 0);
+    const slip = Math.abs(wheelSlip);
 
     state.tractionActive = slip > 0.18;
 
     if (!state.tractionActive) {
       state.throttleLimit = 1;
-      return input.throttle;
+      return throttle;
     }
 
     const reduction = clamp(
-      slip * settings.assistStrength,
+      (slip - 0.18) * settings.assistStrength * 1.5,
       0,
       0.65
     );
 
     state.throttleLimit = 1 - reduction;
 
-    return input.throttle * state.throttleLimit;
+    return throttle * state.throttleLimit;
   }
 
-  function calculateStability(input) {
+  function calculateStability(steering, yawRate) {
     if (!settings.stabilityControl) {
       state.stabilityActive = false;
       state.steeringCorrection = 0;
-
       return 0;
     }
 
-    const yaw = Number(input.yawRate) || 0;
-    const steering = Number(input.steering) || 0;
-
-    const instability = Math.abs(
-      yaw - steering * 0.35
-    );
+    const yaw = number(yawRate);
+    const instability = Math.abs(yaw - steering * 0.35);
 
     state.stabilityActive = instability > 0.35;
 
@@ -241,105 +260,125 @@
     return correction;
   }
 
-  function calculateCruise(input) {
+  function calculateCruise(speed, brake) {
     if (!settings.cruiseControl) {
       state.cruiseActive = false;
+      state.cruiseThrottle = 0;
       return null;
     }
 
-    if (input.brake > 0.05) {
-      state.cruiseActive = false;
+    if (brake > 0.05) {
       settings.cruiseControl = false;
+      state.cruiseActive = false;
+      state.cruiseThrottle = 0;
+
       save();
+      dispatch("cruise-cancelled", {
+        reason: "braking"
+      });
 
       return null;
     }
 
     state.cruiseActive = true;
 
-    const difference =
-      settings.cruiseSpeed - input.speed;
+    const difference = settings.cruiseSpeed - speed;
 
-    return clamp(
+    state.cruiseThrottle = clamp(
       difference * 0.015,
       -0.25,
       0.25
     );
+
+    return state.cruiseThrottle;
   }
 
-  function update(input) {
-    const data = input || {};
-
-    const speed = Math.max(
-      0,
-      Number(data.speed) || 0
-    );
+  function update(input = {}) {
+    const speed = Math.abs(number(input.speed));
+    const throttle = clamp(number(input.throttle), 0, 1);
+    const brake = clamp(number(input.brake), 0, 1);
+    const steering = clamp(number(input.steering), -1, 1);
+    const wheelSlip = number(input.wheelSlip);
+    const yawRate = number(input.yawRate);
 
     const result = {
-      brake: clamp(
-        Number(data.brake) || 0,
-        0,
-        1
-      ),
-      throttle: clamp(
-        Number(data.throttle) || 0,
-        0,
-        1
-      ),
-      steering: clamp(
-        Number(data.steering) || 0,
-        -1,
-        1
-      ),
+      brake,
+      throttle,
+      steering,
       cruiseThrottle: null,
       steeringCorrection: 0
     };
 
-    const speedFactor = clamp(
-      speed / 160,
-      0,
-      1
+    result.brake = calculateABS(result.brake, speed);
+
+    result.throttle = calculateTraction(
+      result.throttle,
+      wheelSlip
     );
 
-    result.brake = calculateABS({
-      brake: result.brake,
-      speedFactor
-    });
+    result.steeringCorrection = calculateStability(
+      result.steering,
+      yawRate
+    );
 
-    result.throttle = calculateTraction({
-      throttle: result.throttle,
-      wheelSlip: Number(data.wheelSlip) || 0
-    });
-
-    result.steeringCorrection = calculateStability({
-      yawRate: Number(data.yawRate) || 0,
-      steering: result.steering
-    });
-
-    result.cruiseThrottle = calculateCruise({
+    result.cruiseThrottle = calculateCruise(
       speed,
-      brake: result.brake
-    });
+      result.brake
+    );
 
-    if (state.launchActive && speed < 5) {
-      result.throttle = Math.min(
-        result.throttle,
-        0.85
-      );
-    } else {
-      state.launchActive = false;
+    if (state.launchActive) {
+      if (speed < 5 && settings.launchControl) {
+        result.throttle = Math.min(result.throttle, 0.85);
+      } else {
+        state.launchActive = false;
+      }
     }
 
     state.brakePressure = result.brake;
     state.lastSpeed = speed;
 
-    window.dispatchEvent(
-      new CustomEvent("sx:driving-assist-update", {
-        detail: getState()
-      })
-    );
+    dispatch("update", getState());
 
     return result;
+  }
+
+  function configure(options = {}) {
+    if (!options || typeof options !== "object") {
+      return false;
+    }
+
+    [
+      "abs",
+      "tractionControl",
+      "stabilityControl",
+      "launchControl",
+      "cruiseControl"
+    ].forEach(key => {
+      if (typeof options[key] === "boolean") {
+        settings[key] = options[key];
+      }
+    });
+
+    if (Number.isFinite(Number(options.assistStrength))) {
+      settings.assistStrength = clamp(
+        Number(options.assistStrength),
+        0,
+        1
+      );
+    }
+
+    if (Number.isFinite(Number(options.cruiseSpeed))) {
+      settings.cruiseSpeed = clamp(
+        Number(options.cruiseSpeed),
+        30,
+        300
+      );
+    }
+
+    save();
+    dispatch("settings-changed", getSettings());
+
+    return true;
   }
 
   function getSettings() {
@@ -359,43 +398,25 @@
       tractionActive: false,
       stabilityActive: false,
       launchActive: false,
-      cruiseActive: false,
+      cruiseActive: settings.cruiseControl,
       brakePressure: 0,
       throttleLimit: 1,
       steeringCorrection: 0,
+      cruiseThrottle: 0,
       lastSpeed: 0
     };
 
     return getState();
   }
 
-  function configure(options) {
-    if (!options || typeof options !== "object") {
-      return false;
-    }
+  function dispatch(event, detail = {}) {
+    if (typeof window.dispatchEvent !== "function") return;
 
-    [
-      "abs",
-      "tractionControl",
-      "stabilityControl",
-      "launchControl"
-    ].forEach(key => {
-      if (typeof options[key] === "boolean") {
-        settings[key] = options[key];
-      }
-    });
-
-    if (Number.isFinite(options.assistStrength)) {
-      settings.assistStrength = clamp(
-        options.assistStrength,
-        0,
-        1
-      );
-    }
-
-    save();
-
-    return true;
+    window.dispatchEvent(
+      new CustomEvent(`sx:driving-assist-${event}`, {
+        detail
+      })
+    );
   }
 
   function init() {
@@ -422,18 +443,19 @@
 
   SX.vehicleDrivingAssist = api;
 
-  if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      init,
-      { once: true }
-    );
-  } else {
-    init();
+  if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init, {
+        once: true
+      });
+    } else {
+      init();
+    }
   }
 
-})();
+})(window);
 
 /* =========================================================
-   END: VEHICLE DRIVING ASSIST SYSTEM — FILE 87
-   ========================================================= */
+   SUPERX LEGEND — FILE 87
+   END
+========================================================= */
