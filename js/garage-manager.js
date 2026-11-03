@@ -1,8 +1,7 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 64
    FILE: js/garage-manager.js
-   PURPOSE: Complete garage inventory and vehicle management
+   PURPOSE: Garage inventory, ownership and vehicle management
    START
 ========================================================= */
 
@@ -21,17 +20,22 @@
     init() {
       this.load();
 
-      if (
-        !this.selectedCarId &&
-        typeof SX.getSelectedCar === "function"
-      ) {
-        const car = SX.getSelectedCar();
-
-        if (car) {
-          this.selectedCarId = String(car.id);
-        }
+      const selected = SX.player?.selectedCar;
+      if (selected && this.isOwned(selected)) {
+        this.selectedCarId = String(selected);
       }
 
+      if (!this.selectedCarId || !this.isOwned(this.selectedCarId)) {
+        const car = typeof SX.getSelectedCar === "function"
+          ? SX.getSelectedCar()
+          : null;
+
+        this.selectedCarId = car && this.isOwned(car.id)
+          ? String(car.id)
+          : (this.getOwnedCarIds()[0] || null);
+      }
+
+      this.save();
       return this.getGarage();
     },
 
@@ -44,22 +48,46 @@
       }));
     },
 
+    // FIX: unlockedCars is the main ownership source.
+    // Migrate any old ownedCars entries into unlockedCars.
     getOwnedCarIds() {
       const player = SX.player || {};
 
-      const owned = Array.isArray(player.ownedCars)
+      if (!Array.isArray(player.unlockedCars)) {
+        player.unlockedCars = [];
+      }
+
+      const legacyOwned = Array.isArray(player.ownedCars)
         ? player.ownedCars.map(String)
         : [];
 
-      const cars = this.getCars();
-
-      return cars
+      const catalogUnlocked = this.getCars()
         .filter(car => car.unlocked === true)
-        .map(car => String(car.id))
-        .concat(owned)
-        .filter((id, index, array) =>
-          array.indexOf(id) === index
+        .map(car => String(car.id));
+
+      const allOwned = [
+        ...player.unlockedCars.map(String),
+        ...legacyOwned,
+        ...catalogUnlocked
+      ];
+
+      const uniqueOwned = allOwned.filter(
+        (id, index, list) => list.indexOf(id) === index
+      );
+
+      const changed =
+        uniqueOwned.length !== player.unlockedCars.length ||
+        uniqueOwned.some((id, index) =>
+          id !== String(player.unlockedCars[index])
         );
+
+      player.unlockedCars = uniqueOwned;
+
+      if (changed && typeof SX.savePlayer === "function") {
+        SX.savePlayer();
+      }
+
+      return uniqueOwned;
     },
 
     getOwnedCars() {
@@ -93,15 +121,13 @@
     getCar(carId) {
       const id = String(carId);
 
-      return this.getCars().find(
-        car => String(car.id) === id
+      return this.getCars().find(car =>
+        String(car.id) === id
       ) || null;
     },
 
     isOwned(carId) {
-      return this.getOwnedCarIds().includes(
-        String(carId)
-      );
+      return this.getOwnedCarIds().includes(String(carId));
     },
 
     selectCar(carId) {
@@ -110,25 +136,22 @@
       if (!this.isOwned(id)) {
         return {
           success: false,
-          message: "This car is locked."
+          message: "यह कार अभी अनलॉक नहीं है।"
         };
       }
 
-      if (typeof SX.selectGameCar === "function") {
-        const result = SX.selectGameCar(id);
+      let selected = false;
 
-        if (result === false) {
-          return {
-            success: false,
-            message: "Could not select this car."
-          };
-        }
+      if (typeof SX.selectGameCar === "function") {
+        selected = SX.selectGameCar(id) !== false;
       } else if (typeof SX.selectCar === "function") {
-        SX.selectCar(id);
-      } else {
+        selected = SX.selectCar(id) !== false;
+      }
+
+      if (!selected) {
         return {
           success: false,
-          message: "Car selection system is unavailable."
+          message: "कार Select नहीं हो पाई।"
         };
       }
 
@@ -153,21 +176,21 @@
       if (!car) {
         return {
           success: false,
-          message: "Car not found."
+          message: "कार नहीं मिली।"
         };
       }
 
       if (this.isOwned(id)) {
         return {
           success: false,
-          message: "Car already owned."
+          message: "यह कार पहले से अनलॉक है।"
         };
       }
 
       if (typeof SX.buyCar !== "function") {
         return {
           success: false,
-          message: "Car purchase system is unavailable."
+          message: "Car purchase system उपलब्ध नहीं है।"
         };
       }
 
@@ -179,7 +202,15 @@
       ) {
         return {
           success: false,
-          message: result.message || "Purchase failed."
+          message: result?.message || "कार खरीद नहीं पाए।"
+        };
+      }
+
+      // Confirm ownership from the main player save.
+      if (!this.isOwned(id)) {
+        return {
+          success: false,
+          message: "कार खरीदी गई, लेकिन ownership save नहीं हुई।"
         };
       }
 
@@ -197,16 +228,11 @@
     },
 
     setFilter(filter) {
-      const allowed = [
-        "all",
-        "owned",
-        "locked"
-      ];
+      const allowed = ["all", "owned", "locked"];
 
       if (!allowed.includes(filter)) return false;
 
       this.filter = filter;
-
       return this.getFilteredCars();
     },
 
@@ -223,7 +249,6 @@
       if (!allowed.includes(sortBy)) return false;
 
       this.sortBy = sortBy;
-
       return this.getFilteredCars();
     },
 
@@ -275,8 +300,7 @@
       return cars.map(car => ({
         ...car,
         owned: this.isOwned(car.id),
-        selected:
-          String(car.id) === String(this.selectedCarId)
+        selected: String(car.id) === String(this.selectedCarId)
       }));
     },
 
@@ -285,8 +309,7 @@
       const owned = this.getOwnedCars();
 
       const totalValue = owned.reduce(
-        (sum, car) =>
-          sum + Number(car.price || 0),
+        (sum, car) => sum + Number(car.price || 0),
         0
       );
 
@@ -321,20 +344,14 @@
 
         return true;
       } catch (error) {
-        console.warn(
-          "[SUPERX Garage] Save failed:",
-          error
-        );
-
+        console.warn("[SUPERX Garage] Save failed:", error);
         return false;
       }
     },
 
     load() {
       try {
-        const raw = localStorage.getItem(
-          this.storageKey
-        );
+        const raw = localStorage.getItem(this.storageKey);
 
         if (!raw) return false;
 
@@ -346,11 +363,7 @@
 
         return true;
       } catch (error) {
-        console.warn(
-          "[SUPERX Garage] Load failed:",
-          error
-        );
-
+        console.warn("[SUPERX Garage] Load failed:", error);
         return false;
       }
     },
@@ -377,3 +390,4 @@
    FILE: js/garage-manager.js
    END
 ========================================================= */
+
