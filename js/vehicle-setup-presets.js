@@ -61,7 +61,13 @@
       throw new Error("Setup डेटा की सीमा पार हो गई है।");
     }
 
+    /*
+      पुराने Upgrade सिस्टम की Settings
+      और नए Vehicle Setup सिस्टम की Settings
+      दोनों को सुरक्षित रखा गया है।
+    */
     const allowedKeys = [
+      // Legacy upgrade settings
       "engine",
       "gearbox",
       "brakes",
@@ -71,9 +77,18 @@
       "turbo",
       "finalDrive",
       "camber",
+
+      // Vehicle Setup settings
+      "steeringSensitivity",
+      "steeringAssist",
+      "brakeBalance",
+      "suspensionStiffness",
+      "rideHeight",
+      "tyreGrip",
+      "downforce",
       "tractionControl",
       "abs",
-      "steeringSensitivity"
+      "stabilityControl"
     ];
 
     const result = {};
@@ -182,7 +197,6 @@
     } catch (error) {
       state.presets = [];
       state.initialized = true;
-
       return false;
     }
   }
@@ -452,3 +466,4 @@
 /* =========================================================
    END — FILE 141
    ========================================================= */
+     
