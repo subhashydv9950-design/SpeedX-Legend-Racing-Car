@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 94
    FILE: js/vehicle-race-ghost-comparison.js
@@ -20,7 +19,7 @@
   let ghostSpeed = 0;
   let lastResult = null;
 
-  function num(value, fallback) {
+  function num(value, fallback = 0) {
     const n = Number(value);
     return Number.isFinite(n) ? n : fallback;
   }
@@ -29,68 +28,60 @@
     return Math.max(min, Math.min(max, value));
   }
 
-  function start(options) {
-    const settings = options || {};
+  function emit(name, detail = {}) {
+    window.dispatchEvent(
+      new CustomEvent(name, { detail })
+    );
+  }
 
+  function start(options = {}) {
     active = true;
     currentRaceStart = Date.now();
     currentRaceTime = 0;
-    ghostTime = 0;
+    ghostTime = Math.max(0, num(options.ghostTime));
     currentDistance = 0;
     ghostDistance = 0;
     currentSpeed = 0;
     ghostSpeed = 0;
     lastResult = null;
 
-    if (settings.ghostTime != null) {
-      ghostTime = Math.max(0, num(settings.ghostTime, 0));
-    }
+    emit("sx:ghost-comparison-started", {
+      ghostTime
+    });
 
     return getState();
   }
 
-  function updateCurrent(data) {
+  function updateCurrent(data = {}) {
     if (!active) return false;
-
-    const state = data || {};
 
     currentRaceTime = Math.max(
       0,
-      num(state.elapsed, (Date.now() - currentRaceStart) / 1000)
+      num(data.elapsed, (Date.now() - currentRaceStart) / 1000)
     );
 
     currentDistance = Math.max(
       0,
-      num(state.distance, currentDistance)
+      num(data.distance, currentDistance)
     );
 
     currentSpeed = Math.max(
       0,
-      num(state.speed, currentSpeed)
+      num(data.speed, currentSpeed)
     );
 
     return calculate();
   }
 
-  function updateGhost(data) {
+  function updateGhost(data = {}) {
     if (!active) return false;
 
-    const state = data || {};
-
-    ghostTime = Math.max(
-      0,
-      num(state.elapsed, ghostTime)
-    );
-
+    ghostTime = Math.max(0, num(data.elapsed, ghostTime));
     ghostDistance = Math.max(
       0,
-      num(state.distance, ghostDistance)
+      num(data.distance, ghostDistance)
     );
-
-    ghostSpeed = Math.max(
-      0,
-      num(state.speed, ghostSpeed)
-    );
+    ghostSpeed = Math.max(0, num(data.speed, ghostSpeed));
 
     return calculate();
   }
@@ -98,16 +89,25 @@
   function updateFromGhostSystem() {
     if (!active || !SX.vehicleGhost) return false;
 
-    const state = SX.vehicleGhost.getState();
+    if (
+      typeof SX.vehicleGhost.getState !== "function" ||
+      typeof SX.vehicleGhost.getInterpolatedSample !== "function"
+    ) {
+      return false;
+    }
+
+    const ghostState = SX.vehicleGhost.getState();
+    if (!ghostState) return false;
 
     const sample = SX.vehicleGhost.getInterpolatedSample(
-      state.playbackTime
+      ghostState.playbackTime
     );
 
     if (!sample) return false;
 
     updateGhost({
       elapsed: sample.time,
+      distance: sample.distance,
       speed: sample.speed
     });
 
@@ -115,6 +115,8 @@
   }
 
   function calculate() {
+    if (!active && !lastResult) return null;
+
     const timeDifference = currentRaceTime - ghostTime;
     const distanceDifference = currentDistance - ghostDistance;
     const speedDifference = currentSpeed - ghostSpeed;
@@ -143,8 +145,7 @@
   }
 
   function formatTime(seconds) {
-    const value = Math.max(0, num(seconds, 0));
-
+    const value = Math.max(0, num(seconds));
     const minutes = Math.floor(value / 60);
     const remaining = value - minutes * 60;
 
@@ -156,8 +157,7 @@
   }
 
   function formatDifference(seconds) {
-    const value = Math.abs(num(seconds, 0));
-
+    const value = Math.abs(num(seconds));
     const prefix = seconds > 0
       ? "+"
       : seconds < 0
@@ -174,9 +174,9 @@
       currentDistance,
       ghostDistance,
       difference,
-      ahead: difference < 0,
+      ahead: difference > 0,
       percentage: ghostDistance > 0
-        ? clamp((currentDistance / ghostDistance) * 100, 0, 200)
+        ? clamp(currentDistance / ghostDistance * 100, 0, 200)
         : 0
     };
   }
@@ -187,9 +187,7 @@
       currentTime: formatTime(currentRaceTime),
       ghostTime: formatTime(ghostTime),
       position: lastResult ? lastResult.position : "equal",
-      difference: lastResult
-        ? lastResult.timeText
-        : "0.00s",
+      difference: lastResult ? lastResult.timeText : "0.00s",
       distanceDifference: currentDistance - ghostDistance,
       speedDifference: currentSpeed - ghostSpeed,
       progress: getProgress()
@@ -200,7 +198,6 @@
     if (!active) return null;
 
     const result = calculate();
-
     active = false;
 
     lastResult = {
@@ -208,11 +205,7 @@
       finishedAt: Date.now()
     };
 
-    window.dispatchEvent(
-      new CustomEvent("sx:ghost-comparison-finished", {
-        detail: lastResult
-      })
-    );
+    emit("sx:ghost-comparison-finished", lastResult);
 
     return { ...lastResult };
   }
@@ -227,6 +220,8 @@
     currentSpeed = 0;
     ghostSpeed = 0;
     lastResult = null;
+
+    emit("sx:ghost-comparison-reset");
 
     return true;
   }
@@ -252,3 +247,4 @@
 /* =========================================================
    END: RACE GHOST COMPARISON SYSTEM — FILE 94
    ========================================================= */
+
