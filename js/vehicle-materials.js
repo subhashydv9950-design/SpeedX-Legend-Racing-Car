@@ -1,8 +1,7 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 74
    FILE: js/vehicle-materials.js
-   PURPOSE: Vehicle paint, glass, chrome and material effects
+   PURPOSE: Vehicle Paint, Glass, Chrome & Glow System
    START
 ========================================================= */
 
@@ -10,7 +9,6 @@
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-  const THREE = window.THREE;
 
   const VehicleMaterials = {
     vehicle: null,
@@ -18,6 +16,15 @@
     initialized: false,
 
     current: {
+      paint: "#8b35ff",
+      finish: "metallic",
+      glass: "tinted",
+      chrome: true,
+      glow: false,
+      glowColor: "#9b4dff"
+    },
+
+    defaults: {
       paint: "#8b35ff",
       finish: "metallic",
       glass: "tinted",
@@ -54,19 +61,36 @@
       }
     },
 
+    glassPresets: {
+      clear: {
+        color: 0xbdeaff,
+        opacity: 0.3,
+        roughness: 0.08
+      },
+      tinted: {
+        color: 0x182333,
+        opacity: 0.72,
+        roughness: 0.12
+      },
+      dark: {
+        color: 0x080d18,
+        opacity: 0.88,
+        roughness: 0.18
+      }
+    },
+
     init(options = {}) {
-      if (!window.THREE) {
+      if (!window.THREE) return false;
+
+      const vehicle = options.vehicle;
+
+      if (!vehicle || typeof vehicle.traverse !== "function") {
         return false;
       }
 
-      this.vehicle = options.vehicle || null;
+      this.destroy();
 
-      if (!this.vehicle) {
-        return false;
-      }
-
-      this.disposeSnapshots();
-      this.originalMaterials.clear();
+      this.vehicle = vehicle;
 
       this.vehicle.traverse(object => {
         if (!object.isMesh || !object.material) return;
@@ -76,6 +100,10 @@
           : [object.material];
 
         materials.forEach((material, index) => {
+          if (!material || typeof material.clone !== "function") {
+            return;
+          }
+
           const key = `${object.uuid}:${index}`;
 
           this.originalMaterials.set(
@@ -85,15 +113,60 @@
         });
       });
 
+      this.current = { ...this.defaults };
       this.initialized = true;
+
+      this.dispatch("initialized", {
+        materials: this.originalMaterials.size
+      });
 
       return true;
     },
 
     disposeSnapshots() {
       this.originalMaterials.forEach(material => {
-        material.dispose?.();
+        if (material && typeof material.dispose === "function") {
+          material.dispose();
+        }
       });
+
+      this.originalMaterials.clear();
+    },
+
+    isReady() {
+      return Boolean(
+        this.initialized &&
+        this.vehicle &&
+        window.THREE
+      );
+    },
+
+    createColor(value) {
+      try {
+        if (!window.THREE || value == null) return null;
+
+        const color = new window.THREE.Color(value);
+
+        if (
+          !Number.isFinite(color.r) ||
+          !Number.isFinite(color.g) ||
+          !Number.isFinite(color.b)
+        ) {
+          return null;
+        }
+
+        return color;
+      } catch (error) {
+        return null;
+      }
+    },
+
+    normalizeColor(value) {
+      const color = this.createColor(value);
+
+      if (!color) return null;
+
+      return `#${color.getHexString()}`;
     },
 
     getMaterials() {
@@ -109,6 +182,8 @@
           : [object.material];
 
         materials.forEach((material, index) => {
+          if (!material) return;
+
           result.push({
             object,
             material,
@@ -132,108 +207,92 @@
     },
 
     setPaint(color, finish = this.current.finish) {
-      if (!this.initialized || !window.THREE) {
-        return false;
-      }
+      if (!this.isReady()) return false;
 
-      if (!window.THREE.Color.isColor(
-        new window.THREE.Color(color)
-      )) {
-        return false;
-      }
+      const normalizedColor = this.normalizeColor(color);
 
-      const settings =
-        this.finishes[finish] ||
-        this.finishes.standard;
+      if (!normalizedColor) return false;
+
+      const finishSettings =
+        this.finishes[finish] || this.finishes.standard;
 
       let changed = 0;
 
       this.getMaterials().forEach(item => {
         const { object, material } = item;
 
-        if (!this.matches(
-          object,
-          material,
-          ["body", "paint", "car", "chassis"]
-        )) {
+        if (!this.matches(object, material, [
+          "body",
+          "paint",
+          "car",
+          "chassis",
+          "exterior",
+          "bonnet",
+          "bumper",
+          "fender"
+        ])) {
           return;
         }
 
         if (material.color) {
-          material.color.set(color);
+          material.color.set(normalizedColor);
         }
 
         if ("metalness" in material) {
-          material.metalness = settings.metalness;
+          material.metalness = finishSettings.metalness;
         }
 
         if ("roughness" in material) {
-          material.roughness = settings.roughness;
+          material.roughness = finishSettings.roughness;
         }
 
         if ("clearcoat" in material) {
-          material.clearcoat = settings.clearcoat;
+          material.clearcoat = finishSettings.clearcoat;
         }
 
         material.needsUpdate = true;
         changed++;
       });
 
-      if (!changed) {
-        return false;
-      }
+      if (!changed) return false;
 
-      this.current.paint = `#${new window.THREE.Color(
-        color
-      ).getHexString()}`;
-
-      this.current.finish = finish;
+      this.current.paint = normalizedColor;
+      this.current.finish = this.finishes[finish]
+        ? finish
+        : "standard";
 
       this.dispatch("paint-changed", {
         color: this.current.paint,
-        finish
+        finish: this.current.finish,
+        changed
       });
 
       return true;
     },
 
     setGlass(type = "tinted") {
-      if (!this.initialized) return false;
+      if (!this.isReady()) return false;
 
-      const presets = {
-        clear: {
-          color: 0xbdeaff,
-          opacity: 0.3,
-          roughness: 0.08
-        },
-        tinted: {
-          color: 0x182333,
-          opacity: 0.72,
-          roughness: 0.12
-        },
-        dark: {
-          color: 0x080d18,
-          opacity: 0.88,
-          roughness: 0.18
-        }
-      };
-
-      const preset = presets[type];
+      const preset = this.glassPresets[type];
 
       if (!preset) return false;
 
       let changed = 0;
 
       this.getMaterials().forEach(({ object, material }) => {
-        if (!this.matches(
-          object,
-          material,
-          ["glass", "window", "windscreen", "windshield"]
-        )) {
+        if (!this.matches(object, material, [
+          "glass",
+          "window",
+          "windscreen",
+          "windshield"
+        ])) {
           return;
         }
 
-        material.color?.setHex(preset.color);
+        if (material.color) {
+          material.color.setHex(preset.color);
+        }
+
         material.transparent = true;
         material.opacity = preset.opacity;
         material.roughness = preset.roughness;
@@ -246,22 +305,30 @@
 
       this.current.glass = type;
 
-      this.dispatch("glass-changed", { type });
+      this.dispatch("glass-changed", {
+        type,
+        changed
+      });
 
       return true;
     },
 
     setChrome(enabled) {
-      if (!this.initialized) return false;
+      if (!this.isReady()) return false;
+
+      enabled = Boolean(enabled);
 
       let changed = 0;
 
       this.getMaterials().forEach(({ object, material }) => {
-        if (!this.matches(
-          object,
-          material,
-          ["chrome", "trim", "metal", "grille", "rim"]
-        )) {
+        if (!this.matches(object, material, [
+          "chrome",
+          "trim",
+          "metal",
+          "grille",
+          "rim",
+          "handle"
+        ])) {
           return;
         }
 
@@ -279,29 +346,37 @@
 
       if (!changed) return false;
 
-      this.current.chrome = Boolean(enabled);
+      this.current.chrome = enabled;
 
       this.dispatch("chrome-changed", {
-        enabled: this.current.chrome
+        enabled,
+        changed
       });
 
       return true;
     },
 
-    setGlow(enabled, color = "#9b4dff") {
-      if (!this.initialized || !window.THREE) {
-        return false;
-      }
+    setGlow(enabled, color = this.current.glowColor) {
+      if (!this.isReady()) return false;
 
-      const glowColor = new window.THREE.Color(color);
+      enabled = Boolean(enabled);
+
+      const normalizedColor = this.normalizeColor(color);
+
+      if (!normalizedColor) return false;
+
+      const glowColor = this.createColor(normalizedColor);
+
       let changed = 0;
 
       this.getMaterials().forEach(({ object, material }) => {
-        if (!this.matches(
-          object,
-          material,
-          ["glow", "neon", "underglow", "emissive"]
-        )) {
+        if (!this.matches(object, material, [
+          "glow",
+          "neon",
+          "underglow",
+          "emissive",
+          "light-strip"
+        ])) {
           return;
         }
 
@@ -323,77 +398,131 @@
 
       if (!changed) return false;
 
-      this.current.glow = Boolean(enabled);
-      this.current.glowColor = color;
+      this.current.glow = enabled;
+      this.current.glowColor = normalizedColor;
 
       this.dispatch("glow-changed", {
-        enabled: this.current.glow,
-        color
+        enabled,
+        color: normalizedColor,
+        changed
       });
 
       return true;
     },
 
     restoreOriginal() {
-      if (!this.initialized) return false;
+      if (!this.isReady()) return false;
+
+      let restoredCount = 0;
 
       this.vehicle.traverse(object => {
         if (!object.isMesh || !object.material) return;
 
         const isArray = Array.isArray(object.material);
 
-        const materials = isArray
+        const currentMaterials = isArray
           ? object.material
           : [object.material];
 
-        const restored = materials.map((material, index) => {
-          const key = `${object.uuid}:${index}`;
-          const original = this.originalMaterials.get(key);
+        const restoredMaterials = currentMaterials.map(
+          (material, index) => {
+            const key = `${object.uuid}:${index}`;
+            const original = this.originalMaterials.get(key);
 
-          return original
-            ? original.clone()
-            : material;
-        });
+            if (!original) return material;
 
-        if (isArray) {
-          object.material = restored;
-        } else {
-          object.material = restored[0];
-        }
+            restoredCount++;
+
+            return original.clone();
+          }
+        );
+
+        object.material = isArray
+          ? restoredMaterials
+          : restoredMaterials[0];
       });
 
-      this.current = {
-        paint: "#8b35ff",
-        finish: "metallic",
-        glass: "tinted",
-        chrome: true,
-        glow: false,
-        glowColor: "#9b4dff"
-      };
+      this.current = { ...this.defaults };
 
-      this.dispatch("materials-restored", {});
+      this.dispatch("materials-restored", {
+        restored: restoredCount
+      });
 
-      return true;
+      return restoredCount > 0;
+    },
+
+    applyState(state = {}) {
+      if (!this.isReady()) return false;
+
+      let changed = false;
+
+      if (state.paint) {
+        changed = this.setPaint(
+          state.paint,
+          state.finish || "standard"
+        ) || changed;
+      }
+
+      if (state.glass) {
+        changed = this.setGlass(state.glass) || changed;
+      }
+
+      if (typeof state.chrome === "boolean") {
+        changed = this.setChrome(state.chrome) || changed;
+      }
+
+      if (typeof state.glow === "boolean") {
+        changed = this.setGlow(
+          state.glow,
+          state.glowColor || this.current.glowColor
+        ) || changed;
+      }
+
+      return changed;
     },
 
     getState() {
       return { ...this.current };
     },
 
-    dispatch(name, detail) {
-      window.dispatchEvent(
-        new CustomEvent(`sx:vehicle-material-${name}`, {
+    getAvailableFinishes() {
+      return Object.keys(this.finishes);
+    },
+
+    getAvailableGlass() {
+      return Object.keys(this.glassPresets);
+    },
+
+    dispatch(name, detail = {}) {
+      if (typeof window.dispatchEvent !== "function") return;
+
+      let event;
+
+      if (typeof window.CustomEvent === "function") {
+        event = new window.CustomEvent(
+          `sx:vehicle-material-${name}`,
+          { detail }
+        );
+      } else {
+        event = document.createEvent("CustomEvent");
+        event.initCustomEvent(
+          `sx:vehicle-material-${name}`,
+          false,
+          false,
           detail
-        })
-      );
+        );
+      }
+
+      window.dispatchEvent(event);
     },
 
     destroy() {
       this.disposeSnapshots();
-      this.originalMaterials.clear();
 
       this.vehicle = null;
       this.initialized = false;
+
+      return true;
     }
   };
 
@@ -406,4 +535,3 @@
    FILE: js/vehicle-materials.js
    END
 ========================================================= */
-           
