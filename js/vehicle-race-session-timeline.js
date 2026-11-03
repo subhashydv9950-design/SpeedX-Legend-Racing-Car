@@ -1,21 +1,17 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 114
    FILE: js/vehicle-race-session-timeline.js
-
-   PURPOSE:
-   - Record ordered events during a race session.
-   - Keep a separate timeline for each session.
-   - Search, filter, export and delete timeline entries.
-   - Does not modify race results or session statistics.
-========================================================= */
+   MODULE: Advanced Race Session Timeline
+   ========================================================= */
 
 (function (window) {
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
 
-  const STORAGE_KEY = "superx_race_session_timeline_v1";
+  const STORAGE_KEY = "superx_race_session_timeline_v2";
+  const LEGACY_KEY = "superx_race_session_timeline_v1";
+
   const MAX_SESSIONS = 100;
   const MAX_EVENTS_PER_SESSION = 500;
   const MAX_TEXT = 180;
@@ -42,47 +38,39 @@
   }
 
   function createId(prefix) {
-    return prefix + "_" +
-      now().toString(36) + "_" +
+    return prefix + "_" + now().toString(36) + "_" +
       Math.random().toString(36).slice(2, 9);
   }
 
-  function safeText(value, fallback) {
-    if (typeof value !== "string") return fallback || "";
+  function safeText(value, fallback = "") {
+    if (typeof value !== "string" && typeof value !== "number") {
+      return fallback;
+    }
 
-    return value
+    return String(value)
       .replace(/[<>]/g, "")
       .trim()
-      .slice(0, MAX_TEXT);
+      .slice(0, MAX_TEXT) || fallback;
   }
 
-  function safeNumber(value, fallback) {
-    const number = Number(value);
-
-    return Number.isFinite(number)
-      ? number
-      : fallback;
+  function safeNumber(value, fallback = 0) {
+    const result = Number(value);
+    return Number.isFinite(result) ? result : fallback;
   }
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
   }
 
-  function createSession(sessionId, metadata) {
+  function normalizeMetadata(metadata) {
     const meta = metadata && typeof metadata === "object"
       ? metadata
       : {};
 
     return {
-      id: sessionId,
-      createdAt: now(),
-      updatedAt: now(),
-      metadata: {
-        mode: safeText(meta.mode, "unknown"),
-        map: safeText(meta.map, "unknown"),
-        car: safeText(meta.car, "unknown")
-      },
-      events: []
+      mode: safeText(meta.mode, "unknown"),
+      map: safeText(meta.map, "unknown"),
+      car: safeText(meta.car, "unknown")
     };
   }
 
@@ -95,30 +83,50 @@
       ? item.type
       : "custom";
 
+    let data = {};
+
+    try {
+      if (item.data && typeof item.data === "object") {
+        data = JSON.parse(JSON.stringify(item.data));
+      }
+    } catch (_) {
+      data = {};
+    }
+
     return {
-      id: createId("event"),
-      type: type,
+      id: safeText(item.id, createId("event")),
+      type,
       title: safeText(item.title, type.replace(/-/g, " ")),
-      description: safeText(item.description, ""),
-      timestamp: safeNumber(item.timestamp, now()),
-      elapsedMs: Math.max(
-        0,
-        safeNumber(item.elapsedMs, 0)
-      ),
-      lap: Math.max(0, safeNumber(item.lap, 0)),
-      checkpoint: Math.max(
-        0,
-        safeNumber(item.checkpoint, 0)
-      ),
-      data: item.data && typeof item.data === "object"
-        ? clone(item.data)
-        : {}
+      description: safeText(item.description),
+      timestamp: Math.max(0, safeNumber(item.timestamp, now())),
+      elapsedMs: Math.max(0, safeNumber(item.elapsedMs)),
+      lap: Math.max(0, safeNumber(item.lap)),
+      checkpoint: Math.max(0, safeNumber(item.checkpoint)),
+      data
+    };
+  }
+
+  function normalizeSession(item) {
+    if (!item || typeof item.id !== "string" ||
+        !Array.isArray(item.events)) {
+      return null;
+    }
+
+    return {
+      id: safeText(item.id),
+      createdAt: safeNumber(item.createdAt, now()),
+      updatedAt: safeNumber(item.updatedAt, now()),
+      metadata: normalizeMetadata(item.metadata),
+      events: item.events
+        .slice(-MAX_EVENTS_PER_SESSION)
+        .map(normalizeEvent)
     };
   }
 
   function loadStore() {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY) ||
+        localStorage.getItem(LEGACY_KEY);
 
       if (!raw) return { sessions: [] };
 
@@ -130,11 +138,8 @@
 
       return {
         sessions: parsed.sessions
-          .filter(function (session) {
-            return session &&
-              typeof session.id === "string" &&
-              Array.isArray(session.events);
-          })
+          .map(normalizeSession)
+          .filter(Boolean)
           .slice(0, MAX_SESSIONS)
       };
     } catch (error) {
@@ -147,17 +152,10 @@
 
   function save() {
     try {
-      store.sessions.sort(function (a, b) {
-        return b.updatedAt - a.updatedAt;
-      });
-
+      store.sessions.sort((a, b) => b.updatedAt - a.updatedAt);
       store.sessions = store.sessions.slice(0, MAX_SESSIONS);
 
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(store)
-      );
-
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
       return true;
     } catch (error) {
       console.warn("[SUPERX Timeline] Save failed:", error);
@@ -165,14 +163,30 @@
     }
   }
 
+  function emit(name, detail) {
+    window.dispatchEvent(new CustomEvent("sx:" + name, {
+      detail
+    }));
+  }
+
   function findSession(sessionId) {
-    return store.sessions.find(function (session) {
-      return session.id === sessionId;
-    }) || null;
+    return store.sessions.find(session => session.id === sessionId) || null;
+  }
+
+  function createSession(sessionId, metadata) {
+    const timestamp = now();
+
+    return {
+      id: sessionId,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      metadata: normalizeMetadata(metadata),
+      events: []
+    };
   }
 
   function getOrCreateSession(sessionId, metadata) {
-    const id = safeText(sessionId, "");
+    const id = safeText(sessionId);
 
     if (!id) {
       throw new Error("A valid session ID is required.");
@@ -189,128 +203,107 @@
   }
 
   function addEvent(sessionId, event, metadata) {
-    const session = getOrCreateSession(
-      sessionId,
-      metadata
-    );
+    const session = getOrCreateSession(sessionId, metadata);
+    const entry = normalizeEvent(event);
 
-    if (session.events.length >= MAX_EVENTS_PER_SESSION) {
+    const previous = session.events.slice();
+    const previousUpdatedAt = session.updatedAt;
+
+    session.events.push(entry);
+
+    if (session.events.length > MAX_EVENTS_PER_SESSION) {
       session.events.shift();
     }
 
-    const entry = normalizeEvent(event);
-
-    session.events.push(entry);
     session.updatedAt = now();
 
-    save();
+    if (!save()) {
+      session.events = previous;
+      session.updatedAt = previousUpdatedAt;
+      return null;
+    }
 
-    window.dispatchEvent(new CustomEvent(
-      "sx:race-timeline-updated",
-      {
-        detail: {
-          sessionId: session.id,
-          event: clone(entry)
-        }
-      }
-    ));
+    emit("race-timeline-updated", {
+      sessionId: session.id,
+      event: clone(entry)
+    });
 
     return clone(entry);
   }
 
   function startSession(sessionId, metadata) {
-    const session = getOrCreateSession(
-      sessionId,
-      metadata
-    );
+    const session = getOrCreateSession(sessionId, metadata);
 
-    if (session.events.length === 0) {
+    if (!session.events.some(event => event.type === "session-start")) {
       addEvent(sessionId, {
         type: "session-start",
         title: "Session started",
         description: "Race session timeline created."
-      });
+      }, metadata);
     }
 
     return getTimeline(sessionId);
   }
 
-  function getTimeline(sessionId, options) {
+  function getTimeline(sessionId, options = {}) {
     const session = findSession(sessionId);
-
     if (!session) return [];
 
-    const settings = options || {};
     let events = session.events.slice();
 
-    if (settings.type) {
-      events = events.filter(function (event) {
-        return event.type === settings.type;
-      });
+    if (options.type) {
+      events = events.filter(event => event.type === options.type);
     }
 
-    if (settings.search) {
-      const query = String(settings.search).toLowerCase();
+    if (options.search) {
+      const query = String(options.search).toLowerCase();
 
-      events = events.filter(function (event) {
-        return (
-          event.title.toLowerCase().includes(query) ||
-          event.description.toLowerCase().includes(query) ||
-          event.type.toLowerCase().includes(query)
-        );
-      });
-    }
-
-    if (settings.from != null) {
-      events = events.filter(function (event) {
-        return event.timestamp >= Number(settings.from);
-      });
-    }
-
-    if (settings.to != null) {
-      events = events.filter(function (event) {
-        return event.timestamp <= Number(settings.to);
-      });
-    }
-
-    if (settings.limit != null) {
-      const limit = Math.max(
-        0,
-        Math.floor(Number(settings.limit) || 0)
+      events = events.filter(event =>
+        event.title.toLowerCase().includes(query) ||
+        event.description.toLowerCase().includes(query) ||
+        event.type.toLowerCase().includes(query)
       );
+    }
 
-      events = events.slice(-limit);
+    if (options.from != null) {
+      const from = safeNumber(options.from, 0);
+      events = events.filter(event => event.timestamp >= from);
+    }
+
+    if (options.to != null) {
+      const to = safeNumber(options.to, Infinity);
+      events = events.filter(event => event.timestamp <= to);
+    }
+
+    if (options.limit != null) {
+      const limit = Math.max(0, Math.floor(safeNumber(options.limit)));
+      events = limit === 0 ? [] : events.slice(-limit);
     }
 
     return clone(events);
   }
 
   function getSessions() {
-    return store.sessions.map(function (session) {
-      return {
-        id: session.id,
-        createdAt: session.createdAt,
-        updatedAt: session.updatedAt,
-        metadata: clone(session.metadata),
-        eventCount: session.events.length,
-        firstEvent: session.events[0]
-          ? clone(session.events[0])
-          : null,
-        lastEvent: session.events.length
-          ? clone(session.events[session.events.length - 1])
-          : null
-      };
-    });
+    return store.sessions.map(session => ({
+      id: session.id,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+      metadata: clone(session.metadata),
+      eventCount: session.events.length,
+      firstEvent: session.events[0] ? clone(session.events[0]) : null,
+      lastEvent: session.events.length
+        ? clone(session.events[session.events.length - 1])
+        : null
+    }));
   }
 
   function getSessionSummary(sessionId) {
     const session = findSession(sessionId);
-
     if (!session) return null;
 
     const counts = {};
 
-    session.events.forEach(function (event) {
+    session.events.forEach(event => {
       counts[event.type] = (counts[event.type] || 0) + 1;
     });
 
@@ -320,7 +313,12 @@
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
       totalEvents: session.events.length,
-      eventCounts: counts
+      eventCounts: counts,
+      durationMs: session.events.length > 1
+        ? Math.max(0,
+            session.events[session.events.length - 1].timestamp -
+            session.events[0].timestamp)
+        : 0
     };
   }
 
@@ -331,7 +329,9 @@
       return false;
     }
 
-    ["mode", "map", "car"].forEach(function (key) {
+    const previous = clone(session.metadata);
+
+    ["mode", "map", "car"].forEach(key => {
       if (metadata[key] !== undefined) {
         session.metadata[key] = safeText(
           metadata[key],
@@ -341,64 +341,77 @@
     });
 
     session.updatedAt = now();
-    save();
+
+    if (!save()) {
+      session.metadata = previous;
+      return false;
+    }
+
+    emit("race-timeline-metadata-updated", {
+      sessionId,
+      metadata: clone(session.metadata)
+    });
 
     return true;
   }
 
   function deleteEvent(sessionId, eventId) {
     const session = findSession(sessionId);
-
     if (!session) return false;
 
-    const before = session.events.length;
+    const index = session.events.findIndex(event => event.id === eventId);
+    if (index < 0) return false;
 
-    session.events = session.events.filter(function (event) {
-      return event.id !== eventId;
-    });
-
-    if (before === session.events.length) return false;
+    const removed = session.events.splice(index, 1)[0];
+    const previousUpdatedAt = session.updatedAt;
 
     session.updatedAt = now();
-    save();
+
+    if (!save()) {
+      session.events.splice(index, 0, removed);
+      session.updatedAt = previousUpdatedAt;
+      return false;
+    }
+
+    emit("race-timeline-event-deleted", {
+      sessionId,
+      eventId
+    });
 
     return true;
   }
 
   function deleteSession(sessionId) {
-    const before = store.sessions.length;
+    const index = store.sessions.findIndex(session => session.id === sessionId);
+    if (index < 0) return false;
 
-    store.sessions = store.sessions.filter(function (session) {
-      return session.id !== sessionId;
-    });
+    const removed = store.sessions.splice(index, 1)[0];
 
-    if (before === store.sessions.length) return false;
+    if (!save()) {
+      store.sessions.splice(index, 0, removed);
+      return false;
+    }
 
-    save();
+    emit("race-timeline-session-deleted", { sessionId });
     return true;
   }
 
   function clearAll() {
+    const previous = store.sessions;
     store.sessions = [];
-    save();
 
-    window.dispatchEvent(new CustomEvent(
-      "sx:race-timeline-cleared"
-    ));
+    if (!save()) {
+      store.sessions = previous;
+      return false;
+    }
 
+    emit("race-timeline-cleared", {});
     return true;
   }
 
   function exportSession(sessionId) {
     const session = findSession(sessionId);
-
-    if (!session) return null;
-
-    return JSON.stringify(
-      clone(session),
-      null,
-      2
-    );
+    return session ? JSON.stringify(clone(session), null, 2) : null;
   }
 
   function importSession(jsonText) {
@@ -407,30 +420,35 @@
         ? JSON.parse(jsonText)
         : jsonText;
 
-      if (
-        !imported ||
-        typeof imported.id !== "string" ||
-        !Array.isArray(imported.events)
-      ) {
+      const normalized = normalizeSession(imported);
+
+      if (!normalized) {
         return {
           success: false,
           error: "Invalid timeline data."
         };
       }
 
-      const session = createSession(
-        createId("import"),
-        imported.metadata
-      );
-
-      session.events = imported.events
-        .slice(0, MAX_EVENTS_PER_SESSION)
-        .map(normalizeEvent);
-
-      session.updatedAt = now();
+      const session = {
+        ...normalized,
+        id: createId("import"),
+        createdAt: now(),
+        updatedAt: now()
+      };
 
       store.sessions.unshift(session);
-      save();
+
+      if (!save()) {
+        store.sessions.shift();
+        return {
+          success: false,
+          error: "Could not save imported timeline."
+        };
+      }
+
+      emit("race-timeline-imported", {
+        sessionId: session.id
+      });
 
       return {
         success: true,
@@ -449,23 +467,23 @@
   }
 
   SX.vehicleRaceSessionTimeline = {
-    startSession: startSession,
-    addEvent: addEvent,
-    getTimeline: getTimeline,
-    getSessions: getSessions,
-    getSessionSummary: getSessionSummary,
-    updateMetadata: updateMetadata,
-    deleteEvent: deleteEvent,
-    deleteSession: deleteSession,
-    clearAll: clearAll,
-    exportSession: exportSession,
-    importSession: importSession,
-    getEventTypes: getEventTypes
+    startSession,
+    addEvent,
+    getTimeline,
+    getSessions,
+    getSessionSummary,
+    updateMetadata,
+    deleteEvent,
+    deleteSession,
+    clearAll,
+    exportSession,
+    importSession,
+    getEventTypes
   };
 
-  console.log("[SUPERX] Race Session Timeline ready.");
+  console.info("[SUPERX] Advanced Race Session Timeline loaded.");
 
 })(window);
 
 /* ======================= FILE 114 END ======================= */
-        
+                            
