@@ -2,81 +2,53 @@
 /* =========================================================
    SUPERX LEGEND — FILE 117
    FILE: js/vehicle-race-session-archive.js
-
-   PURPOSE:
-   - Archive completed race sessions.
-   - Restore archived sessions.
-   - Add archive labels and notes.
-   - Search and sort archived records.
-   - Keep archive metadata separate from race history.
-========================================================= */
+   MODULE: RACE SESSION ARCHIVE
+   START: RACE SESSION ARCHIVE
+   ========================================================= */
 
 (function (window) {
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
 
-  const STORAGE_KEY = "superx_race_session_archive_v1";
+  const STORAGE_KEY = "superx_race_session_archive_v2";
   const MAX_ARCHIVED = 300;
   const MAX_NOTE_LENGTH = 300;
 
-  let archive = load();
+  let archive = [];
+  let revision = 0;
 
-  function cleanText(value, limit) {
-    if (typeof value !== "string") return "";
-
-    return value
+  function clean(value, limit = 120) {
+    return String(value == null ? "" : value)
       .replace(/[<>]/g, "")
       .trim()
-      .slice(0, limit || 120);
+      .slice(0, limit);
   }
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
   }
 
-  function load() {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+  function normalize(item) {
+    if (!item || typeof item !== "object") return null;
 
-      if (!raw) return [];
+    const sessionId = clean(item.sessionId, 120);
+    if (!sessionId) return null;
 
-      const parsed = JSON.parse(raw);
-
-      if (!Array.isArray(parsed)) return [];
-
-      return parsed.filter(function (item) {
-        return item &&
-          typeof item.sessionId === "string";
-      }).slice(0, MAX_ARCHIVED);
-    } catch (error) {
-      console.warn("[SUPERX Archive] Load failed:", error);
-      return [];
-    }
-  }
-
-  function save() {
-    try {
-      archive = archive.slice(0, MAX_ARCHIVED);
-
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(archive)
-      );
-
-      return true;
-    } catch (error) {
-      console.warn("[SUPERX Archive] Save failed:", error);
-      return false;
-    }
-  }
-
-  function findIndex(sessionId) {
-    const id = cleanText(sessionId, 120);
-
-    return archive.findIndex(function (item) {
-      return item.sessionId === id;
-    });
+    return {
+      sessionId,
+      archivedAt: Math.max(0, Number(item.archivedAt) || Date.now()),
+      updatedAt: Math.max(0, Number(item.updatedAt) || Date.now()),
+      title: clean(item.title, 100),
+      mode: clean(item.mode, 50),
+      map: clean(item.map, 80),
+      car: clean(item.car, 80),
+      note: clean(item.note, MAX_NOTE_LENGTH),
+      label: clean(item.label, 40),
+      session: item.session && typeof item.session === "object"
+        ? item.session
+        : null
+    };
   }
 
   function emit(action, sessionId) {
@@ -84,77 +56,121 @@
       "sx:race-session-archive-updated",
       {
         detail: {
-          action: action,
+          action,
           sessionId: sessionId || null,
-          count: archive.length
+          count: archive.length,
+          revision
         }
       }
     ));
   }
 
-  function archiveSession(sessionId, details) {
-    const id = cleanText(sessionId, 120);
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const records = Array.isArray(parsed)
+        ? parsed
+        : parsed.records;
 
-    if (!id) {
-      return {
-        success: false,
-        reason: "invalid-session-id"
-      };
+      archive = Array.isArray(records)
+        ? records.map(normalize).filter(Boolean).slice(0, MAX_ARCHIVED)
+        : [];
+
+      revision++;
+      return true;
+    } catch (error) {
+      console.warn("[SUPERX Archive] Load failed:", error);
+      archive = [];
+      return false;
     }
+  }
 
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 2,
+        revision: revision + 1,
+        records: archive.slice(0, MAX_ARCHIVED)
+      }));
+
+      revision++;
+      return true;
+    } catch (error) {
+      console.warn("[SUPERX Archive] Save failed:", error);
+      return false;
+    }
+  }
+
+  function findIndex(id) {
+    const key = clean(id, 120);
+    return archive.findIndex(item => item.sessionId === key);
+  }
+
+  function archiveSession(sessionId, details = {}) {
+    const id = clean(sessionId, 120);
+
+    if (!id) return { success: false, reason: "invalid-session-id" };
     if (findIndex(id) !== -1) {
-      return {
-        success: false,
-        reason: "already-archived"
-      };
+      return { success: false, reason: "already-archived" };
     }
-
     if (archive.length >= MAX_ARCHIVED) {
-      return {
-        success: false,
-        reason: "archive-limit-reached"
-      };
+      return { success: false, reason: "archive-limit-reached" };
     }
 
-    const info = details && typeof details === "object"
-      ? details
-      : {};
-
-    const item = {
+    const item = normalize({
       sessionId: id,
       archivedAt: Date.now(),
       updatedAt: Date.now(),
-      title: cleanText(info.title, 100),
-      mode: cleanText(info.mode, 50),
-      map: cleanText(info.map, 80),
-      car: cleanText(info.car, 80),
-      note: cleanText(info.note, MAX_NOTE_LENGTH),
-      label: cleanText(info.label, 40)
-    };
+      title: details.title,
+      mode: details.mode,
+      map: details.map,
+      car: details.car,
+      note: details.note,
+      label: details.label,
+      session: details.session
+    });
 
     archive.unshift(item);
+    const saved = save();
 
-    save();
     emit("archive", id);
 
     return {
       success: true,
+      saved,
       record: clone(item)
     };
   }
 
-  function restoreSession(sessionId) {
-    const id = cleanText(sessionId, 120);
-    const index = findIndex(id);
+  function archiveCurrentSession(details = {}) {
+    const manager = SX.vehicleRaceSessionStats;
+    const session = manager &&
+      typeof manager.getCurrentSession === "function"
+      ? manager.getCurrentSession()
+      : null;
 
+    if (!session) {
+      return { success: false, reason: "no-active-session" };
+    }
+
+    return archiveSession(session.id, {
+      ...details,
+      session
+    });
+  }
+
+  function restoreSession(sessionId) {
+    const index = findIndex(sessionId);
     if (index === -1) return false;
 
+    const id = archive[index].sessionId;
     archive.splice(index, 1);
 
-    save();
+    const saved = save();
     emit("restore", id);
 
-    return true;
+    return saved;
   }
 
   function isArchived(sessionId) {
@@ -163,142 +179,146 @@
 
   function getOne(sessionId) {
     const index = findIndex(sessionId);
-
-    return index === -1
-      ? null
-      : clone(archive[index]);
+    return index === -1 ? null : clone(archive[index]);
   }
 
-  function getAll(options) {
-    const settings = options || {};
-    let result = archive.slice();
+  function getAll(options = {}) {
+    let list = archive.slice();
 
-    if (settings.search) {
-      const query = String(settings.search).toLowerCase();
+    const search = clean(options.search, 120).toLowerCase();
+    const mode = clean(options.mode, 50).toLowerCase();
+    const label = clean(options.label, 40).toLowerCase();
 
-      result = result.filter(function (item) {
-        return (
-          item.sessionId.toLowerCase().includes(query) ||
-          item.title.toLowerCase().includes(query) ||
-          item.mode.toLowerCase().includes(query) ||
-          item.map.toLowerCase().includes(query) ||
-          item.car.toLowerCase().includes(query) ||
-          item.label.toLowerCase().includes(query) ||
-          item.note.toLowerCase().includes(query)
-        );
-      });
+    if (search) {
+      list = list.filter(item => [
+        item.sessionId,
+        item.title,
+        item.mode,
+        item.map,
+        item.car,
+        item.note,
+        item.label
+      ].join(" ").toLowerCase().includes(search));
     }
 
-    if (settings.mode) {
-      result = result.filter(function (item) {
-        return item.mode.toLowerCase() ===
-          String(settings.mode).toLowerCase();
-      });
+    if (mode) {
+      list = list.filter(item => item.mode.toLowerCase() === mode);
     }
 
-    if (settings.sort === "oldest") {
-      result.sort(function (a, b) {
-        return a.archivedAt - b.archivedAt;
-      });
-    } else if (settings.sort === "alphabetical") {
-      result.sort(function (a, b) {
-        return a.sessionId.localeCompare(b.sessionId);
-      });
+    if (label) {
+      list = list.filter(item => item.label.toLowerCase() === label);
+    }
+
+    if (options.from) {
+      const from = Number(options.from);
+      if (Number.isFinite(from)) {
+        list = list.filter(item => item.archivedAt >= from);
+      }
+    }
+
+    if (options.to) {
+      const to = Number(options.to);
+      if (Number.isFinite(to)) {
+        list = list.filter(item => item.archivedAt <= to);
+      }
+    }
+
+    if (options.sort === "oldest") {
+      list.sort((a, b) => a.archivedAt - b.archivedAt);
+    } else if (options.sort === "alphabetical") {
+      list.sort((a, b) => a.title.localeCompare(b.title));
     } else {
-      result.sort(function (a, b) {
-        return b.archivedAt - a.archivedAt;
-      });
+      list.sort((a, b) => b.archivedAt - a.archivedAt);
     }
 
-    return clone(result);
+    const offset = Math.max(0, Math.floor(Number(options.offset) || 0));
+    const limit = Math.min(100, Math.max(1, Math.floor(Number(options.limit) || 100)));
+
+    return clone(list.slice(offset, offset + limit));
   }
 
-  function updateNote(sessionId, note) {
+  function updateField(sessionId, field, value) {
     const index = findIndex(sessionId);
-
     if (index === -1) return false;
 
-    archive[index].note = cleanText(
-      note,
-      MAX_NOTE_LENGTH
-    );
+    const limits = {
+      title: 100,
+      mode: 50,
+      map: 80,
+      car: 80,
+      note: MAX_NOTE_LENGTH,
+      label: 40
+    };
 
+    if (!Object.prototype.hasOwnProperty.call(limits, field)) {
+      return false;
+    }
+
+    archive[index][field] = clean(value, limits[field]);
     archive[index].updatedAt = Date.now();
 
-    save();
-    emit("note-updated", archive[index].sessionId);
+    const saved = save();
+    emit(field + "-updated", archive[index].sessionId);
 
-    return true;
+    return saved;
   }
 
-  function updateLabel(sessionId, label) {
-    const index = findIndex(sessionId);
+  function updateNote(id, note) {
+    return updateField(id, "note", note);
+  }
 
-    if (index === -1) return false;
-
-    archive[index].label = cleanText(label, 40);
-    archive[index].updatedAt = Date.now();
-
-    save();
-    emit("label-updated", archive[index].sessionId);
-
-    return true;
+  function updateLabel(id, label) {
+    return updateField(id, "label", label);
   }
 
   function deleteArchived(sessionId) {
-    const id = cleanText(sessionId, 120);
-    const index = findIndex(id);
-
+    const index = findIndex(sessionId);
     if (index === -1) return false;
 
+    const id = archive[index].sessionId;
     archive.splice(index, 1);
 
-    save();
+    const saved = save();
     emit("delete", id);
 
-    return true;
+    return saved;
   }
 
   function clearArchive() {
     archive = [];
-
-    save();
+    const saved = save();
     emit("clear", null);
-
-    return true;
-  }
-
-  function getCount() {
-    return archive.length;
+    return saved;
   }
 
   function getSummary() {
     const modes = {};
+    const labels = {};
 
-    archive.forEach(function (item) {
+    archive.forEach(item => {
       const mode = item.mode || "unknown";
+      const label = item.label || "unlabelled";
+
       modes[mode] = (modes[mode] || 0) + 1;
+      labels[label] = (labels[label] || 0) + 1;
     });
 
     return {
       totalArchived: archive.length,
       modeCounts: modes,
+      labelCounts: labels,
       oldestArchivedAt: archive.length
-        ? Math.min.apply(null, archive.map(function (item) {
-            return item.archivedAt;
-          }))
+        ? Math.min(...archive.map(item => item.archivedAt))
         : null,
       newestArchivedAt: archive.length
-        ? Math.max.apply(null, archive.map(function (item) {
-            return item.archivedAt;
-          }))
+        ? Math.max(...archive.map(item => item.archivedAt))
         : null
     };
   }
 
   function exportArchive() {
     return JSON.stringify({
-      version: 1,
+      version: 2,
       exportedAt: Date.now(),
       records: clone(archive)
     }, null, 2);
@@ -311,74 +331,66 @@
         : input;
 
       if (!data || !Array.isArray(data.records)) {
-        return {
-          success: false,
-          reason: "invalid-data"
-        };
+        return { success: false, reason: "invalid-data" };
       }
 
       let imported = 0;
+      let skipped = 0;
 
-      data.records.forEach(function (item) {
-        if (
-          !item ||
-          typeof item.sessionId !== "string" ||
-          archive.length >= MAX_ARCHIVED ||
-          isArchived(item.sessionId)
-        ) {
+      data.records.forEach(raw => {
+        const item = normalize(raw);
+
+        if (!item || findIndex(item.sessionId) !== -1 ||
+            archive.length >= MAX_ARCHIVED) {
+          skipped++;
           return;
         }
 
-        archive.push({
-          sessionId: cleanText(item.sessionId, 120),
-          archivedAt: Number(item.archivedAt) || Date.now(),
-          updatedAt: Date.now(),
-          title: cleanText(item.title, 100),
-          mode: cleanText(item.mode, 50),
-          map: cleanText(item.map, 80),
-          car: cleanText(item.car, 80),
-          note: cleanText(item.note, MAX_NOTE_LENGTH),
-          label: cleanText(item.label, 40)
-        });
-
-        imported += 1;
+        archive.push(item);
+        imported++;
       });
 
-      save();
+      const saved = save();
       emit("import", null);
 
       return {
         success: true,
-        imported: imported,
+        saved,
+        imported,
+        skipped,
         total: archive.length
       };
     } catch (error) {
-      return {
-        success: false,
-        reason: "import-failed"
-      };
+      return { success: false, reason: "import-failed" };
     }
   }
 
+  load();
+
   SX.vehicleRaceSessionArchive = {
-    archiveSession: archiveSession,
-    restoreSession: restoreSession,
-    isArchived: isArchived,
-    getOne: getOne,
-    getAll: getAll,
-    updateNote: updateNote,
-    updateLabel: updateLabel,
-    deleteArchived: deleteArchived,
-    clearArchive: clearArchive,
-    getCount: getCount,
-    getSummary: getSummary,
-    exportArchive: exportArchive,
-    importArchive: importArchive
+    archiveSession,
+    archiveCurrentSession,
+    restoreSession,
+    isArchived,
+    getOne,
+    getAll,
+    updateField,
+    updateNote,
+    updateLabel,
+    deleteArchived,
+    clearArchive,
+    getCount: () => archive.length,
+    getSummary,
+    exportArchive,
+    importArchive,
+    reload: load
   };
 
-  console.log("[SUPERX] Race Session Archive ready.");
+  console.info("[SUPERX] Race Session Archive ready.");
 
 })(window);
 
-/* ======================= FILE 117 END ======================= */
- 
+/* =========================================================
+   END: RACE SESSION ARCHIVE — FILE 117
+   ========================================================= */
+   
