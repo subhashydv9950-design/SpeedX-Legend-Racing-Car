@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 112
    FILE: js/vehicle-race-session-achievements.js
@@ -10,7 +9,9 @@
 
   const SX = window.SUPERX = window.SUPERX || {};
 
-  const STORAGE_KEY = "superx_race_session_achievements_v1";
+  const STORAGE_KEY = "superx_race_session_achievements_v2";
+  const LEGACY_KEY = "superx_race_session_achievements_v1";
+  const MAX_PROCESSED_IDS = 1000;
 
   const DEFINITIONS = [
     {
@@ -78,40 +79,110 @@
     winStreak: 0,
     distance: 0,
     unlocked: {},
-    processedSessions: []
+    processedSessions: [],
+    processedRaces: []
   };
 
-  function number(value) {
+  function number(value, fallback = 0) {
     const result = Number(value);
-    return Number.isFinite(result) ? result : 0;
+    return Number.isFinite(result) ? result : fallback;
+  }
+
+  function safeId(value) {
+    return String(value == null ? "" : value)
+      .trim()
+      .slice(0, 120);
+  }
+
+  function safeCount(value) {
+    return Math.max(0, Math.min(1000000000, Math.floor(number(value))));
+  }
+
+  function safeDistance(value) {
+    return Math.max(0, Math.min(1000000000, number(value)));
+  }
+
+  function cleanIdList(value) {
+    if (!Array.isArray(value)) return [];
+
+    return Array.from(new Set(
+      value.map(safeId).filter(Boolean)
+    )).slice(-MAX_PROCESSED_IDS);
+  }
+
+  function cleanUnlocked(value) {
+    const result = {};
+
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      return result;
+    }
+
+    DEFINITIONS.forEach(definition => {
+      const item = value[definition.id];
+
+      if (!item || typeof item !== "object") return;
+
+      result[definition.id] = {
+        id: definition.id,
+        title: definition.title,
+        description: definition.description,
+        unlockedAt: safeId(item.unlockedAt).slice(0, 40) ||
+          new Date().toISOString()
+      };
+    });
+
+    return result;
+  }
+
+  function applyData(data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      return false;
+    }
+
+    state.sessions = safeCount(data.sessions);
+    state.races = safeCount(data.races);
+    state.cleanRaces = Math.min(
+      state.races,
+      safeCount(data.cleanRaces)
+    );
+    state.winStreak = safeCount(data.winStreak);
+    state.distance = safeDistance(data.distance);
+    state.unlocked = cleanUnlocked(data.unlocked);
+    state.processedSessions = cleanIdList(data.processedSessions);
+    state.processedRaces = cleanIdList(data.processedRaces);
+
+    return true;
+  }
+
+  function snapshot() {
+    return JSON.stringify(state);
+  }
+
+  function restore(raw) {
+    try {
+      applyData(JSON.parse(raw));
+    } catch (error) {
+      console.warn("[SUPERX SessionAchievements] Restore failed:", error);
+    }
   }
 
   function load() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      let raw = localStorage.getItem(STORAGE_KEY);
 
-      if (!raw) return;
+      if (!raw) {
+        raw = localStorage.getItem(LEGACY_KEY);
 
-      const data = JSON.parse(raw);
+        if (raw) {
+          const migrated = JSON.parse(raw);
+          applyData(migrated);
+          save();
+        }
 
-      if (!data || typeof data !== "object") return;
+        return;
+      }
 
-      state.sessions = Math.max(0, number(data.sessions));
-      state.races = Math.max(0, number(data.races));
-      state.cleanRaces = Math.max(0, number(data.cleanRaces));
-      state.winStreak = Math.max(0, number(data.winStreak));
-      state.distance = Math.max(0, number(data.distance));
-
-      state.unlocked =
-        data.unlocked && typeof data.unlocked === "object"
-          ? data.unlocked
-          : {};
-
-      state.processedSessions =
-        Array.isArray(data.processedSessions)
-          ? data.processedSessions.slice(-200)
-          : [];
-
+      applyData(JSON.parse(raw));
     } catch (error) {
       console.warn("[SUPERX SessionAchievements] Load failed:", error);
     }
@@ -119,11 +190,7 @@
 
   function save() {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(state)
-      );
-
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       return true;
     } catch (error) {
       console.warn("[SUPERX SessionAchievements] Save failed:", error);
@@ -135,105 +202,152 @@
     return number(state[type]);
   }
 
+  function emitUnlock(record) {
+    try {
+      if (typeof window.CustomEvent === "function") {
+        window.dispatchEvent(new CustomEvent(
+          "sx:session-achievement-unlocked",
+          { detail: { ...record } }
+        ));
+      }
+    } catch (error) {
+      console.warn("[SUPERX SessionAchievements] Event failed:", error);
+    }
+  }
+
   function checkUnlocks() {
     const newlyUnlocked = [];
 
     DEFINITIONS.forEach(definition => {
       if (state.unlocked[definition.id]) return;
 
-      if (
-        getValue(definition.type) >= definition.target
-      ) {
-        const record = {
-          id: definition.id,
-          title: definition.title,
-          description: definition.description,
-          unlockedAt: new Date().toISOString()
-        };
+      if (getValue(definition.type) < definition.target) return;
 
-        state.unlocked[definition.id] = record;
-        newlyUnlocked.push({ ...record });
+      const record = {
+        id: definition.id,
+        title: definition.title,
+        description: definition.description,
+        unlockedAt: new Date().toISOString()
+      };
 
-        window.dispatchEvent(new CustomEvent(
-          "sx:session-achievement-unlocked",
-          { detail: { ...record } }
-        ));
-      }
+      state.unlocked[definition.id] = record;
+      newlyUnlocked.push({ ...record });
     });
 
-    if (newlyUnlocked.length) save();
+    if (newlyUnlocked.length) {
+      if (save()) {
+        newlyUnlocked.forEach(emitUnlock);
+      }
+    }
 
     return newlyUnlocked;
   }
 
   function recordRace(data = {}) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      return {
+        success: false,
+        error: "Invalid race data.",
+        unlocked: []
+      };
+    }
+
+    const raceId = safeId(data.id);
+
+    if (raceId && state.processedRaces.includes(raceId)) {
+      return {
+        success: false,
+        error: "Race already processed.",
+        unlocked: []
+      };
+    }
+
+    const previous = snapshot();
+
     state.races += 1;
 
-    const penalties = Math.max(
-      0,
-      number(data.penalties)
-    );
-
+    const penalties = Math.max(0, number(data.penalties));
     const clean = penalties === 0;
 
     if (clean) {
       state.cleanRaces += 1;
     }
 
-    const won = data.won === true ||
-      Number(data.position) === 1;
+    const won = data.won === true || Number(data.position) === 1;
 
     state.winStreak = won
       ? state.winStreak + 1
       : 0;
 
-    state.distance += Math.max(
-      0,
-      number(data.distanceKm)
-    );
+    state.distance += safeDistance(data.distanceKm);
 
-    save();
+    if (raceId) {
+      state.processedRaces.push(raceId);
+      state.processedRaces = cleanIdList(state.processedRaces);
+    }
 
-    return checkUnlocks();
-  }
+    if (!save()) {
+      restore(previous);
 
-  function recordSession(session) {
-    if (!session || typeof session !== "object") {
       return {
         success: false,
-        error: "Invalid session data."
+        error: "Could not save race achievement data.",
+        unlocked: []
       };
     }
 
-    const id = String(session.id || "");
+    return {
+      success: true,
+      unlocked: checkUnlocks()
+    };
+  }
+
+  function recordSession(session) {
+    if (!session || typeof session !== "object" || Array.isArray(session)) {
+      return {
+        success: false,
+        error: "Invalid session data.",
+        unlocked: []
+      };
+    }
+
+    const id = safeId(session.id);
 
     if (!id) {
       return {
         success: false,
-        error: "Session ID is required."
+        error: "Session ID is required.",
+        unlocked: []
       };
     }
 
     if (state.processedSessions.includes(id)) {
       return {
         success: false,
-        error: "Session already processed."
+        error: "Session already processed.",
+        unlocked: []
       };
     }
 
+    const previous = snapshot();
+
     state.sessions += 1;
-
     state.processedSessions.push(id);
-    state.processedSessions =
-      state.processedSessions.slice(-200);
+    state.processedSessions = cleanIdList(state.processedSessions);
 
-    save();
+    if (!save()) {
+      restore(previous);
 
-    const unlocked = checkUnlocks();
+      return {
+        success: false,
+        error: "Could not save session achievement data.",
+        unlocked: []
+      };
+    }
 
     return {
       success: true,
-      unlocked
+      unlocked: checkUnlocks()
     };
   }
 
@@ -262,6 +376,14 @@
     return getAll().filter(item => item.unlocked);
   }
 
+  function getLocked() {
+    return getAll().filter(item => !item.unlocked);
+  }
+
+  function getById(id) {
+    return getAll().find(item => item.id === String(id)) || null;
+  }
+
   function getSummary() {
     const all = getAll();
     const unlocked = all.filter(item => item.unlocked).length;
@@ -286,6 +408,78 @@
     };
   }
 
+  function exportData() {
+    return {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      stats: getStats(),
+      achievements: getAll(),
+      storage: JSON.parse(JSON.stringify(state))
+    };
+  }
+
+  function importData(data, options = {}) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      return {
+        success: false,
+        error: "Invalid import data."
+      };
+    }
+
+    const incoming = data.storage || data;
+    const previous = snapshot();
+
+    if (!applyData(incoming)) {
+      restore(previous);
+
+      return {
+        success: false,
+        error: "Import data could not be read."
+      };
+    }
+
+    if (options.merge === true) {
+      const imported = JSON.parse(snapshot());
+      restore(previous);
+
+      state.sessions = Math.max(state.sessions, imported.sessions);
+      state.races = Math.max(state.races, imported.races);
+      state.cleanRaces = Math.max(state.cleanRaces, imported.cleanRaces);
+      state.winStreak = Math.max(state.winStreak, imported.winStreak);
+      state.distance = Math.max(state.distance, imported.distance);
+
+      Object.keys(imported.unlocked).forEach(id => {
+        if (!state.unlocked[id]) {
+          state.unlocked[id] = imported.unlocked[id];
+        }
+      });
+
+      state.processedSessions = cleanIdList(
+        state.processedSessions.concat(imported.processedSessions)
+      );
+
+      state.processedRaces = cleanIdList(
+        state.processedRaces.concat(imported.processedRaces)
+      );
+    }
+
+    if (!save()) {
+      restore(previous);
+
+      return {
+        success: false,
+        error: "Could not save imported achievements."
+      };
+    }
+
+    checkUnlocks();
+
+    return {
+      success: true,
+      summary: getSummary()
+    };
+  }
+
   load();
 
   SX.vehicleRaceSessionAchievements = {
@@ -293,8 +487,13 @@
     recordSession,
     getAll,
     getUnlocked,
+    getLocked,
+    getById,
     getSummary,
-    getStats
+    getStats,
+    checkUnlocks,
+    exportData,
+    importData
   };
 
   console.info("[SUPERX] Race Session Achievements loaded.");
@@ -302,3 +501,4 @@
 })(window);
 
 /* ======================= END FILE 112 ======================= */
+       
