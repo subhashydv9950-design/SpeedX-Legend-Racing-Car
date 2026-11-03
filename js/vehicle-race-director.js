@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 99
    FILE: js/vehicle-race-director.js
@@ -29,6 +28,7 @@
   let pausedAt = 0;
   let totalPausedTime = 0;
   let timer = null;
+  let countdownEndsAt = 0;
 
   function emit(name, detail) {
     window.dispatchEvent(
@@ -50,6 +50,50 @@
     }
   }
 
+  function getElapsedTime() {
+    if (!raceStartedAt) return 0;
+
+    const end = raceFinishedAt || Date.now();
+
+    return Math.max(
+      0,
+      (end - raceStartedAt - totalPausedTime) / 1000
+    );
+  }
+
+  function getProgress() {
+    return {
+      currentLap,
+      totalLaps,
+      completedLaps: lapHistory.length,
+      percentage: totalLaps > 0
+        ? Math.min(100, lapHistory.length / totalLaps * 100)
+        : 0,
+      finalLap: currentLap === totalLaps &&
+        state === "racing"
+    };
+  }
+
+  function getLapHistory() {
+    return lapHistory.map(lap => ({ ...lap }));
+  }
+
+  function getState() {
+    return {
+      state,
+      countdown,
+      lights,
+      currentLap,
+      totalLaps,
+      elapsed: getElapsedTime(),
+      lastLapTime,
+      bestLapTime,
+      progress: getProgress(),
+      paused: state === "paused",
+      finished: state === "finished"
+    };
+  }
+
   function reset() {
     clearTimer();
 
@@ -65,6 +109,7 @@
     lights = 0;
     pausedAt = 0;
     totalPausedTime = 0;
+    countdownEndsAt = 0;
 
     emit("sx:race-director-reset");
 
@@ -93,6 +138,30 @@
     return getState();
   }
 
+  function startRace() {
+    if (state !== "countdown" && state !== "ready") {
+      return false;
+    }
+
+    clearTimer();
+
+    state = "racing";
+    countdown = 0;
+    currentLap = 1;
+    raceStartedAt = Date.now();
+    raceFinishedAt = 0;
+    lights = CONFIG.countdownSeconds;
+    countdownEndsAt = 0;
+
+    emit("sx:race-started", {
+      totalLaps,
+      currentLap,
+      startTime: raceStartedAt
+    });
+
+    return getState();
+  }
+
   function startCountdown() {
     if (state !== "ready") {
       return {
@@ -106,6 +175,7 @@
     state = "countdown";
     countdown = CONFIG.countdownSeconds;
     lights = 0;
+    countdownEndsAt = Date.now() + countdown * 1000;
 
     emit("sx:race-countdown-started", {
       countdown
@@ -117,69 +187,38 @@
         return;
       }
 
-      countdown--;
-
-      lights = Math.min(
-        CONFIG.countdownSeconds,
-        CONFIG.countdownSeconds - countdown
+      const remaining = Math.max(
+        0,
+        Math.ceil((countdownEndsAt - Date.now()) / 1000)
       );
 
-      emit("sx:race-countdown-tick", {
-        countdown,
-        lights
-      });
+      if (remaining !== countdown) {
+        countdown = remaining;
+        lights = Math.min(
+          CONFIG.countdownSeconds,
+          CONFIG.countdownSeconds - countdown
+        );
+
+        emit("sx:race-countdown-tick", {
+          countdown,
+          lights
+        });
+      }
 
       if (countdown <= 0) {
-        clearTimer();
         startRace();
       }
-    }, 1000);
+    }, 100);
 
     return getState();
-  }
-
-  function startRace() {
-    if (state !== "countdown" && state !== "ready") {
-      return false;
-    }
-
-    clearTimer();
-
-    state = "racing";
-    currentLap = 1;
-    raceStartedAt = Date.now();
-    raceFinishedAt = 0;
-    lights = CONFIG.countdownSeconds;
-
-    emit("sx:race-started", {
-      totalLaps,
-      currentLap,
-      startTime: raceStartedAt
-    });
-
-    return getState();
-  }
-
-  function getElapsedTime() {
-    if (!raceStartedAt) return 0;
-
-    const end = raceFinishedAt || Date.now();
-
-    return Math.max(
-      0,
-      (end - raceStartedAt - totalPausedTime) / 1000
-    );
   }
 
   function completeLap(milliseconds) {
     if (state !== "racing") return false;
 
-    const lapTime = Math.max(
-      0,
-      num(milliseconds, 0)
-    );
+    const lapTime = num(milliseconds, 0);
 
-    if (lapTime <= 0) {
+    if (!Number.isFinite(lapTime) || lapTime <= 0) {
       return {
         success: false,
         message: "Invalid lap time."
@@ -188,10 +227,7 @@
 
     lastLapTime = lapTime;
 
-    if (
-      bestLapTime === 0 ||
-      lapTime < bestLapTime
-    ) {
+    if (bestLapTime === 0 || lapTime < bestLapTime) {
       bestLapTime = lapTime;
     }
 
@@ -204,7 +240,9 @@
 
     lapHistory.push(lapResult);
 
-    emit("sx:race-lap-completed", lapResult);
+    emit("sx:race-lap-completed", {
+      ...lapResult
+    });
 
     if (currentLap >= totalLaps) {
       return finishRace();
@@ -228,17 +266,33 @@
       success: true,
       lap: currentLap,
       lastLapTime,
-      bestLapTime
+      bestLapTime,
+      progress: getProgress()
     };
   }
 
   function pause() {
+    if (state === "countdown") {
+      clearTimer();
+      state = "ready";
+      countdown = 0;
+      lights = 0;
+      countdownEndsAt = 0;
+
+      emit("sx:race-countdown-cancelled");
+
+      return true;
+    }
+
     if (state !== "racing") return false;
 
     state = "paused";
     pausedAt = Date.now();
 
-    emit("sx:race-director-paused");
+    emit("sx:race-director-paused", {
+      currentLap,
+      elapsed: getElapsedTime()
+    });
 
     return true;
   }
@@ -250,16 +304,16 @@
     pausedAt = 0;
     state = "racing";
 
-    emit("sx:race-director-resumed");
+    emit("sx:race-director-resumed", {
+      currentLap,
+      elapsed: getElapsedTime()
+    });
 
     return true;
   }
 
   function finishRace() {
-    if (
-      state !== "racing" &&
-      state !== "paused"
-    ) {
+    if (state !== "racing" && state !== "paused") {
       return false;
     }
 
@@ -279,7 +333,7 @@
       duration: getElapsedTime(),
       bestLapTime,
       lastLapTime,
-      lapHistory: lapHistory.slice(),
+      lapHistory: getLapHistory(),
       finishedAt: raceFinishedAt
     };
 
@@ -289,59 +343,29 @@
   }
 
   function abort() {
-    if (state === "idle" || state === "finished") {
+    if (
+      state === "idle" ||
+      state === "finished" ||
+      state === "aborted"
+    ) {
       return false;
     }
+
+    const elapsed = getElapsedTime();
 
     clearTimer();
 
     state = "aborted";
+    countdown = 0;
+    countdownEndsAt = 0;
 
     emit("sx:race-director-aborted", {
       currentLap,
       totalLaps,
-      elapsed: getElapsedTime()
+      elapsed
     });
 
     return true;
-  }
-
-  function getProgress() {
-    return {
-      currentLap,
-      totalLaps,
-      completedLaps: lapHistory.length,
-      percentage: totalLaps > 0
-        ? Math.min(
-            100,
-            (lapHistory.length / totalLaps) * 100
-          )
-        : 0,
-      finalLap: currentLap === totalLaps &&
-        state === "racing"
-    };
-  }
-
-  function getState() {
-    return {
-      state,
-      countdown,
-      lights,
-      currentLap,
-      totalLaps,
-      elapsed: getElapsedTime(),
-      lastLapTime,
-      bestLapTime,
-      progress: getProgress(),
-      paused: state === "paused",
-      finished: state === "finished"
-    };
-  }
-
-  function getLapHistory() {
-    return lapHistory.map(
-      lap => ({ ...lap })
-    );
   }
 
   const api = {
@@ -367,3 +391,4 @@
 /* =========================================================
    END: VEHICLE RACE DIRECTOR — FILE 99
    ========================================================= */
+
