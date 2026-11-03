@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 84
    FILE: js/vehicle-maintenance.js
@@ -9,65 +8,24 @@
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const STORAGE_KEY = "superx_vehicle_maintenance_v1";
+  const STORAGE_KEY = "superx_vehicle_maintenance_v2";
 
   const SERVICES = {
-    oil: {
-      name: "Engine Oil Service",
-      interval: 5000,
-      cost: 350,
-      duration: 5
-    },
-    gearbox: {
-      name: "Gearbox Service",
-      interval: 10000,
-      cost: 550,
-      duration: 8
-    },
-    brakes: {
-      name: "Brake Service",
-      interval: 4000,
-      cost: 300,
-      duration: 4
-    },
-    tyres: {
-      name: "Tyre Inspection",
-      interval: 3000,
-      cost: 250,
-      duration: 3
-    },
-    suspension: {
-      name: "Suspension Service",
-      interval: 8000,
-      cost: 450,
-      duration: 7
-    },
-    cooling: {
-      name: "Cooling System Service",
-      interval: 7000,
-      cost: 400,
-      duration: 6
-    },
-    battery: {
-      name: "Battery Check",
-      interval: 6000,
-      cost: 200,
-      duration: 2
-    },
-    full: {
-      name: "Complete Vehicle Service",
-      interval: 10000,
-      cost: 1500,
-      duration: 15
-    }
+    oil: { name: "Engine Oil Service", interval: 5000, cost: 350, duration: 5 },
+    gearbox: { name: "Gearbox Service", interval: 10000, cost: 550, duration: 8 },
+    brakes: { name: "Brake Service", interval: 4000, cost: 300, duration: 4 },
+    tyres: { name: "Tyre Inspection", interval: 3000, cost: 250, duration: 3 },
+    suspension: { name: "Suspension Service", interval: 8000, cost: 450, duration: 7 },
+    cooling: { name: "Cooling System Service", interval: 7000, cost: 400, duration: 6 },
+    battery: { name: "Battery Check", interval: 6000, cost: 200, duration: 2 },
+    full: { name: "Complete Vehicle Service", interval: 10000, cost: 1500, duration: 15 }
   };
 
   let records = {};
   let initialized = false;
 
   function getCarId() {
-    const car = SX.getSelectedCar
+    const car = typeof SX.getSelectedCar === "function"
       ? SX.getSelectedCar()
       : null;
 
@@ -78,19 +36,42 @@
     );
   }
 
+  function createRecord() {
+    return {
+      distance: 0,
+      services: {},
+      history: [],
+      lastService: null,
+      totalSpent: 0
+    };
+  }
+
   function getCarRecords() {
     const id = getCarId();
 
     if (!records[id]) {
-      records[id] = {
-        distance: 0,
-        services: {},
-        history: [],
-        lastService: null
-      };
+      records[id] = createRecord();
     }
 
     return records[id];
+  }
+
+  function normalizeRecord(record) {
+    if (!record || typeof record !== "object") {
+      return createRecord();
+    }
+
+    return {
+      distance: Math.max(0, Number(record.distance) || 0),
+      services: record.services && typeof record.services === "object"
+        ? record.services
+        : {},
+      history: Array.isArray(record.history)
+        ? record.history.slice(0, 100)
+        : [],
+      lastService: record.lastService || null,
+      totalSpent: Math.max(0, Number(record.totalSpent) || 0)
+    };
   }
 
   function save() {
@@ -99,30 +80,31 @@
         STORAGE_KEY,
         JSON.stringify(records)
       );
+      return true;
     } catch (error) {
-      console.warn(
-        "[SUPERX Maintenance] Save failed:",
-        error
-      );
+      console.warn("[SUPERX Maintenance] Save failed:", error);
+      return false;
     }
   }
 
   function load() {
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const data = raw ? JSON.parse(raw) : {};
 
-      records = data ? JSON.parse(data) : {};
+      records = {};
 
-      if (
-        !records ||
-        typeof records !== "object" ||
-        Array.isArray(records)
-      ) {
-        records = {};
+      if (data && typeof data === "object" && !Array.isArray(data)) {
+        Object.keys(data).forEach(id => {
+          records[id] = normalizeRecord(data[id]);
+        });
       }
     } catch (error) {
       records = {};
+      console.warn("[SUPERX Maintenance] Load failed:", error);
     }
+
+    return records;
   }
 
   function getService(key) {
@@ -131,7 +113,6 @@
 
   function getStatus(key) {
     const service = getService(key);
-
     if (!service) return null;
 
     const car = getCarRecords();
@@ -142,7 +123,7 @@
 
     const travelled = Math.max(
       0,
-      car.distance - item.lastDistance
+      car.distance - (Number(item.lastDistance) || 0)
     );
 
     const remaining = Math.max(
@@ -150,21 +131,21 @@
       service.interval - travelled
     );
 
-    const percentage = Math.min(
-      100,
-      (travelled / service.interval) * 100
-    );
-
     return {
       key,
       name: service.name,
       cost: service.cost,
       interval: service.interval,
-      travelled,
-      remaining,
-      percentage: Math.round(percentage),
+      duration: service.duration,
+      travelled: Math.round(travelled),
+      remaining: Math.round(remaining),
+      percentage: Math.min(
+        100,
+        Math.round((travelled / service.interval) * 100)
+      ),
       due: remaining <= 0,
-      count: item.count || 0
+      count: Number(item.count) || 0,
+      lastDate: item.lastDate || null
     };
   }
 
@@ -180,12 +161,56 @@
     }
 
     const car = getCarRecords();
-
     car.distance += amount;
 
     save();
 
     return car.distance;
+  }
+
+  function canAfford(cost) {
+    return (
+      typeof SX.spendCoins === "function" &&
+      SX.spendCoins(cost) === true
+    );
+  }
+
+  function addHistory(car, key, service, date) {
+    const entry = {
+      id: "service_" + key + "_" + Date.now() + "_" +
+        Math.random().toString(36).slice(2, 7),
+      key,
+      name: service.name,
+      cost: service.cost,
+      distance: Math.round(car.distance),
+      date
+    };
+
+    car.history.unshift(entry);
+
+    if (car.history.length > 100) {
+      car.history.length = 100;
+    }
+
+    return entry;
+  }
+
+  function markServiced(car, key, date) {
+    const previous = car.services[key] || {};
+
+    car.services[key] = {
+      lastDistance: car.distance,
+      count: (Number(previous.count) || 0) + 1,
+      lastDate: date
+    };
+  }
+
+  function emitServiceEvent(detail) {
+    window.dispatchEvent(
+      new CustomEvent("sx:vehicle-serviced", {
+        detail
+      })
+    );
   }
 
   function serviceVehicle(key) {
@@ -200,56 +225,41 @@
 
     const car = getCarRecords();
 
-    if (
-      typeof SX.spendCoins !== "function" ||
-      !SX.spendCoins(service.cost)
-    ) {
+    if (!canAfford(service.cost)) {
       return {
         success: false,
-        message: "Not enough coins."
+        message: "Not enough coins.",
+        cost: service.cost
       };
     }
 
-    car.services[key] = {
-      lastDistance: car.distance,
-      count: (
-        car.services[key]?.count || 0
-      ) + 1,
-      lastDate: new Date().toISOString()
-    };
+    const now = new Date().toISOString();
 
-    const entry = {
-      id: "service_" + Date.now(),
-      key,
-      name: service.name,
-      cost: service.cost,
-      distance: Math.round(car.distance),
-      date: new Date().toISOString()
-    };
-
-    car.history.unshift(entry);
-
-    if (car.history.length > 100) {
-      car.history.length = 100;
+    if (key === "full") {
+      Object.keys(SERVICES).forEach(serviceKey => {
+        if (serviceKey !== "full") {
+          markServiced(car, serviceKey, now);
+        }
+      });
     }
 
-    car.lastService = entry.date;
+    markServiced(car, key, now);
+
+    const entry = addHistory(car, key, service, now);
+
+    car.lastService = now;
+    car.totalSpent += service.cost;
 
     save();
 
-    window.dispatchEvent(
-      new CustomEvent("sx:vehicle-serviced", {
-        detail: {
-          carId: getCarId(),
-          service: entry
-        }
-      })
-    );
+    emitServiceEvent({
+      carId: getCarId(),
+      service: entry,
+      fullService: key === "full"
+    });
 
-    if (SX.notifications) {
-      SX.notifications.success(
-        service.name + " completed!"
-      );
+    if (SX.notifications && typeof SX.notifications.success === "function") {
+      SX.notifications.success(service.name + " completed!");
     }
 
     return {
@@ -278,10 +288,7 @@
       0
     );
 
-    if (
-      typeof SX.spendCoins !== "function" ||
-      !SX.spendCoins(total)
-    ) {
+    if (!canAfford(total)) {
       return {
         success: false,
         message: "Not enough coins.",
@@ -290,43 +297,34 @@
     }
 
     const now = new Date().toISOString();
+    const completed = [];
 
     dueServices.forEach(key => {
-      car.services[key] = {
-        lastDistance: car.distance,
-        count: (
-          car.services[key]?.count || 0
-        ) + 1,
-        lastDate: now
-      };
+      markServiced(car, key, now);
 
-      car.history.unshift({
-        id: "service_" + key + "_" + Date.now(),
-        key,
-        name: SERVICES[key].name,
-        cost: SERVICES[key].cost,
-        distance: Math.round(car.distance),
-        date: now
-      });
+      completed.push(
+        addHistory(car, key, SERVICES[key], now)
+      );
     });
 
     car.lastService = now;
+    car.totalSpent += total;
 
     save();
 
-    window.dispatchEvent(
-      new CustomEvent("sx:vehicle-serviced", {
-        detail: {
-          carId: getCarId(),
-          services: dueServices,
-          total
-        }
-      })
-    );
+    emitServiceEvent({
+      carId: getCarId(),
+      services: completed,
+      total
+    });
+
+    if (SX.notifications && typeof SX.notifications.success === "function") {
+      SX.notifications.success("All due services completed!");
+    }
 
     return {
       success: true,
-      services: dueServices,
+      services: completed,
       total,
       message: "All due services completed."
     };
@@ -344,43 +342,45 @@
   }
 
   function getOverview() {
+    const car = getCarRecords();
     const statuses = getAllStatuses();
-
     const due = statuses.filter(item => item.due);
 
     return {
       carId: getCarId(),
-      distance: Math.round(
-        getCarRecords().distance
-      ),
-      totalServices: getCarRecords().history.length,
+      distance: Math.round(car.distance),
+      totalServices: car.history.length,
+      totalSpent: car.totalSpent,
       dueCount: due.length,
       dueServices: due,
       estimatedCost: due.reduce(
         (sum, item) => sum + item.cost,
         0
       ),
-      lastService: getCarRecords().lastService
+      lastService: car.lastService
     };
+  }
+
+  function getCatalog() {
+    return Object.entries(SERVICES).map(([key, value]) => ({
+      key,
+      name: value.name,
+      interval: value.interval,
+      cost: value.cost,
+      duration: value.duration
+    }));
   }
 
   function resetCurrentCar() {
     delete records[getCarId()];
     save();
-
     return true;
   }
 
-  function getCatalog() {
-    return Object.entries(SERVICES).map(
-      ([key, value]) => ({
-        key,
-        name: value.name,
-        interval: value.interval,
-        cost: value.cost,
-        duration: value.duration
-      })
-    );
+  function resetAll() {
+    records = {};
+    save();
+    return true;
   }
 
   function init() {
@@ -390,7 +390,6 @@
     getCarRecords();
 
     initialized = true;
-
     return api;
   }
 
@@ -399,6 +398,7 @@
     load,
     save,
     getCatalog,
+    getService,
     getStatus,
     getAllStatuses,
     recordDistance,
@@ -406,17 +406,14 @@
     serviceAll,
     getHistory,
     getOverview,
-    resetCurrentCar
+    resetCurrentCar,
+    resetAll
   };
 
   SX.vehicleMaintenance = api;
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      init,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }
