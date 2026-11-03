@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 90
    FILE: js/vehicle-dyno.js
@@ -9,8 +8,7 @@
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const STORAGE_KEY = "superx_vehicle_dyno_v1";
+  const STORAGE_KEY = "superx_vehicle_dyno_v2";
 
   const DEFAULT_CONFIG = {
     testDuration: 12,
@@ -22,119 +20,99 @@
   let config = { ...DEFAULT_CONFIG };
   let results = {};
   let activeTest = null;
-  let timer = null;
-
-  function getCarId() {
-    const car = SX.getSelectedCar
-      ? SX.getSelectedCar()
-      : null;
-
-    return String(
-      car && (car.id || car.name)
-        ? car.id || car.name
-        : "default"
-    );
-  }
+  let sampleTimer = null;
+  let initialized = false;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
 
+  function number(value, fallback = 0) {
+    const result = Number(value);
+    return Number.isFinite(result) ? result : fallback;
+  }
+
+  function getCarId() {
+    const car = typeof SX.getSelectedCar === "function"
+      ? SX.getSelectedCar()
+      : null;
+
+    return String(car && (car.id || car.name)
+      ? car.id || car.name
+      : "default");
+  }
+
+  function getCarSpecifications() {
+    const car = typeof SX.getSelectedCar === "function"
+      ? SX.getSelectedCar()
+      : null;
+
+    const specs = {
+      horsepower: number(car && (car.horsepower || car.power), 150),
+      torque: number(car && car.torque, 250),
+      topSpeed: number(car && (car.topSpeed || car.speed), 240)
+    };
+
+    if (SX.vehiclePerformance &&
+        typeof SX.vehiclePerformance.getStats === "function") {
+      const stats = SX.vehiclePerformance.getStats();
+
+      if (stats && Number.isFinite(stats.powerMultiplier)) {
+        const multiplier = clamp(stats.powerMultiplier, 0.5, 3);
+        specs.horsepower *= multiplier;
+        specs.torque *= multiplier;
+      }
+    }
+
+    return specs;
+  }
+
   function save() {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          config,
-          results
-        })
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        config,
+        results
+      }));
+      return true;
     } catch (error) {
       console.warn("[SUPERX Dyno] Save failed:", error);
+      return false;
     }
   }
 
   function load() {
     try {
-      const saved = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "null"
-      );
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
 
-      if (saved && typeof saved === "object") {
-        config = {
-          ...DEFAULT_CONFIG,
-          ...(saved.config || {})
-        };
+      config = {
+        ...DEFAULT_CONFIG,
+        ...(saved && saved.config || {})
+      };
 
-        results = saved.results || {};
-      }
+      results = saved && saved.results &&
+        typeof saved.results === "object"
+        ? saved.results
+        : {};
     } catch (error) {
       config = { ...DEFAULT_CONFIG };
       results = {};
     }
-  }
 
-  function getCarSpecifications() {
-    const car = SX.getSelectedCar
-      ? SX.getSelectedCar()
-      : null;
-
-    if (!car) {
-      return {
-        horsepower: 150,
-        torque: 250,
-        topSpeed: 240
-      };
-    }
-
-    return {
-      horsepower: Number(
-        car.horsepower || car.power || 150
-      ),
-      torque: Number(car.torque || 250),
-      topSpeed: Number(
-        car.topSpeed || car.speed || 240
-      )
-    };
-  }
-
-  function getUpgradeMultiplier() {
-    if (
-      SX.vehiclePerformance &&
-      typeof SX.vehiclePerformance.getStats === "function"
-    ) {
-      const stats = SX.vehiclePerformance.getStats();
-
-      if (stats && Number.isFinite(stats.powerMultiplier)) {
-        return clamp(stats.powerMultiplier, 0.5, 3);
-      }
-    }
-
-    return 1;
+    return true;
   }
 
   function createPowerCurve(horsepower, torque) {
     const points = [];
 
-    for (let rpm = 1000; rpm <= config.maximumRPM; rpm += 500) {
-      const normalized = rpm / config.maximumRPM;
-
-      const torqueFactor = clamp(
-        1.1 - normalized * 0.35,
-        0.55,
-        1.1
-      );
-
+    for (let rpm = 1000; rpm <= config.maximumRPM; rpm += 250) {
+      const ratio = rpm / config.maximumRPM;
+      const torqueFactor = clamp(1.1 - ratio * 0.35, 0.55, 1.1);
       const currentTorque = torque * torqueFactor;
-
-      const currentHP =
-        currentTorque * rpm / 7127;
+      const currentHP = currentTorque * rpm / 7127;
 
       points.push({
         rpm,
-        horsepower: Number(
-          Math.min(horsepower, currentHP).toFixed(1)
-        ),
+        horsepower: Number(Math.min(horsepower, currentHP).toFixed(1)),
         torque: Number(currentTorque.toFixed(1))
       });
     }
@@ -142,16 +120,16 @@
     return points;
   }
 
+  function emit(name, detail) {
+    window.dispatchEvent(new CustomEvent(name, { detail }));
+  }
+
   function beginTest() {
     if (activeTest) {
-      return {
-        success: false,
-        message: "A dyno test is already running."
-      };
+      return { success: false, message: "A dyno test is already running." };
     }
 
     const specs = getCarSpecifications();
-    const multiplier = getUpgradeMultiplier();
 
     activeTest = {
       id: "dyno_" + Date.now(),
@@ -159,29 +137,42 @@
       startedAt: Date.now(),
       samples: [],
       specs,
-      multiplier,
+      powerCurve: createPowerCurve(specs.horsepower, specs.torque),
       status: "running"
     };
 
-    activeTest.specs = {
-      horsepower: specs.horsepower * multiplier,
-      torque: specs.torque * multiplier,
-      topSpeed: specs.topSpeed
-    };
+    sampleTimer = setInterval(() => {
+      if (!activeTest) return;
 
-    activeTest.powerCurve = createPowerCurve(
-      activeTest.specs.horsepower,
-      activeTest.specs.torque
-    );
+      const telemetry = SX.vehicleTelemetry &&
+        typeof SX.vehicleTelemetry.getData === "function"
+        ? SX.vehicleTelemetry.getData()
+        : null;
 
-    window.dispatchEvent(
-      new CustomEvent("sx:dyno-started", {
-        detail: {
-          testId: activeTest.id,
-          carId: activeTest.carId
-        }
-      })
-    );
+      if (!telemetry) return;
+
+      const rpm = number(telemetry.rpm);
+      const torqueFactor = clamp(
+        1.1 - rpm / config.maximumRPM * 0.35,
+        0.55,
+        1.1
+      );
+
+      recordSample({
+        rpm,
+        speed: telemetry.speed,
+        horsepower: Math.min(
+          specs.horsepower,
+          specs.torque * torqueFactor * rpm / 7127
+        ),
+        torque: specs.torque * torqueFactor
+      });
+    }, config.sampleInterval);
+
+    emit("sx:dyno-started", {
+      testId: activeTest.id,
+      carId: activeTest.carId
+    });
 
     return {
       success: true,
@@ -192,114 +183,83 @@
 
   function recordSample(values) {
     if (!activeTest) {
-      return {
-        success: false,
-        message: "No active dyno test."
-      };
+      return { success: false, message: "No active dyno test." };
     }
 
     const data = values || {};
 
     const sample = {
       time: Date.now(),
-      rpm: clamp(
-        Number(data.rpm) || 0,
-        0,
-        config.maximumRPM
-      ),
-      speed: clamp(
-        Number(data.speed) || 0,
-        0,
-        config.maximumSpeed
-      ),
-      horsepower: Math.max(
-        0,
-        Number(data.horsepower) || 0
-      ),
-      torque: Math.max(
-        0,
-        Number(data.torque) || 0
-      )
+      rpm: clamp(number(data.rpm), 0, config.maximumRPM),
+      speed: clamp(number(data.speed), 0, config.maximumSpeed),
+      horsepower: Math.max(0, number(data.horsepower)),
+      torque: Math.max(0, number(data.torque))
     };
 
     activeTest.samples.push(sample);
 
-    return {
-      success: true,
-      sample
-    };
+    return { success: true, sample: { ...sample } };
   }
 
   function getTestMetrics(test) {
     const samples = test.samples || [];
 
-    const peakRPM = samples.reduce(
-      (max, item) => Math.max(max, item.rpm),
-      0
-    );
-
-    const peakSpeed = samples.reduce(
-      (max, item) => Math.max(max, item.speed),
-      0
-    );
-
-    const peakHP = samples.reduce(
-      (max, item) => Math.max(max, item.horsepower),
-      test.specs.horsepower
-    );
-
-    const peakTorque = samples.reduce(
-      (max, item) => Math.max(max, item.torque),
-      test.specs.torque
+    const maximum = (key, fallback) => samples.reduce(
+      (max, item) => Math.max(max, number(item[key])),
+      fallback
     );
 
     return {
-      peakRPM: Math.round(peakRPM),
-      peakSpeed: Number(peakSpeed.toFixed(1)),
-      peakHorsepower: Number(peakHP.toFixed(1)),
-      peakTorque: Number(peakTorque.toFixed(1))
+      peakRPM: Math.round(maximum("rpm", 0)),
+      peakSpeed: Number(maximum("speed", 0).toFixed(1)),
+      peakHorsepower: Number(
+        maximum("horsepower", test.specs.horsepower).toFixed(1)
+      ),
+      peakTorque: Number(
+        maximum("torque", test.specs.torque).toFixed(1)
+      )
     };
+  }
+
+  function stopSampling() {
+    if (sampleTimer !== null) {
+      clearInterval(sampleTimer);
+      sampleTimer = null;
+    }
   }
 
   function finishTest() {
     if (!activeTest) {
-      return {
-        success: false,
-        message: "No active dyno test."
-      };
+      return { success: false, message: "No active dyno test." };
     }
 
+    stopSampling();
+
     const test = activeTest;
+    const finishedAt = Date.now();
 
     test.status = "completed";
-    test.finishedAt = Date.now();
-    test.duration = (
-      test.finishedAt - test.startedAt
-    ) / 1000;
-
+    test.finishedAt = finishedAt;
+    test.duration = (finishedAt - test.startedAt) / 1000;
     test.metrics = getTestMetrics(test);
 
     test.result = {
       testId: test.id,
       carId: test.carId,
-      horsepower: Number(
-        test.specs.horsepower.toFixed(1)
-      ),
-      torque: Number(
-        test.specs.torque.toFixed(1)
-      ),
+      date: new Date(finishedAt).toISOString(),
+      horsepower: Number(test.specs.horsepower.toFixed(1)),
+      torque: Number(test.specs.torque.toFixed(1)),
       topSpeed: test.specs.topSpeed,
       peakRPM: test.metrics.peakRPM,
       measuredPeakSpeed: test.metrics.peakSpeed,
       peakHorsepower: test.metrics.peakHorsepower,
       peakTorque: test.metrics.peakTorque,
       duration: Number(test.duration.toFixed(2)),
-      powerCurve: test.powerCurve
+      sampleCount: test.samples.length,
+      powerCurve: test.powerCurve.map(item => ({ ...item }))
     };
 
-    if (!results[test.carId]) {
-      results[test.carId] = [];
-    }
+    if (!results[test.carId]) results[test.carId] = [];
 
     results[test.carId].unshift(test.result);
 
@@ -308,32 +268,32 @@
     }
 
     activeTest = null;
-
     save();
 
-    window.dispatchEvent(
-      new CustomEvent("sx:dyno-completed", {
-        detail: test.result
-      })
-    );
+    emit("sx:dyno-completed", test.result);
 
     return {
       success: true,
-      result: test.result
+      result: JSON.parse(JSON.stringify(test.result))
     };
   }
 
   function cancelTest() {
     if (!activeTest) return false;
 
-    activeTest.status = "cancelled";
+    const testId = activeTest.id;
+    stopSampling();
     activeTest = null;
 
-    window.dispatchEvent(
-      new CustomEvent("sx:dyno-cancelled")
-    );
+    emit("sx:dyno-cancelled", { testId });
 
     return true;
+  }
+
+  function getActiveTest() {
+    return activeTest
+      ? JSON.parse(JSON.stringify(activeTest))
+      : null;
   }
 
   function getLatestResult() {
@@ -345,80 +305,72 @@
   }
 
   function getHistory() {
-    return JSON.parse(
-      JSON.stringify(results[getCarId()] || [])
-    );
-  }
-
-  function compareResults(firstId, secondId) {
-    const list = results[getCarId()] || [];
-
-    const first = list.find(x => x.testId === firstId);
-    const second = list.find(x => x.testId === secondId);
-
-    if (!first || !second) {
-      return {
-        success: false,
-        message: "Test result not found."
-      };
-    }
-
-    return {
-      success: true,
-      horsepowerDifference:
-        second.horsepower - first.horsepower,
-      torqueDifference:
-        second.torque - first.torque,
-      topSpeedDifference:
-        second.topSpeed - first.topSpeed
-    };
-  }
-
-  function getActiveTest() {
-    return activeTest
-      ? JSON.parse(JSON.stringify(activeTest))
-      : null;
+    return JSON.parse(JSON.stringify(results[getCarId()] || []));
   }
 
   function getAllVehicleResults() {
     return JSON.parse(JSON.stringify(results));
   }
 
+  function compareResults(firstId, secondId) {
+    const list = results[getCarId()] || [];
+    const first = list.find(item => item.testId === firstId);
+    const second = list.find(item => item.testId === secondId);
+
+    if (!first || !second) {
+      return { success: false, message: "Test result not found." };
+    }
+
+    return {
+      success: true,
+      horsepowerDifference: second.horsepower - first.horsepower,
+      torqueDifference: second.torque - first.torque,
+      topSpeedDifference: second.topSpeed - first.topSpeed
+    };
+  }
+
   function clearCurrentHistory() {
     delete results[getCarId()];
     save();
-
     return true;
   }
 
   function configure(options) {
-    if (!options || typeof options !== "object") {
-      return false;
+    if (!options || typeof options !== "object") return false;
+    if (activeTest) return false;
+
+    if (Number.isFinite(options.maximumRPM)) {
+      config.maximumRPM = clamp(options.maximumRPM, 3000, 15000);
     }
 
-    if (
-      Number.isFinite(options.maximumRPM) &&
-      options.maximumRPM >= 3000 &&
-      options.maximumRPM <= 15000
-    ) {
-      config.maximumRPM = options.maximumRPM;
+    if (Number.isFinite(options.maximumSpeed)) {
+      config.maximumSpeed = clamp(options.maximumSpeed, 100, 600);
     }
 
-    if (
-      Number.isFinite(options.maximumSpeed) &&
-      options.maximumSpeed >= 100 &&
-      options.maximumSpeed <= 600
-    ) {
-      config.maximumSpeed = options.maximumSpeed;
+    if (Number.isFinite(options.sampleInterval)) {
+      config.sampleInterval = clamp(
+        Math.round(options.sampleInterval),
+        50,
+        1000
+      );
     }
 
-    save();
+    return save();
+  }
 
-    return true;
+  function getConfig() {
+    return { ...config };
+  }
+
+  function destroy() {
+    stopSampling();
+    activeTest = null;
   }
 
   function init() {
+    if (initialized) return api;
     load();
+    initialized = true;
     return api;
   }
 
@@ -437,17 +389,15 @@
     getAllVehicleResults,
     clearCurrentHistory,
     getCarSpecifications,
-    configure
+    configure,
+    getConfig,
+    destroy
   };
 
   SX.vehicleDyno = api;
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      init,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }
@@ -457,4 +407,3 @@
 /* =========================================================
    END: VEHICLE DYNO TEST SYSTEM — FILE 90
    ========================================================= */
-    
