@@ -2,23 +2,27 @@
 /* =========================================================
    SUPERX LEGEND — FILE 116
    FILE: js/vehicle-race-session-favorites.js
-
-   PURPOSE:
-   - Mark race sessions as favorites.
-   - Remove favorite sessions.
-   - Store a private note for each favorite.
-   - Search and sort favorite sessions.
-   - Independent from session history and tags.
-========================================================= */
+   MODULE: Race Session Favorites
+   ========================================================= */
 
 (function (window) {
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-  const STORAGE_KEY = "superx_race_session_favorites_v1";
+
+  const STORAGE_KEY = "superx_race_session_favorites_v2";
+  const LEGACY_KEY = "superx_race_session_favorites_v1";
 
   const MAX_FAVORITES = 200;
   const MAX_NOTE_LENGTH = 300;
+
+  const LIMITS = {
+    sessionId: 120,
+    title: 100,
+    mode: 50,
+    map: 80,
+    car: 80
+  };
 
   function cleanText(value, limit) {
     if (typeof value !== "string") return "";
@@ -29,24 +33,93 @@
       .slice(0, limit || 120);
   }
 
+  function safeTime(value) {
+    const time = Number(value);
+
+    return Number.isFinite(time) && time > 0
+      ? Math.min(time, Date.now() + 86400000)
+      : Date.now();
+  }
+
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
   }
 
+  function normalizeItem(item) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return null;
+    }
+
+    const sessionId = cleanText(item.sessionId, LIMITS.sessionId);
+
+    if (!sessionId) return null;
+
+    return {
+      sessionId,
+      addedAt: safeTime(item.addedAt),
+      updatedAt: safeTime(item.updatedAt || item.addedAt),
+      note: cleanText(item.note, MAX_NOTE_LENGTH),
+      title: cleanText(item.title, LIMITS.title),
+      mode: cleanText(item.mode, LIMITS.mode),
+      map: cleanText(item.map, LIMITS.map),
+      car: cleanText(item.car, LIMITS.car)
+    };
+  }
+
+  function normalizeList(list) {
+    if (!Array.isArray(list)) return [];
+
+    const result = [];
+    const seen = new Set();
+
+    list.forEach(function (item) {
+      if (result.length >= MAX_FAVORITES) return;
+
+      const normalized = normalizeItem(item);
+
+      if (!normalized || seen.has(normalized.sessionId)) return;
+
+      seen.add(normalized.sessionId);
+      result.push(normalized);
+    });
+
+    return result;
+  }
+
   function load() {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      let raw = window.localStorage.getItem(STORAGE_KEY);
+      let migrated = false;
+
+      if (!raw) {
+        raw = window.localStorage.getItem(LEGACY_KEY);
+        migrated = Boolean(raw);
+      }
 
       if (!raw) return [];
 
       const parsed = JSON.parse(raw);
+      const list = Array.isArray(parsed)
+        ? parsed
+        : parsed && parsed.favorites;
 
-      if (!Array.isArray(parsed)) return [];
+      const result = normalizeList(list);
 
-      return parsed.filter(function (item) {
-        return item &&
-          typeof item.sessionId === "string";
-      }).slice(0, MAX_FAVORITES);
+      if (migrated) {
+        try {
+          window.localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+              version: 2,
+              favorites: result
+            })
+          );
+        } catch (error) {
+          console.warn("[SUPERX Favorites] Migration save failed:", error);
+        }
+      }
+
+      return result;
     } catch (error) {
       console.warn("[SUPERX Favorites] Load failed:", error);
       return [];
@@ -55,15 +128,17 @@
 
   let favorites = load();
 
-  function save() {
+  function persist(next) {
     try {
-      favorites = favorites.slice(0, MAX_FAVORITES);
-
       window.localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(favorites)
+        JSON.stringify({
+          version: 2,
+          favorites: next
+        })
       );
 
+      favorites = next;
       return true;
     } catch (error) {
       console.warn("[SUPERX Favorites] Save failed:", error);
@@ -72,7 +147,7 @@
   }
 
   function findIndex(sessionId) {
-    const id = cleanText(sessionId, 120);
+    const id = cleanText(sessionId, LIMITS.sessionId);
 
     return favorites.findIndex(function (item) {
       return item.sessionId === id;
@@ -80,20 +155,26 @@
   }
 
   function emit(action, sessionId) {
-    window.dispatchEvent(new CustomEvent(
-      "sx:race-session-favorites-updated",
-      {
-        detail: {
-          action: action,
-          sessionId: sessionId || null,
-          count: favorites.length
+    try {
+      if (typeof window.CustomEvent !== "function") return;
+
+      window.dispatchEvent(new CustomEvent(
+        "sx:race-session-favorites-updated",
+        {
+          detail: {
+            action,
+            sessionId: sessionId || null,
+            count: favorites.length
+          }
         }
-      }
-    ));
+      ));
+    } catch (error) {
+      console.warn("[SUPERX Favorites] Event failed:", error);
+    }
   }
 
   function add(sessionId, details) {
-    const id = cleanText(sessionId, 120);
+    const id = cleanText(sessionId, LIMITS.sessionId);
 
     if (!id) {
       return {
@@ -123,16 +204,23 @@
     const item = {
       sessionId: id,
       addedAt: Date.now(),
+      updatedAt: Date.now(),
       note: "",
-      title: cleanText(info.title, 100),
-      mode: cleanText(info.mode, 50),
-      map: cleanText(info.map, 80),
-      car: cleanText(info.car, 80)
+      title: cleanText(info.title, LIMITS.title),
+      mode: cleanText(info.mode, LIMITS.mode),
+      map: cleanText(info.map, LIMITS.map),
+      car: cleanText(info.car, LIMITS.car)
     };
 
-    favorites.unshift(item);
+    const next = [item].concat(favorites);
 
-    save();
+    if (!persist(next)) {
+      return {
+        success: false,
+        reason: "save-failed"
+      };
+    }
+
     emit("add", id);
 
     return {
@@ -142,32 +230,30 @@
   }
 
   function remove(sessionId) {
-    const id = cleanText(sessionId, 120);
+    const id = cleanText(sessionId, LIMITS.sessionId);
     const index = findIndex(id);
 
     if (index === -1) return false;
 
-    favorites.splice(index, 1);
+    const next = favorites.slice();
+    next.splice(index, 1);
 
-    save();
+    if (!persist(next)) return false;
+
     emit("remove", id);
-
     return true;
   }
 
   function toggle(sessionId, details) {
-    const id = cleanText(sessionId, 120);
+    const id = cleanText(sessionId, LIMITS.sessionId);
 
     if (!id) return false;
 
     if (findIndex(id) !== -1) {
-      remove(id);
-      return false;
+      return remove(id) ? false : true;
     }
 
-    const result = add(id, details);
-
-    return result.success ? true : false;
+    return add(id, details).success;
   }
 
   function isFavorite(sessionId) {
@@ -179,32 +265,34 @@
     let result = favorites.slice();
 
     if (settings.search) {
-      const query = String(settings.search).toLowerCase();
+      const query = String(settings.search).trim().toLowerCase();
 
       result = result.filter(function (item) {
-        return (
-          item.sessionId.toLowerCase().includes(query) ||
-          item.title.toLowerCase().includes(query) ||
-          item.mode.toLowerCase().includes(query) ||
-          item.map.toLowerCase().includes(query) ||
-          item.car.toLowerCase().includes(query) ||
-          item.note.toLowerCase().includes(query)
-        );
+        return [
+          item.sessionId,
+          item.title,
+          item.mode,
+          item.map,
+          item.car,
+          item.note
+        ].some(function (value) {
+          return value.toLowerCase().includes(query);
+        });
       });
     }
 
     if (settings.sort === "oldest") {
-      result.sort(function (a, b) {
-        return a.addedAt - b.addedAt;
-      });
+      result.sort((a, b) => a.addedAt - b.addedAt);
     } else if (settings.sort === "alphabetical") {
-      result.sort(function (a, b) {
-        return a.sessionId.localeCompare(b.sessionId);
-      });
+      result.sort((a, b) =>
+        a.sessionId.localeCompare(b.sessionId)
+      );
+    } else if (settings.sort === "title") {
+      result.sort((a, b) =>
+        a.title.localeCompare(b.title)
+      );
     } else {
-      result.sort(function (a, b) {
-        return b.addedAt - a.addedAt;
-      });
+      result.sort((a, b) => b.addedAt - a.addedAt);
     }
 
     return clone(result);
@@ -223,16 +311,14 @@
 
     if (index === -1) return false;
 
-    favorites[index].note = cleanText(
-      note,
-      MAX_NOTE_LENGTH
-    );
+    const next = clone(favorites);
 
-    favorites[index].updatedAt = Date.now();
+    next[index].note = cleanText(note, MAX_NOTE_LENGTH);
+    next[index].updatedAt = Date.now();
 
-    save();
-    emit("note-updated", favorites[index].sessionId);
+    if (!persist(next)) return false;
 
+    emit("note-updated", next[index].sessionId);
     return true;
   }
 
@@ -245,27 +331,19 @@
       ? details
       : {};
 
-    ["title", "mode", "map", "car"].forEach(function (key) {
-      if (info[key] !== undefined) {
-        const limits = {
-          title: 100,
-          mode: 50,
-          map: 80,
-          car: 80
-        };
+    const next = clone(favorites);
 
-        favorites[index][key] = cleanText(
-          info[key],
-          limits[key]
-        );
-      }
+    Object.keys(LIMITS).forEach(function (key) {
+      if (key === "sessionId" || info[key] === undefined) return;
+
+      next[index][key] = cleanText(info[key], LIMITS[key]);
     });
 
-    favorites[index].updatedAt = Date.now();
+    next[index].updatedAt = Date.now();
 
-    save();
-    emit("details-updated", favorites[index].sessionId);
+    if (!persist(next)) return false;
 
+    emit("details-updated", next[index].sessionId);
     return true;
   }
 
@@ -274,22 +352,23 @@
   }
 
   function clearAll() {
-    favorites = [];
-    save();
-    emit("clear-all", null);
+    if (!favorites.length) return true;
 
+    if (!persist([])) return false;
+
+    emit("clear-all", null);
     return true;
   }
 
   function exportFavorites() {
     return JSON.stringify({
-      version: 1,
-      exportedAt: Date.now(),
+      version: 2,
+      exportedAt: new Date().toISOString(),
       favorites: clone(favorites)
     }, null, 2);
   }
 
-  function importFavorites(input) {
+  function importFavorites(input, options) {
     try {
       const data = typeof input === "string"
         ? JSON.parse(input)
@@ -297,6 +376,7 @@
 
       if (
         !data ||
+        typeof data !== "object" ||
         !Array.isArray(data.favorites)
       ) {
         return {
@@ -305,41 +385,40 @@
         };
       }
 
+      const settings = options || {};
+      const incoming = normalizeList(data.favorites);
+
+      let next = settings.replace === true
+        ? []
+        : clone(favorites);
+
+      const existing = new Set(
+        next.map(item => item.sessionId)
+      );
+
       let imported = 0;
 
-      data.favorites.forEach(function (item) {
-        if (
-          !item ||
-          typeof item.sessionId !== "string"
-        ) {
-          return;
-        }
+      incoming.forEach(function (item) {
+        if (existing.has(item.sessionId)) return;
+        if (next.length >= MAX_FAVORITES) return;
 
-        const id = cleanText(item.sessionId, 120);
-
-        if (!id || findIndex(id) !== -1) return;
-        if (favorites.length >= MAX_FAVORITES) return;
-
-        favorites.push({
-          sessionId: id,
-          addedAt: Number(item.addedAt) || Date.now(),
-          updatedAt: Date.now(),
-          note: cleanText(item.note, MAX_NOTE_LENGTH),
-          title: cleanText(item.title, 100),
-          mode: cleanText(item.mode, 50),
-          map: cleanText(item.map, 80),
-          car: cleanText(item.car, 80)
-        });
-
+        next.push(item);
+        existing.add(item.sessionId);
         imported += 1;
       });
 
-      save();
+      if (!persist(next)) {
+        return {
+          success: false,
+          reason: "save-failed"
+        };
+      }
+
       emit("import", null);
 
       return {
         success: true,
-        imported: imported,
+        imported,
         total: favorites.length
       };
     } catch (error) {
@@ -351,23 +430,22 @@
   }
 
   SX.vehicleRaceSessionFavorites = {
-    add: add,
-    remove: remove,
-    toggle: toggle,
-    isFavorite: isFavorite,
-    getAll: getAll,
-    getOne: getOne,
-    updateNote: updateNote,
-    updateDetails: updateDetails,
-    getCount: getCount,
-    clearAll: clearAll,
-    exportFavorites: exportFavorites,
-    importFavorites: importFavorites
+    add,
+    remove,
+    toggle,
+    isFavorite,
+    getAll,
+    getOne,
+    updateNote,
+    updateDetails,
+    getCount,
+    clearAll,
+    exportFavorites,
+    importFavorites
   };
 
-  console.log("[SUPERX] Race Session Favorites ready.");
+  console.info("[SUPERX] Race Session Favorites ready.");
 
 })(window);
 
-/* ======================= FILE 116 END ======================= */
- 
+/* ======================= END FILE 116 ======================= */
