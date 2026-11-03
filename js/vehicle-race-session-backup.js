@@ -3,12 +3,12 @@
    SUPERX LEGEND — FILE 124
    FILE: js/vehicle-race-session-backup.js
 
-   PURPOSE:
-   - Create race session backups.
-   - Export and import backup JSON.
-   - Validate backup structure.
-   - Restore session data.
-   - Maintain local backup history.
+   RACE SESSION BACKUP MANAGER
+   - Create, validate, export and import backups
+   - Restore and merge session history
+   - Duplicate-session protection
+   - Backup history and statistics
+   - File-size and data-integrity checks
 
    DEPENDENCIES: None
 ========================================================= */
@@ -18,22 +18,16 @@
 
   const SX = window.SUPERX = window.SUPERX || {};
 
-  const STORAGE_KEY = "superx_race_session_backups_v1";
-  const BACKUP_VERSION = 1;
+  const STORAGE_KEY = "superx_race_session_backups_v2";
+  const LEGACY_KEY = "superx_race_session_backups_v1";
+
+  const BACKUP_TYPE = "SUPERX_RACE_SESSION_BACKUP";
+  const BACKUP_VERSION = 2;
+
   const MAX_BACKUPS = 50;
   const MAX_SESSIONS = 10000;
   const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-  function makeId() {
-    return "SXBACKUP-" +
-      Date.now().toString(36).toUpperCase() +
-      "-" +
-      Math.random().toString(36).slice(2, 8).toUpperCase();
-  }
-
-  function clone(value) {
-    return JSON.parse(JSON.stringify(value));
-  }
+  const MAX_LABEL_LENGTH = 80;
 
   function isObject(value) {
     return value !== null &&
@@ -41,12 +35,88 @@
       !Array.isArray(value);
   }
 
-  function readHistory() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const data = raw ? JSON.parse(raw) : [];
+  function safeString(value, fallback) {
+    if (typeof value !== "string") return fallback;
 
-      return Array.isArray(data) ? data : [];
+    return value
+      .replace(/[<>]/g, "")
+      .trim()
+      .slice(0, MAX_LABEL_LENGTH) || fallback;
+  }
+
+  function makeId() {
+    return "SXBACKUP-" +
+      Date.now().toString(36).toUpperCase() +
+      "-" +
+      Math.random().toString(36).slice(2, 10).toUpperCase();
+  }
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function getStorage() {
+    try {
+      return window.localStorage || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function normalizeHistory(data) {
+    if (!Array.isArray(data)) return [];
+
+    const seen = new Set();
+
+    return data
+      .filter(function (item) {
+        if (!isObject(item)) return false;
+        if (typeof item.id !== "string" || !item.id) return false;
+        if (seen.has(item.id)) return false;
+
+        seen.add(item.id);
+        return true;
+      })
+      .map(function (item) {
+        return {
+          id: item.id.slice(0, 120),
+          label: safeString(item.label, "Race Session Backup"),
+          createdAt: Number(item.createdAt) || 0,
+          sessionCount: Math.max(
+            0,
+            Math.min(MAX_SESSIONS, Number(item.sessionCount) || 0)
+          )
+        };
+      })
+      .sort(function (a, b) {
+        return b.createdAt - a.createdAt;
+      })
+      .slice(0, MAX_BACKUPS);
+  }
+
+  function readHistory() {
+    const storage = getStorage();
+
+    if (!storage) return [];
+
+    try {
+      const current = storage.getItem(STORAGE_KEY);
+
+      if (current !== null) {
+        return normalizeHistory(JSON.parse(current));
+      }
+
+      const legacy = storage.getItem(LEGACY_KEY);
+
+      if (legacy !== null) {
+        const migrated = normalizeHistory(JSON.parse(legacy));
+
+        saveHistory(migrated);
+
+        return migrated;
+      }
+
+      return [];
     } catch (error) {
       console.warn("[SUPERX] Backup history read failed.", error);
       return [];
@@ -54,10 +124,16 @@
   }
 
   function saveHistory(history) {
+    const storage = getStorage();
+
+    if (!storage) return false;
+
     try {
-      localStorage.setItem(
+      const safeHistory = normalizeHistory(history);
+
+      storage.setItem(
         STORAGE_KEY,
-        JSON.stringify(history.slice(0, MAX_BACKUPS))
+        JSON.stringify(safeHistory)
       );
 
       return true;
@@ -82,7 +158,16 @@
       };
     }
 
-    const settings = isObject(options) ? options : {};
+    const invalidIndex = sessions.findIndex(function (session) {
+      return !isObject(session);
+    });
+
+    if (invalidIndex !== -1) {
+      return {
+        success: false,
+        error: "Invalid session at index " + invalidIndex + "."
+      };
+    }
 
     let safeSessions;
 
@@ -95,17 +180,38 @@
       };
     }
 
+    const settings = isObject(options) ? options : {};
+
     const backup = {
-      type: "SUPERX_RACE_SESSION_BACKUP",
+      type: BACKUP_TYPE,
       version: BACKUP_VERSION,
       id: makeId(),
       createdAt: Date.now(),
-      label: String(settings.label || "Race Session Backup")
-        .replace(/[<>]/g, "")
-        .slice(0, 80),
+      label: safeString(
+        settings.label,
+        "Race Session Backup"
+      ),
       sessionCount: safeSessions.length,
       sessions: safeSessions
     };
+
+    let serialized;
+
+    try {
+      serialized = JSON.stringify(backup);
+
+      if (serialized.length > MAX_FILE_SIZE) {
+        return {
+          success: false,
+          error: "Backup exceeds the 10 MB limit."
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: "Backup data could not be prepared."
+      };
+    }
 
     const history = readHistory();
 
@@ -116,11 +222,15 @@
       sessionCount: backup.sessionCount
     });
 
-    saveHistory(history);
+    const historySaved = saveHistory(history);
 
     return {
       success: true,
-      backup: backup
+      backup: backup,
+      historySaved: historySaved,
+      warning: historySaved
+        ? null
+        : "Backup created, but local backup history could not be saved."
     };
   }
 
@@ -132,15 +242,19 @@
       return {
         valid: false,
         errors: ["Backup must be an object."],
-        warnings: []
+        warnings: [],
+        sessionCount: 0
       };
     }
 
-    if (backup.type !== "SUPERX_RACE_SESSION_BACKUP") {
+    if (backup.type !== BACKUP_TYPE) {
       errors.push("Unknown backup format.");
     }
 
-    if (backup.version !== BACKUP_VERSION) {
+    if (
+      !Number.isInteger(backup.version) ||
+      backup.version !== BACKUP_VERSION
+    ) {
       errors.push("Unsupported backup version.");
     }
 
@@ -161,12 +275,39 @@
       backup.sessions.forEach(function (session, index) {
         if (!isObject(session)) {
           errors.push("Invalid session at index " + index + ".");
+          return;
+        }
+
+        if (
+          session.id !== undefined &&
+          typeof session.id !== "string" &&
+          typeof session.id !== "number"
+        ) {
+          warnings.push(
+            "Session ID has an unusual format at index " + index + "."
+          );
+        }
+
+        if (
+          session.startedAt !== undefined &&
+          !Number.isFinite(Number(session.startedAt))
+        ) {
+          warnings.push(
+            "Invalid start timestamp at index " + index + "."
+          );
         }
       });
     }
 
     if (!backup.id || typeof backup.id !== "string") {
       warnings.push("Backup ID is missing.");
+    }
+
+    if (
+      backup.createdAt !== undefined &&
+      !Number.isFinite(Number(backup.createdAt))
+    ) {
+      warnings.push("Backup timestamp is invalid.");
     }
 
     return {
@@ -191,10 +332,23 @@
     }
 
     try {
+      const content = JSON.stringify(backup, null, 2);
+
+      if (content.length > MAX_FILE_SIZE) {
+        return {
+          success: false,
+          error: "Backup exceeds the 10 MB export limit."
+        };
+      }
+
+      const safeId = String(backup.id || "backup")
+        .replace(/[^a-zA-Z0-9_-]/g, "_")
+        .slice(0, 100);
+
       return {
         success: true,
-        filename: "superx-backup-" + backup.id + ".json",
-        content: JSON.stringify(backup, null, 2),
+        filename: "superx-backup-" + safeId + ".json",
+        content: content,
         mimeType: "application/json"
       };
     } catch (error) {
@@ -210,26 +364,35 @@
 
     if (!result.success) return result;
 
+    let url = null;
+    let link = null;
+
     try {
+      if (
+        typeof Blob === "undefined" ||
+        !window.URL ||
+        typeof window.URL.createObjectURL !== "function"
+      ) {
+        return {
+          success: false,
+          error: "File download is not supported in this browser."
+        };
+      }
+
       const blob = new Blob(
         [result.content],
         { type: result.mimeType }
       );
 
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      url = window.URL.createObjectURL(blob);
 
+      link = document.createElement("a");
       link.href = url;
       link.download = result.filename;
       link.style.display = "none";
 
       document.body.appendChild(link);
       link.click();
-      link.remove();
-
-      setTimeout(function () {
-        URL.revokeObjectURL(url);
-      }, 1000);
 
       return {
         success: true,
@@ -240,6 +403,20 @@
         success: false,
         error: "Backup download failed."
       };
+    } finally {
+      if (link && link.parentNode) {
+        link.parentNode.removeChild(link);
+      }
+
+      if (url) {
+        window.setTimeout(function () {
+          try {
+            window.URL.revokeObjectURL(url);
+          } catch (error) {
+            // Ignore cleanup errors.
+          }
+        }, 1500);
+      }
     }
   }
 
@@ -248,6 +425,13 @@
       return {
         success: false,
         error: "Import data must be text."
+      };
+    }
+
+    if (!raw.trim()) {
+      return {
+        success: false,
+        error: "Backup file is empty."
       };
     }
 
@@ -279,11 +463,18 @@
       };
     }
 
-    return {
-      success: true,
-      backup: backup,
-      validation: validation
-    };
+    try {
+      return {
+        success: true,
+        backup: clone(backup),
+        validation: validation
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: "Backup data could not be copied safely."
+      };
+    }
   }
 
   function importFile(file) {
@@ -294,19 +485,68 @@
       });
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    if (typeof file.size === "number" && file.size > MAX_FILE_SIZE) {
       return Promise.resolve({
         success: false,
         error: "Backup file exceeds 10 MB."
       });
     }
 
-    return file.text().then(parseImport).catch(function () {
-      return {
-        success: false,
-        error: "Unable to read backup file."
-      };
+    if (typeof file.text === "function") {
+      return file.text()
+        .then(parseImport)
+        .catch(function () {
+          return {
+            success: false,
+            error: "Unable to read backup file."
+          };
+        });
+    }
+
+    if (typeof FileReader !== "undefined") {
+      return new Promise(function (resolve) {
+        const reader = new FileReader();
+
+        reader.onload = function () {
+          resolve(parseImport(String(reader.result || "")));
+        };
+
+        reader.onerror = function () {
+          resolve({
+            success: false,
+            error: "Unable to read backup file."
+          });
+        };
+
+        try {
+          reader.readAsText(file);
+        } catch (error) {
+          resolve({
+            success: false,
+            error: "Unable to open backup file."
+          });
+        }
+      });
+    }
+
+    return Promise.resolve({
+      success: false,
+      error: "File reading is not supported in this browser."
     });
+  }
+
+  function getSessionKey(session) {
+    const id = session.id || session.sessionId;
+
+    if (id !== undefined && id !== null && String(id)) {
+      return "ID:" + String(id);
+    }
+
+    try {
+      return "DATA:" + JSON.stringify(session);
+    } catch (error) {
+      return null;
+    }
   }
 
   function restoreBackup(backup, options) {
@@ -335,25 +575,27 @@
 
     if (settings.merge === true) {
       const existing = Array.isArray(settings.existingSessions)
-        ? settings.existingSessions
+        ? settings.existingSessions.filter(isObject)
         : [];
 
       const seen = new Set();
-
       const merged = [];
 
       existing.concat(restored).forEach(function (session) {
-        const id = session.id || session.sessionId;
+        const key = getSessionKey(session);
 
-        const key = id
-          ? String(id)
-          : JSON.stringify(session);
+        if (key === null || seen.has(key)) return;
 
-        if (!seen.has(key)) {
-          seen.add(key);
-          merged.push(session);
-        }
+        seen.add(key);
+        merged.push(session);
       });
+
+      if (merged.length > MAX_SESSIONS) {
+        return {
+          success: false,
+          error: "Merged session count exceeds the allowed limit."
+        };
+      }
 
       restored = merged;
     }
@@ -379,6 +621,10 @@
   }
 
   function deleteHistoryItem(backupId) {
+    if (typeof backupId !== "string" || !backupId) {
+      return false;
+    }
+
     const history = readHistory();
 
     const filtered = history.filter(function (item) {
@@ -393,10 +639,16 @@
   }
 
   function clearHistory() {
+    const storage = getStorage();
+
+    if (!storage) return false;
+
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      storage.removeItem(STORAGE_KEY);
+      storage.removeItem(LEGACY_KEY);
       return true;
     } catch (error) {
+      console.warn("[SUPERX] Unable to clear backup history.", error);
       return false;
     }
   }
@@ -406,12 +658,20 @@
 
     return {
       backupCount: history.length,
+
       totalSessions: history.reduce(function (total, item) {
         return total + (Number(item.sessionCount) || 0);
       }, 0),
+
       latestBackup: history.length
         ? history[0].createdAt
-        : null
+        : null,
+
+      oldestBackup: history.length
+        ? history[history.length - 1].createdAt
+        : null,
+
+      storageAvailable: !!getStorage()
     };
   }
 
@@ -434,4 +694,3 @@
 })(window);
 
 /* ======================= FILE 124 END ======================= */
-        
