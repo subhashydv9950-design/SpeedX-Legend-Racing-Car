@@ -1,16 +1,14 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 21
    FILE: js/camera.js
+   PURPOSE: Advanced 4-Mode Vehicle Camera System
    START
 ========================================================= */
 
-(function () {
+(function (window) {
   "use strict";
 
-  window.SUPERX = window.SUPERX || {};
-
-  const SX = window.SUPERX;
+  const SX = window.SUPERX = window.SUPERX || {};
 
   const CAMERA_MODES = [
     {
@@ -49,32 +47,59 @@
   let smoothness = 5;
   let initialized = false;
   let lookTarget = null;
+  let positionTarget = null;
+  let enabled = true;
+
+  function getThree() {
+    return window.THREE || null;
+  }
 
   function getMode() {
     return CAMERA_MODES[modeIndex];
   }
 
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function makeWorldPoint(localPoint) {
+    const THREE = getThree();
+
+    if (!THREE || !car) return null;
+
+    const point = new THREE.Vector3(
+      localPoint.x,
+      localPoint.y,
+      localPoint.z
+    );
+
+    if (typeof car.localToWorld === "function") {
+      car.updateMatrixWorld?.(true);
+      car.localToWorld(point);
+      return point;
+    }
+
+    point.add(car.position || new THREE.Vector3());
+    return point;
+  }
+
   function setCameraPosition(position, target, dt) {
     if (!camera || !car) return;
 
-    const factor = Math.min(1, Math.max(0.01, dt * smoothness));
+    const desiredPosition = makeWorldPoint(position);
+    const desiredLook = makeWorldPoint(target);
 
-    const desiredPosition = new THREE.Vector3(
-      position.x,
-      position.y,
-      position.z
+    if (!desiredPosition || !desiredLook) return;
+
+    const factor = 1 - Math.exp(
+      -smoothness * clamp(dt, 0.001, 0.1)
     );
 
-    const desiredLook = new THREE.Vector3(
-      target.x,
-      target.y,
-      target.z
-    );
-
-    car.localToWorld(desiredPosition);
-    car.localToWorld(desiredLook);
-
-    camera.position.lerp(desiredPosition, factor);
+    if (!positionTarget) {
+      positionTarget = desiredPosition.clone();
+    } else {
+      positionTarget.lerp(desiredPosition, factor);
+    }
 
     if (!lookTarget) {
       lookTarget = desiredLook.clone();
@@ -82,45 +107,72 @@
       lookTarget.lerp(desiredLook, factor);
     }
 
+    camera.position.lerp(positionTarget, factor);
     camera.lookAt(lookTarget);
   }
 
-  function applyMode() {
-    if (!camera) return;
-
+  function dispatchChange() {
     const mode = getMode();
-
-    camera.fov = mode.fov;
-    camera.updateProjectionMatrix();
 
     if (SX.ui && typeof SX.ui.showToast === "function") {
       SX.ui.showToast(mode.name);
     }
 
-    document.dispatchEvent(
-      new CustomEvent("superx:cameraChanged", {
-        detail: {
-          id: mode.id,
-          name: mode.name,
-          index: modeIndex
-        }
-      })
-    );
+    if (typeof document !== "undefined") {
+      document.dispatchEvent(
+        new CustomEvent("superx:cameraChanged", {
+          detail: {
+            id: mode.id,
+            name: mode.name,
+            index: modeIndex
+          }
+        })
+      );
+    }
   }
 
-  function init(options) {
-    options = options || {};
+  function applyMode() {
+    if (!camera) return false;
 
-    camera = options.camera || null;
-    car = options.car || null;
+    const mode = getMode();
 
-    if (!camera || !car || typeof THREE === "undefined") {
-      console.warn("SUPERX Camera: camera or car missing.");
+    camera.fov = mode.fov;
+
+    if (typeof camera.updateProjectionMatrix === "function") {
+      camera.updateProjectionMatrix();
+    }
+
+    lookTarget = null;
+    positionTarget = null;
+
+    dispatchChange();
+
+    return true;
+  }
+
+  function init(options = {}) {
+    const THREE = getThree();
+
+    if (!THREE) {
+      console.warn("SUPERX Camera: Three.js is unavailable.");
       return false;
     }
 
+    const nextCamera = options.camera;
+    const nextCar = options.car;
+
+    if (!nextCamera || !nextCar) {
+      console.warn("SUPERX Camera: camera or vehicle missing.");
+      return false;
+    }
+
+    camera = nextCamera;
+    car = nextCar;
+
     modeIndex = 0;
     lookTarget = null;
+    positionTarget = null;
+    enabled = true;
     initialized = true;
 
     applyMode();
@@ -129,16 +181,20 @@
     return true;
   }
 
-  function update(dt) {
-    if (!initialized || !camera || !car) return;
+  function update(dt = 0.016) {
+    if (!initialized || !enabled || !camera || !car) {
+      return false;
+    }
 
     const mode = getMode();
 
     setCameraPosition(
       mode.position,
       mode.lookAt,
-      Math.max(0.001, Math.min(dt || 0.016, 0.1))
+      clamp(Number(dt) || 0.016, 0.001, 0.1)
     );
+
+    return true;
   }
 
   function next() {
@@ -148,22 +204,24 @@
   }
 
   function previous() {
-    modeIndex =
-      (modeIndex - 1 + CAMERA_MODES.length) % CAMERA_MODES.length;
+    modeIndex = (
+      modeIndex - 1 + CAMERA_MODES.length
+    ) % CAMERA_MODES.length;
 
     applyMode();
     return getMode();
   }
 
   function setMode(mode) {
-    const index = CAMERA_MODES.findIndex(function (item) {
-      return item.id === mode || item.name === mode;
-    });
+    const index = CAMERA_MODES.findIndex(item =>
+      item.id === mode || item.name === mode
+    );
 
-    if (index === -1) return false;
+    if (index < 0) return false;
 
     modeIndex = index;
     applyMode();
+
     return true;
   }
 
@@ -172,6 +230,8 @@
 
     car = newCar;
     lookTarget = null;
+    positionTarget = null;
+
     return true;
   }
 
@@ -179,30 +239,52 @@
     if (!newCamera) return false;
 
     camera = newCamera;
-    applyMode();
+
+    if (initialized) {
+      applyMode();
+    }
+
     return true;
   }
 
   function setSmoothness(value) {
-    smoothness = Math.max(1, Math.min(15, Number(value) || 5));
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) return false;
+
+    smoothness = clamp(number, 1, 15);
+
+    return true;
+  }
+
+  function setEnabled(value) {
+    enabled = Boolean(value);
+
+    if (enabled) {
+      lookTarget = null;
+      positionTarget = null;
+    }
+
+    return enabled;
   }
 
   function getModes() {
-    return CAMERA_MODES.map(function (mode) {
-      return {
-        id: mode.id,
-        name: mode.name
-      };
-    });
+    return CAMERA_MODES.map(mode => ({
+      id: mode.id,
+      name: mode.name,
+      fov: mode.fov
+    }));
   }
 
   function getState() {
     return {
-      initialized: initialized,
+      initialized,
+      enabled,
       mode: getMode().id,
       modeName: getMode().name,
-      modeIndex: modeIndex,
-      totalModes: CAMERA_MODES.length
+      modeIndex,
+      totalModes: CAMERA_MODES.length,
+      smoothness
     };
   }
 
@@ -210,25 +292,31 @@
     camera = null;
     car = null;
     lookTarget = null;
+    positionTarget = null;
+
     initialized = false;
+    enabled = true;
     modeIndex = 0;
+
+    return true;
   }
 
   SX.camera = {
-    init: init,
-    update: update,
-    next: next,
-    previous: previous,
-    setMode: setMode,
-    setCar: setCar,
-    setCamera: setCamera,
-    setSmoothness: setSmoothness,
-    getModes: getModes,
-    getState: getState,
-    dispose: dispose
+    init,
+    update,
+    next,
+    previous,
+    setMode,
+    setCar,
+    setCamera,
+    setSmoothness,
+    setEnabled,
+    getModes,
+    getState,
+    dispose
   };
 
-})();
+})(window);
 
 /* =========================================================
    SUPERX LEGEND — FILE 21
