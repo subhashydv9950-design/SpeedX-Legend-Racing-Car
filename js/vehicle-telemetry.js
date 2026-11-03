@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 88
    FILE: js/vehicle-telemetry.js
@@ -9,8 +8,8 @@
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const HISTORY_LIMIT = 300;
+  const HISTORY_LIMIT = 600;
+  const SAMPLE_INTERVAL = 250;
 
   const DEFAULTS = {
     speed: 0,
@@ -31,6 +30,7 @@
   let history = [];
   let started = false;
   let lastSampleTime = 0;
+  let sessionStartedAt = 0;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -38,10 +38,7 @@
 
   function numeric(value, fallback) {
     const result = Number(value);
-
-    return Number.isFinite(result)
-      ? result
-      : fallback;
+    return Number.isFinite(result) ? result : fallback;
   }
 
   function update(values) {
@@ -49,82 +46,35 @@
       return getData();
     }
 
-    const allowed = [
-      "speed",
-      "rpm",
-      "engineTemperature",
-      "oilPressure",
-      "batteryVoltage",
-      "fuel",
-      "throttle",
-      "brake",
-      "steering",
-      "gear",
-      "engineLoad",
-      "turboPressure"
-    ];
+    const limits = {
+      speed: [0, 520],
+      rpm: [0, 15000],
+      engineTemperature: [-20, 180],
+      oilPressure: [0, 10],
+      batteryVoltage: [0, 20],
+      fuel: [0, 100],
+      throttle: [0, 1],
+      brake: [0, 1],
+      steering: [-1, 1],
+      gear: [-1, 10],
+      engineLoad: [0, 100],
+      turboPressure: [0, 5]
+    };
 
-    allowed.forEach(key => {
+    Object.keys(limits).forEach(key => {
       if (values[key] === undefined) return;
 
-      const value = numeric(
-        values[key],
-        data[key]
-      );
+      const value = numeric(values[key], data[key]);
+      const [min, max] = limits[key];
 
-      switch (key) {
-        case "speed":
-          data[key] = clamp(value, 0, 600);
-          break;
-
-        case "rpm":
-          data[key] = clamp(value, 0, 15000);
-          break;
-
-        case "engineTemperature":
-          data[key] = clamp(value, -20, 180);
-          break;
-
-        case "oilPressure":
-          data[key] = clamp(value, 0, 10);
-          break;
-
-        case "batteryVoltage":
-          data[key] = clamp(value, 0, 20);
-          break;
-
-        case "fuel":
-          data[key] = clamp(value, 0, 100);
-          break;
-
-        case "throttle":
-        case "brake":
-          data[key] = clamp(value, 0, 1);
-          break;
-
-        case "steering":
-          data[key] = clamp(value, -1, 1);
-          break;
-
-        case "gear":
-          data[key] = Math.trunc(
-            clamp(value, -1, 10)
-          );
-          break;
-
-        case "engineLoad":
-          data[key] = clamp(value, 0, 100);
-          break;
-
-        case "turboPressure":
-          data[key] = clamp(value, 0, 5);
-          break;
-      }
+      data[key] = key === "gear"
+        ? Math.trunc(clamp(value, min, max))
+        : clamp(value, min, max);
     });
 
     const now = Date.now();
 
-    if (now - lastSampleTime >= 250) {
+    if (!lastSampleTime || now - lastSampleTime >= SAMPLE_INTERVAL) {
       addSample(now);
       lastSampleTime = now;
     }
@@ -139,18 +89,23 @@
       rpm: data.rpm,
       temperature: data.engineTemperature,
       oilPressure: data.oilPressure,
-      engineLoad: data.engineLoad
+      batteryVoltage: data.batteryVoltage,
+      fuel: data.fuel,
+      throttle: data.throttle,
+      brake: data.brake,
+      steering: data.steering,
+      gear: data.gear,
+      engineLoad: data.engineLoad,
+      turboPressure: data.turboPressure
     });
 
     if (history.length > HISTORY_LIMIT) {
-      history.shift();
+      history.splice(0, history.length - HISTORY_LIMIT);
     }
   }
 
   function getData() {
-    return {
-      ...data
-    };
+    return { ...data };
   }
 
   function getHistory(limit) {
@@ -158,9 +113,7 @@
       ? limit
       : HISTORY_LIMIT;
 
-    return history.slice(-count).map(item => ({
-      ...item
-    }));
+    return history.slice(-count).map(item => ({ ...item }));
   }
 
   function getAverage(key, seconds) {
@@ -169,38 +122,30 @@
       "rpm",
       "temperature",
       "oilPressure",
+      "batteryVoltage",
+      "fuel",
       "engineLoad"
     ];
 
     if (!allowed.includes(key)) return null;
 
-    const duration = Math.max(
-      1,
-      Number(seconds) || 10
-    );
-
+    const duration = Math.max(1, numeric(seconds, 10));
     const cutoff = Date.now() - duration * 1000;
 
-    const samples = history.filter(
-      item => item.time >= cutoff
-    );
+    const samples = history.filter(item => item.time >= cutoff);
 
-    if (!samples.length) {
-      return data[
-        key === "temperature"
-          ? "engineTemperature"
-          : key
-      ] ?? null;
-    }
+    const currentKey = key === "temperature"
+      ? "engineTemperature"
+      : key;
+
+    if (!samples.length) return data[currentKey];
 
     const total = samples.reduce(
-      (sum, item) => sum + item[key],
+      (sum, item) => sum + numeric(item[key], 0),
       0
     );
 
-    return Number(
-      (total / samples.length).toFixed(2)
-    );
+    return Number((total / samples.length).toFixed(2));
   }
 
   function getWarnings() {
@@ -220,10 +165,7 @@
       });
     }
 
-    if (
-      data.oilPressure > 0 &&
-      data.oilPressure < 1
-    ) {
+    if (data.oilPressure > 0 && data.oilPressure < 1) {
       warnings.push({
         id: "low-oil-pressure",
         severity: "critical",
@@ -239,17 +181,21 @@
       });
     }
 
-    if (data.fuel <= 10) {
+    if (data.fuel <= 3) {
+      warnings.push({
+        id: "critical-fuel",
+        severity: "critical",
+        message: "Fuel level is critically low."
+      });
+    } else if (data.fuel <= 10) {
       warnings.push({
         id: "low-fuel",
-        severity: data.fuel <= 3
-          ? "critical"
-          : "warning",
+        severity: "warning",
         message: "Fuel level is low."
       });
     }
 
-    if (data.rpm >= 7200) {
+    if (data.rpm >= 7500) {
       warnings.push({
         id: "high-rpm",
         severity: "warning",
@@ -267,12 +213,10 @@
       item => item.severity === "critical"
     );
 
-    const warning = warnings.length > 0;
-
     return {
       status: critical
         ? "critical"
-        : warning
+        : warnings.length
           ? "warning"
           : "normal",
       warningCount: warnings.length,
@@ -289,6 +233,9 @@
       oilPressure: data.oilPressure,
       battery: data.batteryVoltage,
       fuel: data.fuel,
+      throttle: data.throttle,
+      brake: data.brake,
+      steering: data.steering,
       engineLoad: data.engineLoad,
       turboPressure: data.turboPressure,
       health: getHealth()
@@ -299,6 +246,7 @@
     if (!history.length) {
       return {
         samples: 0,
+        duration: 0,
         maximumSpeed: data.speed,
         maximumRPM: data.rpm,
         averageSpeed: data.speed,
@@ -311,22 +259,20 @@
       0
     );
 
-    const max = key => Math.max(
-      ...history.map(item => item[key])
+    const max = key => history.reduce(
+      (value, item) => Math.max(value, item[key]),
+      0
     );
 
     return {
       samples: history.length,
-      maximumSpeed: Number(
-        max("speed").toFixed(1)
-      ),
+      duration: sessionStartedAt
+        ? Math.max(0, Date.now() - sessionStartedAt)
+        : 0,
+      maximumSpeed: Number(max("speed").toFixed(1)),
       maximumRPM: Math.round(max("rpm")),
-      averageSpeed: Number(
-        (sum("speed") / history.length).toFixed(1)
-      ),
-      averageRPM: Math.round(
-        sum("rpm") / history.length
-      )
+      averageSpeed: Number((sum("speed") / history.length).toFixed(1)),
+      averageRPM: Math.round(sum("rpm") / history.length)
     };
   }
 
@@ -334,6 +280,7 @@
     data = { ...DEFAULTS };
     history = [];
     lastSampleTime = 0;
+    sessionStartedAt = Date.now();
 
     return getDashboard();
   }
@@ -341,7 +288,7 @@
   function exportData() {
     return {
       exportedAt: new Date().toISOString(),
-      vehicle: SX.getSelectedCar
+      vehicle: typeof SX.getSelectedCar === "function"
         ? SX.getSelectedCar()
         : null,
       data: getData(),
@@ -355,7 +302,6 @@
     if (started) return api;
 
     started = true;
-
     reset();
 
     return api;
@@ -378,11 +324,7 @@
   SX.vehicleTelemetry = api;
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      init,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }
@@ -392,4 +334,3 @@
 /* =========================================================
    END: VEHICLE TELEMETRY SYSTEM — FILE 88
    ========================================================= */
-    
