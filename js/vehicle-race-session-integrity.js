@@ -3,12 +3,12 @@
    SUPERX LEGEND — FILE 123
    FILE: js/vehicle-race-session-integrity.js
 
-   PURPOSE:
-   - Validate race session data.
-   - Detect missing and invalid values.
-   - Check report structure.
-   - Normalize imported session data.
-   - Generate integrity summaries.
+   SESSION DATA INTEGRITY
+   - Session and report validation
+   - Data normalization
+   - Import validation
+   - Integrity scoring and reports
+   - Safe handling of malformed values
 
    DEPENDENCIES: None
 ========================================================= */
@@ -28,26 +28,28 @@
   };
 
   function isObject(value) {
-    return (
-      value !== null &&
+    return value !== null &&
       typeof value === "object" &&
-      !Array.isArray(value)
-    );
+      !Array.isArray(value);
   }
 
   function number(value) {
+    if (value === null || value === undefined || value === "") {
+      return null;
+    }
+
     const result = Number(value);
 
-    return Number.isFinite(result)
-      ? result
-      : null;
+    return Number.isFinite(result) ? result : null;
   }
 
   function safeText(value, maxLength) {
-    if (typeof value !== "string") return "";
+    if (typeof value !== "string" && typeof value !== "number") {
+      return "";
+    }
 
-    return value
-      .replace(/[\u0000-\u001F\u007F]/g, "")
+    return String(value)
+      .replace(/[\u0000-\u001F\u007F<>]/g, "")
       .trim()
       .slice(0, maxLength || 100);
   }
@@ -58,6 +60,14 @@
       message: message,
       severity: severity || "warning"
     });
+  }
+
+  function getTimestamp(session, primary, fallback) {
+    const first = number(session[primary]);
+
+    if (first !== null) return first;
+
+    return fallback ? number(session[fallback]) : null;
   }
 
   function validateSession(session) {
@@ -73,20 +83,37 @@
           message: "Session must be an object.",
           severity: "error"
         }],
-        warnings: []
+        warnings: [],
+        checkedAt: Date.now()
       };
     }
 
-    if (!session.id && !session.sessionId) {
+    const id = session.id || session.sessionId;
+
+    if (
+      id === undefined ||
+      id === null ||
+      String(id).trim() === ""
+    ) {
       addIssue(
         errors,
         "MISSING_SESSION_ID",
         "Session ID is missing.",
         "error"
       );
+    } else if (String(id).length > LIMITS.maxSessionIdLength) {
+      addIssue(
+        warnings,
+        "LONG_SESSION_ID",
+        "Session ID exceeds the recommended length."
+      );
     }
 
-    if (!session.startedAt && !session.createdAt) {
+    const start = getTimestamp(session, "startedAt", "createdAt");
+
+    const finish = getTimestamp(session, "finishedAt", "endedAt");
+
+    if (start === null) {
       addIssue(
         warnings,
         "MISSING_START_TIME",
@@ -95,9 +122,9 @@
     }
 
     if (
-      session.finishedAt &&
-      session.startedAt &&
-      Number(session.finishedAt) < Number(session.startedAt)
+      finish !== null &&
+      start !== null &&
+      finish < start
     ) {
       addIssue(
         errors,
@@ -107,49 +134,70 @@
       );
     }
 
-    if (
-      session.distanceKm !== undefined &&
-      (
-        number(session.distanceKm) === null ||
-        Number(session.distanceKm) < 0
-      )
-    ) {
-      addIssue(
-        errors,
-        "INVALID_DISTANCE",
-        "Distance must be a non-negative number.",
-        "error"
-      );
-    }
+    const numericFields = [
+      {
+        keys: ["distanceKm", "totalDistanceKm"],
+        code: "INVALID_DISTANCE",
+        label: "Distance"
+      },
+      {
+        keys: ["coinsEarned", "totalCoins"],
+        code: "INVALID_COINS",
+        label: "Earned coins"
+      },
+      {
+        keys: ["xpEarned", "totalXP"],
+        code: "INVALID_XP",
+        label: "Earned XP"
+      },
+      {
+        keys: ["durationSeconds"],
+        code: "INVALID_DURATION",
+        label: "Duration"
+      },
+      {
+        keys: ["penalties", "totalPenalties"],
+        code: "INVALID_PENALTIES",
+        label: "Penalties"
+      }
+    ];
+
+    numericFields.forEach(function (field) {
+      const key = field.keys.find(function (name) {
+        return session[name] !== undefined;
+      });
+
+      if (!key) return;
+
+      const value = number(session[key]);
+
+      if (value === null || value < 0) {
+        addIssue(
+          errors,
+          field.code,
+          field.label + " must be a non-negative number.",
+          "error"
+        );
+      }
+    });
 
     if (
-      session.coinsEarned !== undefined &&
-      (
-        number(session.coinsEarned) === null ||
-        Number(session.coinsEarned) < 0
-      )
+      session.position !== undefined ||
+      session.bestPosition !== undefined
     ) {
-      addIssue(
-        errors,
-        "INVALID_COINS",
-        "Earned coins value is invalid.",
-        "error"
+      const position = number(
+        session.position !== undefined
+          ? session.position
+          : session.bestPosition
       );
-    }
 
-    if (
-      session.xpEarned !== undefined &&
-      (
-        number(session.xpEarned) === null ||
-        Number(session.xpEarned) < 0
-      )
-    ) {
-      addIssue(
-        errors,
-        "INVALID_XP",
-        "Earned XP value is invalid.",
-        "error"
-      );
+      if (position === null || position < 0) {
+        addIssue(
+          warnings,
+          "INVALID_POSITION",
+          "Race position is invalid."
+        );
+      }
     }
 
     if (
@@ -174,7 +222,9 @@
       }
 
       session.lapTimes.forEach(function (lap, index) {
-        if (number(lap) === null || Number(lap) <= 0) {
+        const value = number(lap);
+
+        if (value === null || value <= 0) {
           addIssue(
             warnings,
             "INVALID_LAP_" + index,
@@ -184,27 +234,11 @@
       });
     }
 
-    if (
-      session.position !== undefined &&
-      (
-        number(session.position) === null ||
-        Number(session.position) < 0
-      )
-    ) {
-      addIssue(
-        warnings,
-        "INVALID_POSITION",
-        "Race position is invalid."
-      );
-    }
-
     const totalIssues = errors.length + warnings.length;
 
     const score = Math.max(
       0,
-      Math.round(
-        100 * (1 - totalIssues / 10)
-      )
+      Math.round(100 * (1 - totalIssues / 10))
     );
 
     return {
@@ -228,11 +262,16 @@
           message: "Report must be an object.",
           severity: "error"
         }],
-        warnings: []
+        warnings: [],
+        checkedAt: Date.now()
       };
     }
 
-    if (!report.id) {
+    if (
+      report.id === undefined ||
+      report.id === null ||
+      String(report.id).trim() === ""
+    ) {
       addIssue(
         warnings,
         "REPORT_ID_MISSING",
@@ -240,7 +279,10 @@
       );
     }
 
-    if (!report.generatedAt) {
+    if (
+      number(report.generatedAt) === null ||
+      Number(report.generatedAt) <= 0
+    ) {
       addIssue(
         warnings,
         "REPORT_DATE_MISSING",
@@ -255,12 +297,7 @@
         "Report sections are missing or invalid.",
         "error"
       );
-    }
-
-    if (
-      isObject(report.sections) &&
-      Object.keys(report.sections).length === 0
-    ) {
+    } else if (Object.keys(report.sections).length === 0) {
       addIssue(
         warnings,
         "EMPTY_REPORT",
@@ -311,30 +348,57 @@
       LIMITS.maxCarLength
     );
 
-    output.startedAt = number(
-      session.startedAt || session.createdAt
+    output.startedAt = getTimestamp(
+      session,
+      "startedAt",
+      "createdAt"
     );
 
-    output.finishedAt = number(session.finishedAt);
+    output.finishedAt = getTimestamp(
+      session,
+      "finishedAt",
+      "endedAt"
+    );
 
     output.distanceKm = Math.max(
       0,
-      number(session.distanceKm) || 0
+      number(
+        session.distanceKm !== undefined
+          ? session.distanceKm
+          : session.totalDistanceKm
+      ) || 0
     );
 
     output.coinsEarned = Math.max(
       0,
-      number(session.coinsEarned) || 0
+      number(
+        session.coinsEarned !== undefined
+          ? session.coinsEarned
+          : session.totalCoins
+      ) || 0
     );
 
     output.xpEarned = Math.max(
       0,
-      number(session.xpEarned) || 0
+      number(
+        session.xpEarned !== undefined
+          ? session.xpEarned
+          : session.totalXP
+      ) || 0
     );
 
     output.position = Math.max(
       0,
-      number(session.position) || 0
+      number(
+        session.position !== undefined
+          ? session.position
+          : session.bestPosition
+      ) || 0
+    );
+
+    output.durationSeconds = Math.max(
+      0,
+      number(session.durationSeconds) || 0
     );
 
     output.lapTimes = Array.isArray(session.lapTimes)
@@ -364,12 +428,14 @@
         type: "unknown",
         errors: [{
           code: "INVALID_IMPORT",
-          message: "Imported data must be an object."
-        }]
+          message: "Imported data must be an object.",
+          severity: "error"
+        }],
+        warnings: []
       };
     }
 
-    if (data.sections) {
+    if (data.sections !== undefined) {
       const result = validateReport(data);
 
       return {
@@ -377,6 +443,37 @@
         type: "report",
         errors: result.errors,
         warnings: result.warnings
+      };
+    }
+
+    if (Array.isArray(data.sessions)) {
+      const errors = [];
+      const warnings = [];
+
+      data.sessions.forEach(function (session, index) {
+        const result = validateSession(session);
+
+        result.errors.forEach(function (issue) {
+          errors.push({
+            ...issue,
+            message: "Session " + (index + 1) + ": " + issue.message
+          });
+        });
+
+        result.warnings.forEach(function (issue) {
+          warnings.push({
+            ...issue,
+            message: "Session " + (index + 1) + ": " + issue.message
+          });
+        });
+      });
+
+      return {
+        valid: errors.length === 0,
+        type: "session_collection",
+        sessionCount: data.sessions.length,
+        errors: errors,
+        warnings: warnings
       };
     }
 
@@ -413,9 +510,7 @@
 
     return {
       valid: valid,
-      score: number(validation.score) === null
-        ? null
-        : validation.score,
+      score: number(validation.score),
       errorCount: errors,
       warningCount: warnings,
       status: !valid
@@ -431,7 +526,7 @@
 
     return {
       type: "SUPERX_SESSION_INTEGRITY",
-      version: 1,
+      version: 2,
       generatedAt: Date.now(),
       summary: getSummary(validation),
       validation: validation
@@ -447,11 +542,9 @@
     createIntegrityReport: createIntegrityReport
   };
 
-  console.log(
-    "[SUPERX] Race Session Integrity ready."
-  );
+  console.log("[SUPERX] Race Session Integrity ready.");
 
 })(window);
 
 /* ======================= FILE 123 END ======================= */
-      
+         
