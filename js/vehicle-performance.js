@@ -1,8 +1,7 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 80
    FILE: js/vehicle-performance.js
-   PURPOSE: Vehicle performance calculation and tuning
+   PURPOSE: Vehicle Performance & Upgrade Calculation
    START
 ========================================================= */
 
@@ -44,6 +43,16 @@
       steering: 10
     },
 
+    baseCosts: {
+      engine: 350,
+      turbo: 450,
+      gearbox: 300,
+      brakes: 250,
+      tyres: 280,
+      suspension: 320,
+      steering: 260
+    },
+
     multipliers: {
       engine: {
         speed: 1.025,
@@ -74,12 +83,23 @@
     },
 
     init(options = {}) {
-      this.selectedCarId = options.carId || null;
-      this.initialized = true;
+      this.selectedCarId = options.carId
+        ? String(options.carId)
+        : null;
 
+      this.initialized = true;
+      this.resetLevels();
       this.load();
 
+      this.dispatch("initialized", this.getSummary());
+
       return true;
+    },
+
+    resetLevels() {
+      Object.keys(this.tuning).forEach(category => {
+        this.tuning[category] = 1;
+      });
     },
 
     getCarId() {
@@ -88,46 +108,84 @@
       return String(
         this.selectedCarId ||
         car?.id ||
+        car?.model ||
         "default"
       );
     },
 
-    getUpgradeData() {
-      const carId = this.getCarId();
-
-      const saved =
-        SX.player?.performanceTuning?.[carId];
-
-      if (saved && typeof saved === "object") {
-        Object.keys(this.tuning).forEach(key => {
-          const value = Number(saved[key]);
-
-          if (Number.isFinite(value)) {
-            this.tuning[key] = Math.max(
-              1,
-              Math.min(this.limits[key], Math.floor(value))
-            );
-          }
-        });
+    selectCar(carId) {
+      if (carId == null || String(carId).trim() === "") {
+        return false;
       }
 
-      return { ...this.tuning };
+      this.selectedCarId = String(carId);
+      this.resetLevels();
+      this.load();
+
+      this.dispatch("car-changed", this.getSummary());
+
+      return true;
+    },
+
+    getUpgradeData() {
+      const carId = this.getCarId();
+      const saved = SX.player?.performanceTuning?.[carId];
+
+      const result = {};
+
+      Object.keys(this.tuning).forEach(category => {
+        const value = Number(saved?.[category]);
+
+        result[category] = Number.isFinite(value)
+          ? Math.max(
+              1,
+              Math.min(
+                this.limits[category],
+                Math.floor(value)
+              )
+            )
+          : this.tuning[category];
+      });
+
+      this.tuning = { ...result };
+
+      return { ...result };
     },
 
     getBaseStats() {
       const car = SX.getSelectedCar?.();
 
       return {
-        speed: this.readNumber(car, ["topSpeed", "speed"], 240),
+        speed: this.readNumber(
+          car,
+          ["topSpeed", "speed"],
+          this.baseStats.speed
+        ),
         acceleration: this.readNumber(
           car,
           ["acceleration", "accel"],
-          7.5
+          this.baseStats.acceleration
         ),
-        handling: this.readNumber(car, ["handling"], 75),
-        braking: this.readNumber(car, ["braking", "brakes"], 70),
-        stability: this.readNumber(car, ["stability"], 75),
-        grip: this.readNumber(car, ["grip"], 72)
+        handling: this.readNumber(
+          car,
+          ["handling"],
+          this.baseStats.handling
+        ),
+        braking: this.readNumber(
+          car,
+          ["braking", "brakes"],
+          this.baseStats.braking
+        ),
+        stability: this.readNumber(
+          car,
+          ["stability"],
+          this.baseStats.stability
+        ),
+        grip: this.readNumber(
+          car,
+          ["grip"],
+          this.baseStats.grip
+        )
       };
     },
 
@@ -166,15 +224,19 @@
       );
 
       result.speed = Math.min(520, result.speed);
-      result.handling = Math.min(100, result.handling);
-      result.braking = Math.min(100, result.braking);
-      result.stability = Math.min(100, result.stability);
-      result.grip = Math.min(100, result.grip);
+      result.acceleration = Math.max(1, result.acceleration);
 
-      result.acceleration = Math.max(
-        1,
-        Number(result.acceleration.toFixed(2))
-      );
+      [
+        "handling",
+        "braking",
+        "stability",
+        "grip"
+      ].forEach(stat => {
+        result[stat] = Math.max(
+          1,
+          Math.min(100, result[stat])
+        );
+      });
 
       Object.keys(result).forEach(key => {
         result[key] = Number(result[key].toFixed(2));
@@ -184,7 +246,12 @@
     },
 
     getUpgradeCost(category, nextLevel) {
-      if (!this.limits[category]) return 0;
+      if (!Object.prototype.hasOwnProperty.call(
+        this.baseCosts,
+        category
+      )) {
+        return 0;
+      }
 
       const level = Number(nextLevel);
 
@@ -196,18 +263,8 @@
         return 0;
       }
 
-      const baseCosts = {
-        engine: 350,
-        turbo: 450,
-        gearbox: 300,
-        brakes: 250,
-        tyres: 280,
-        suspension: 320,
-        steering: 260
-      };
-
       return Math.round(
-        baseCosts[category] *
+        this.baseCosts[category] *
         Math.pow(level - 1, 1.65)
       );
     },
@@ -220,14 +277,17 @@
         };
       }
 
-      if (!this.limits[category]) {
+      if (!Object.prototype.hasOwnProperty.call(
+        this.limits,
+        category
+      )) {
         return {
           success: false,
           message: "Invalid upgrade category."
         };
       }
 
-      const currentLevel = this.tuning[category] || 1;
+      const currentLevel = this.getUpgradeData()[category];
       const nextLevel = currentLevel + 1;
 
       if (nextLevel > this.limits[category]) {
@@ -242,10 +302,14 @@
         nextLevel
       );
 
-      if (
-        typeof SX.spendCoins !== "function" ||
-        !SX.spendCoins(cost)
-      ) {
+      if (typeof SX.spendCoins !== "function") {
+        return {
+          success: false,
+          message: "Wallet system unavailable."
+        };
+      }
+
+      if (SX.spendCoins(cost) !== true) {
         return {
           success: false,
           message: "Not enough coins."
@@ -253,29 +317,30 @@
       }
 
       this.tuning[category] = nextLevel;
-
       this.save();
 
       const stats = this.calculate();
 
-      this.dispatch("upgraded", {
-        category,
-        level: nextLevel,
-        cost,
-        stats
-      });
-
-      return {
+      const result = {
         success: true,
         category,
         level: nextLevel,
         cost,
         stats
       };
+
+      this.dispatch("upgraded", result);
+
+      return result;
     },
 
     setLevel(category, level) {
-      if (!this.limits[category]) return false;
+      if (!Object.prototype.hasOwnProperty.call(
+        this.limits,
+        category
+      )) {
+        return false;
+      }
 
       const value = Number(level);
 
@@ -288,12 +353,12 @@
       }
 
       this.tuning[category] = value;
-
       this.save();
 
       this.dispatch("tuning-changed", {
         category,
-        level: value
+        level: value,
+        stats: this.calculate()
       });
 
       return true;
@@ -302,22 +367,22 @@
     getSummary() {
       const stats = this.calculate();
       const upgrades = this.getUpgradeData();
+      const values = Object.values(upgrades);
 
       return {
         carId: this.getCarId(),
         stats,
         upgrades,
         overallLevel: Math.round(
-          Object.values(upgrades).reduce(
-            (sum, level) => sum + level,
-            0
-          ) / Object.keys(upgrades).length
-        )
+          values.reduce((sum, level) => sum + level, 0) /
+          Math.max(1, values.length)
+        ),
+        maximumLevel: 10
       };
     },
 
     save() {
-      if (!SX.player) return;
+      if (!SX.player) return false;
 
       if (!SX.player.performanceTuning) {
         SX.player.performanceTuning = {};
@@ -328,13 +393,19 @@
       };
 
       SX.savePlayer?.();
+
+      return true;
     },
 
     load() {
       const saved =
         SX.player?.performanceTuning?.[this.getCarId()];
 
-      if (!saved) return false;
+      this.resetLevels();
+
+      if (!saved || typeof saved !== "object") {
+        return false;
+      }
 
       Object.keys(this.tuning).forEach(category => {
         const level = Number(saved[category]);
@@ -354,10 +425,7 @@
     },
 
     reset() {
-      Object.keys(this.tuning).forEach(category => {
-        this.tuning[category] = 1;
-      });
-
+      this.resetLevels();
       this.save();
 
       this.dispatch("reset", this.getSummary());
@@ -365,17 +433,33 @@
       return true;
     },
 
-    dispatch(name, detail) {
+    getCategories() {
+      return Object.keys(this.limits).map(category => ({
+        id: category,
+        level: this.tuning[category],
+        maxLevel: this.limits[category],
+        nextCost: this.getUpgradeCost(
+          category,
+          this.tuning[category] + 1
+        )
+      }));
+    },
+
+    dispatch(name, detail = {}) {
       window.dispatchEvent(
-        new CustomEvent(`sx:vehicle-performance-${name}`, {
-          detail
-        })
+        new CustomEvent(
+          `sx:vehicle-performance-${name}`,
+          { detail }
+        )
       );
     },
 
     destroy() {
       this.initialized = false;
       this.selectedCarId = null;
+      this.resetLevels();
+
+      return true;
     }
   };
 
@@ -385,6 +469,5 @@
 
 /* =========================================================
    SUPERX LEGEND — FILE 80
-   FILE: js/vehicle-performance.js
    END
 ========================================================= */
