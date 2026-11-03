@@ -1,61 +1,38 @@
 
-<!-- ==================================================
- SUPERX LEGEND — FILE 01
- FILE: index.html
- HOME PAGE
-================================================== -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-  <meta name="theme-color" content="#090810">
-  <meta name="description"
-        content="SUPERX LEGEND - Drive Beyond Limits. Experience the ultimate 3D racing world.">
-
-  <title>SUPERX LEGEND | Drive Beyond Limits</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#08070e">
+  <title>SUPERX LEGEND | Racing</title>
 
   <link rel="icon" href="assets/images/favicon.png">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/pages.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/home.css">
 
-  <!-- Three.js 3D Engine -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 
 <body>
-
 <div id="superxApp">
 
-  <!-- LOADING SCREEN -->
   <div id="loadingScreen" class="loading-screen">
     <div class="loading-content">
       <div class="loading-logo">SUPERX</div>
       <div class="loading-subtitle">LEGEND</div>
-      <div class="loading-line">
-        <span id="loadingProgress"></span>
-      </div>
+      <div class="loading-line"><span id="loadingProgress"></span></div>
       <p id="loadingText">INITIALIZING YOUR WORLD...</p>
     </div>
   </div>
 
-
-  <!-- MAIN HOME PAGE -->
   <main id="homePage" class="page home-page active">
 
-    <!-- TOP HEADER -->
     <header class="main-header">
-
-      <button class="menu-button"
-              id="menuOpenBtn"
-              aria-label="Open menu">
-        <span></span>
-        <span></span>
-        <span></span>
+      <button class="menu-button" id="menuOpenBtn" aria-label="Open menu">
+        <span></span><span></span><span></span>
       </button>
 
       <a href="index.html" class="brand-logo">
@@ -64,239 +41,142 @@
       </a>
 
       <div class="header-actions">
-
-        <button class="coin-display" id="coinDisplay">
+        <div class="coin-display">
           <span class="coin-icon">◈</span>
           <span id="coinCount">2500</span>
-        </button>
-
-        <a href="settings.html"
-           class="header-icon"
-           aria-label="Language and settings">
-          文
-        </a>
-
-        <a href="profile.html"
-           class="header-icon profile-icon"
-           aria-label="Player profile">
-          ♙
-        </a>
-
+        </div>
+        <a href="settings.html" class="header-icon" aria-label="Settings">⚙</a>
+        <a href="profile.html" class="header-icon profile-icon" aria-label="Profile">♙</a>
       </div>
     </header>
 
-
-    <!-- 3D SHOWROOM -->
     <section class="home-showroom" id="homeShowroom">
 
       <div class="showroom-background"></div>
-
-      <canvas id="showroomCanvas"
-              class="showroom-canvas"></canvas>
-
+      <canvas id="showroomCanvas" class="showroom-canvas"></canvas>
       <div class="showroom-light showroom-light-left"></div>
       <div class="showroom-light showroom-light-right"></div>
 
-      <div class="showroom-top-info">
-        <span class="showroom-tag">YOUR WORLD. YOUR LEGEND.</span>
-        <span class="showroom-series">SUPERCAR COLLECTION</span>
+      <div class="home-top-label">
+        <span>YOUR WORLD. YOUR LEGEND.</span>
+        <span>SUPERCAR COLLECTION · 01 / 35</span>
       </div>
 
-      <div class="showroom-car-details">
-        <p class="car-category">SUPERSPORT SERIES</p>
+      <div class="home-showroom-stage">
+        <div class="stage-glow"></div>
+        <div class="stage-ring"></div>
 
-        <h1 id="homeCarName">NIGHTFALL GT</h1>
-
-        <div class="car-specifications">
-          <div>
-            <span>TOP SPEED</span>
-            <strong id="homeCarSpeed">240 KM/H</strong>
+        <div id="showroomCar" class="showroom-car-art">
+          <div class="car-shadow"></div>
+          <div class="car-body">
+            <div class="car-roof"></div>
+            <div class="car-window"></div>
+            <div class="car-front"></div>
+            <div class="car-light"></div>
+            <div class="car-wheel car-wheel-one"></div>
+            <div class="car-wheel car-wheel-two"></div>
           </div>
+        </div>
 
+        <div class="stage-caption">PREMIUM SHOWROOM</div>
+      </div>
+
+      <div class="home-car-info">
+        <span class="car-category" id="carClass">SPORTS</span>
+        <h1 id="carName">NIGHTFALL GT</h1>
+        <div class="home-car-stats">
           <div>
-            <span>CLASS</span>
-            <strong id="homeCarClass">SPORT</strong>
+            <small>TOP SPEED</small>
+            <strong id="carSpeed">240 KM/H</strong>
+          </div>
+          <div>
+            <small>POWER</small>
+            <strong id="carPower">450 HP</strong>
+          </div>
+          <div>
+            <small>HANDLING</small>
+            <strong id="carHandling">80%</strong>
           </div>
         </div>
       </div>
 
-      <!-- SHOWROOM CAR SELECTOR -->
       <div class="showroom-selector">
-
-        <button id="previousCarBtn"
-                class="car-arrow"
-                aria-label="Previous car">
-          ‹
-        </button>
-
+        <button id="previousCarBtn" class="car-arrow" aria-label="Previous car">‹</button>
         <div class="car-selector-info">
           <span id="homeCarNumber">01 / 35</span>
           <span id="homeCarStatus">UNLOCKED</span>
         </div>
-
-        <button id="nextCarBtn"
-                class="car-arrow"
-                aria-label="Next car">
-          ›
-        </button>
-
+        <button id="nextCarBtn" class="car-arrow" aria-label="Next car">›</button>
       </div>
 
-      <button id="homeTestDriveBtn" class="test-drive-button">
-        <span>▶</span>
-        TEST DRIVE
-      </button>
-
-      <div class="showroom-footer">
-        <span>3D INTERACTIVE SHOWROOM</span>
-        <span>SUPERX ENGINE</span>
-      </div>
+      <a href="free-drive.html" id="homeTestDriveBtn" class="test-drive-button">
+        ▶ &nbsp; TEST DRIVE
+      </a>
 
     </section>
 
+    <section class="home-bottom-area">
 
-    <!-- MAIN GAME NAVIGATION -->
-    <section class="home-menu-section">
-
-      <div class="section-heading">
+      <div class="home-welcome">
         <div>
-          <span class="section-eyebrow">CHOOSE YOUR EXPERIENCE</span>
+          <span class="home-eyebrow">CHOOSE YOUR MODE</span>
           <h2>ENTER THE WORLD</h2>
         </div>
-      </div>
-
-      <div class="main-mode-grid">
-
-        <a href="garage.html"
-           class="mode-card garage-mode">
-
-          <span class="mode-card-icon">🏎</span>
-
-          <div class="mode-card-text">
-            <h3>GARAGE</h3>
-            <p>Cars, upgrades & customization</p>
-          </div>
-
-          <span class="mode-arrow">↗</span>
-        </a>
-
-
-        <a href="career.html"
-           class="mode-card career-mode">
-
-          <span class="mode-card-icon">🏁</span>
-
-          <div class="mode-card-text">
-            <h3>CAREER</h3>
-            <p>Worlds, missions & challenges</p>
-          </div>
-
-          <span class="mode-arrow">↗</span>
-        </a>
-
-
-        <a href="free-drive.html"
-           class="mode-card free-drive-mode">
-
-          <span class="mode-card-icon">🌄</span>
-
-          <div class="mode-card-text">
-            <h3>FREE DRIVE</h3>
-            <p>Explore the open world</p>
-          </div>
-
-          <span class="mode-arrow">↗</span>
-        </a>
-
-
-        <a href="online.html"
-           class="mode-card online-mode">
-
-          <span class="mode-card-icon">🌐</span>
-
-          <div class="mode-card-text">
-            <h3>ONLINE</h3>
-            <p>Race with friends</p>
-          </div>
-
-          <span class="mode-arrow">↗</span>
-        </a>
-
-      </div>
-
-    </section>
-
-
-    <!-- PLAYER QUICK INFORMATION -->
-    <section class="home-player-section">
-
-      <div class="player-summary-card">
-
-        <div class="player-summary-icon">♙</div>
-
-        <div class="player-summary-details">
-          <span>PLAYER PROFILE</span>
-          <strong id="homePlayerName">GUEST DRIVER</strong>
-          <small>LEVEL <span id="homePlayerLevel">1</span></small>
+        <div class="home-player-mini">
+          <span class="player-mini-avatar">♙</span>
+          <span>
+            <strong id="homePlayerName">GUEST DRIVER</strong>
+            <small>LEVEL <b id="homePlayerLevel">1</b></small>
+          </span>
         </div>
-
-        <a href="profile.html" class="summary-arrow">→</a>
-
       </div>
 
-      <div class="player-summary-card">
+      <nav class="home-mode-navigation">
 
-        <div class="player-summary-icon">🏆</div>
+        <a href="garage.html" class="home-mode-card">
+          <span class="home-mode-icon">🏎</span>
+          <strong>GARAGE</strong>
+          <small>YOUR CARS</small>
+        </a>
 
-        <div class="player-summary-details">
-          <span>RACING PROGRESS</span>
-          <strong id="homeRaceProgress">0 RACES</strong>
-          <small>YOUR JOURNEY STARTS HERE</small>
-        </div>
+        <a href="career.html" class="home-mode-card">
+          <span class="home-mode-icon">🏁</span>
+          <strong>CAREER</strong>
+          <small>CHALLENGES</small>
+        </a>
 
-        <a href="career.html" class="summary-arrow">→</a>
+        <a href="free-drive.html" class="home-mode-card">
+          <span class="home-mode-icon">🌄</span>
+          <strong>FREE DRIVE</strong>
+          <small>OPEN WORLD</small>
+        </a>
 
-      </div>
+        <a href="online.html" class="home-mode-card">
+          <span class="home-mode-icon">🌐</span>
+          <strong>ONLINE</strong>
+          <small>PLAY TOGETHER</small>
+        </a>
 
-    </section>
+      </nav>
 
-
-    <!-- FOOTER -->
-    <footer class="home-footer">
-
-      <div class="footer-brand">
-        <strong>SUPERX LEGEND</strong>
+      <div class="home-bottom-footer">
+        <span>SUPERX LEGEND</span>
         <span>DRIVE BEYOND LIMITS</span>
+        <a href="about.html">ABOUT ↗</a>
       </div>
 
-      <div class="footer-links">
-        <a href="about.html">ABOUT</a>
-        <a href="settings.html">SETTINGS</a>
-      </div>
-
-      <p>© 2026 SUPERX LEGEND. ALL RIGHTS RESERVED.</p>
-
-    </footer>
-
+    </section>
   </main>
 
-
-  <!-- SIDE MENU -->
   <div id="menuBackdrop" class="menu-backdrop"></div>
 
   <aside id="sideMenu" class="side-menu">
-
     <div class="side-menu-header">
-
       <div class="side-menu-brand">
         <strong>SUPERX</strong>
         <span>LEGEND</span>
       </div>
-
-      <button id="menuCloseBtn" class="menu-close-button">
-        ✕
-      </button>
-
+      <button id="menuCloseBtn" class="menu-close-button">✕</button>
     </div>
 
     <div class="side-menu-player">
@@ -308,99 +188,43 @@
     </div>
 
     <nav class="side-menu-navigation">
-
-      <a href="index.html" class="side-menu-link active">
-        <span>⌂</span> HOME
-      </a>
-
-      <a href="garage.html" class="side-menu-link">
-        <span>🏎</span> GARAGE
-      </a>
-
-      <a href="career.html" class="side-menu-link">
-        <span>🏁</span> CAREER
-      </a>
-
-      <a href="maps.html" class="side-menu-link">
-        <span>🗺</span> MAPS
-      </a>
-
-      <a href="free-drive.html" class="side-menu-link">
-        <span>🌄</span> FREE DRIVE
-      </a>
-
-      <a href="online.html" class="side-menu-link">
-        <span>🌐</span> ONLINE
-      </a>
-
-      <a href="profile.html" class="side-menu-link">
-        <span>♙</span> PROFILE
-      </a>
-
+      <a href="index.html" class="side-menu-link active"><span>⌂</span> HOME</a>
+      <a href="garage.html" class="side-menu-link"><span>🏎</span> GARAGE</a>
+      <a href="career.html" class="side-menu-link"><span>🏁</span> CAREER</a>
+      <a href="maps.html" class="side-menu-link"><span>🗺</span> MAPS</a>
+      <a href="free-drive.html" class="side-menu-link"><span>🌄</span> FREE DRIVE</a>
+      <a href="online.html" class="side-menu-link"><span>🌐</span> ONLINE</a>
+      <a href="profile.html" class="side-menu-link"><span>♙</span> PROFILE</a>
       <div class="menu-divider"></div>
-
-      <a href="settings.html" class="side-menu-link">
-        <span>⚙</span> SETTINGS
-      </a>
-
-      <a href="about.html" class="side-menu-link">
-        <span>ⓘ</span> ABOUT SUPERX
-      </a>
-
+      <a href="settings.html" class="side-menu-link"><span>⚙</span> SETTINGS</a>
+      <a href="about.html" class="side-menu-link"><span>ⓘ</span> ABOUT SUPERX</a>
     </nav>
 
     <div class="side-menu-audio">
-
       <button id="musicToggleBtn">
-        <span>♫</span>
-        <span>MUSIC</span>
-        <strong id="musicStatus">ON</strong>
+        <span>♫ MUSIC</span><strong id="musicStatus">ON</strong>
       </button>
-
       <button id="soundToggleBtn">
-        <span>🔊</span>
-        <span>SOUND</span>
-        <strong id="soundStatus">ON</strong>
+        <span>🔊 SOUND</span><strong id="soundStatus">ON</strong>
       </button>
-
     </div>
 
-    <div class="side-menu-footer">
-      SUPERX LEGEND · VERSION 1.0
-    </div>
-
+    <div class="side-menu-footer">SUPERX LEGEND · VERSION 1.0</div>
   </aside>
 
-
-  <!-- GLOBAL DIALOG -->
   <div id="globalDialog" class="global-dialog">
-
     <div class="dialog-panel">
-
-      <button id="dialogCloseBtn"
-              class="dialog-close-button">
-        ✕
-      </button>
-
+      <button id="dialogCloseBtn" class="dialog-close-button">✕</button>
       <div id="dialogIcon" class="dialog-icon">ⓘ</div>
-
       <h2 id="dialogTitle">SUPERX LEGEND</h2>
-
       <div id="dialogBody"></div>
-
     </div>
-
   </div>
 
-
-  <!-- TOAST NOTIFICATION -->
   <div id="toastMessage" class="toast-message"></div>
-
 
 </div>
 
-
-<!-- CORE GAME SCRIPTS -->
 <script src="js/config.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/navigation.js"></script>
@@ -408,7 +232,6 @@
 <script src="js/cars-data.js"></script>
 <script src="js/main.js"></script>
 
-<!-- FIX: LOADING SCREEN -->
 <script>
 window.addEventListener("load", function () {
   setTimeout(function () {
@@ -420,6 +243,3 @@ window.addEventListener("load", function () {
 
 </body>
 </html>
-<!-- ==================================================
- SUPERX LEGEND — FILE 01 END
-================================================== -->
