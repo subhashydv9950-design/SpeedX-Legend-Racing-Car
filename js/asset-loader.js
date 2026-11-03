@@ -1,9 +1,9 @@
 
 /* =========================================================
-   SUPERX LEGEND — FILE 50
+   SUPERX LEGEND — FILE 50 START
    FILE: js/asset-loader.js
-   PURPOSE: Central asset loading and progress tracking
-   ========================================================= */
+   PURPOSE: Advanced Asset Loading & Cache Management
+========================================================= */
 
 (function (window) {
   "use strict";
@@ -17,22 +17,20 @@
     active: 0,
     cache: new Map(),
     failures: [],
-    queue: [],
-    maxConcurrent: 4,
-    processing: false
+    maxConcurrent: 4
   };
 
-  function emit(name, detail) {
-    window.dispatchEvent(new CustomEvent(name, {
-      detail: detail || {}
-    }));
+  function emit(name, detail = {}) {
+    window.dispatchEvent(
+      new CustomEvent(name, { detail })
+    );
   }
 
   function reportProgress() {
     const completed = state.loaded + state.failed;
 
-    const progress = state.total > 0
-      ? Math.round((completed / state.total) * 100)
+    const progress = state.total
+      ? Math.min(100, Math.round(completed / state.total * 100))
       : 0;
 
     const data = {
@@ -49,330 +47,332 @@
     }
 
     emit("sx:asset-progress", data);
+
     return data;
   }
 
-  function getCached(url) {
-    return state.cache.has(url)
-      ? state.cache.get(url)
-      : null;
+  function recordFailure(url, type, error) {
+    state.failed++;
+
+    state.failures.push({
+      url,
+      type,
+      time: Date.now(),
+      message: error?.message || "Asset loading failed"
+    });
+
+    reportProgress();
+  }
+
+  function track(url, type, task) {
+    if (!url || typeof url !== "string") {
+      return Promise.reject(new Error("Invalid asset URL"));
+    }
+
+    if (state.cache.has(url)) {
+      return state.cache.get(url);
+    }
+
+    state.active++;
+
+    const promise = Promise.resolve()
+      .then(task)
+      .then(result => {
+        state.loaded++;
+        return result;
+      })
+      .catch(error => {
+        recordFailure(url, type, error);
+        throw error;
+      })
+      .finally(() => {
+        state.active = Math.max(0, state.active - 1);
+        reportProgress();
+      });
+
+    state.cache.set(url, promise);
+
+    return promise;
   }
 
   function loadImage(url) {
-    if (!url || typeof url !== "string") {
-      return Promise.reject(new Error("Invalid image URL"));
-    }
+    return track(url, "image", () => {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        let settled = false;
 
-    const cached = getCached(url);
+        function finish(error) {
+          if (settled) return;
+          settled = true;
 
-    if (cached) return cached;
+          image.onload = null;
+          image.onerror = null;
 
-    const promise = new Promise(function (resolve, reject) {
-      const image = new Image();
+          if (error) reject(error);
+          else resolve(image);
+        }
 
-      image.onload = function () {
-        state.loaded++;
-        reportProgress();
-        resolve(image);
-      };
+        image.onload = () => finish();
 
-      image.onerror = function () {
-        state.failed++;
+        image.onerror = () => {
+          finish(new Error("Image failed to load: " + url));
+        };
 
-        state.failures.push({
-          url,
-          type: "image",
-          time: Date.now()
-        });
+        image.decoding = "async";
+        image.src = url;
 
-        reportProgress();
-        reject(new Error("Image failed to load: " + url));
-      };
-
-      image.decoding = "async";
-      image.src = url;
-
-      if (image.complete && image.naturalWidth > 0) {
-        state.loaded++;
-        reportProgress();
-        resolve(image);
-      }
+        if (image.complete) {
+          if (image.naturalWidth > 0) {
+            finish();
+          } else {
+            finish(new Error("Invalid image: " + url));
+          }
+        }
+      });
     });
-
-    state.cache.set(url, promise);
-    return promise;
   }
 
   function loadAudio(url) {
-    if (!url || typeof url !== "string") {
-      return Promise.reject(new Error("Invalid audio URL"));
-    }
+    return track(url, "audio", () => {
+      return new Promise((resolve, reject) => {
+        const audio = new Audio();
+        let settled = false;
 
-    const cached = getCached(url);
+        function cleanup() {
+          audio.removeEventListener("canplaythrough", success);
+          audio.removeEventListener("error", failure);
+        }
 
-    if (cached) return cached;
+        function success() {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          resolve(audio);
+        }
 
-    const promise = new Promise(function (resolve, reject) {
-      const audio = new Audio();
+        function failure() {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error("Audio failed to load: " + url));
+        }
 
-      audio.preload = "auto";
+        audio.preload = "auto";
+        audio.addEventListener("canplaythrough", success);
+        audio.addEventListener("error", failure);
 
-      audio.addEventListener("canplaythrough", function () {
-        state.loaded++;
-        reportProgress();
-        resolve(audio);
-      }, { once: true });
+        audio.src = url;
+        audio.load();
 
-      audio.addEventListener("error", function () {
-        state.failed++;
-
-        state.failures.push({
-          url,
-          type: "audio",
-          time: Date.now()
-        });
-
-        reportProgress();
-        reject(new Error("Audio failed to load: " + url));
-      }, { once: true });
-
-      audio.src = url;
-      audio.load();
+        if (audio.readyState >= 4) {
+          success();
+        }
+      });
     });
-
-    state.cache.set(url, promise);
-    return promise;
   }
 
   function loadJSON(url) {
-    if (!url || typeof url !== "string") {
-      return Promise.reject(new Error("Invalid JSON URL"));
-    }
+    return track(url, "json", async () => {
+      const response = await fetch(url, {
+        method: "GET",
+        cache: "default"
+      });
 
-    const cached = getCached(url);
-
-    if (cached) return cached;
-
-    const promise = fetch(url, {
-      method: "GET",
-      cache: "default"
-    }).then(function (response) {
       if (!response.ok) {
         throw new Error("HTTP " + response.status);
       }
 
       return response.json();
-    }).then(function (data) {
-      state.loaded++;
-      reportProgress();
-      return data;
-    }).catch(function (error) {
-      state.failed++;
-
-      state.failures.push({
-        url,
-        type: "json",
-        time: Date.now(),
-        message: error.message
-      });
-
-      reportProgress();
-      throw error;
     });
-
-    state.cache.set(url, promise);
-    return promise;
   }
 
   function loadText(url) {
-    if (!url || typeof url !== "string") {
-      return Promise.reject(new Error("Invalid text URL"));
-    }
+    return track(url, "text", async () => {
+      const response = await fetch(url, {
+        method: "GET",
+        cache: "default"
+      });
 
-    const cached = getCached(url);
-
-    if (cached) return cached;
-
-    const promise = fetch(url).then(function (response) {
       if (!response.ok) {
         throw new Error("HTTP " + response.status);
       }
 
       return response.text();
-    }).then(function (text) {
-      state.loaded++;
-      reportProgress();
-      return text;
-    }).catch(function (error) {
-      state.failed++;
-
-      state.failures.push({
-        url,
-        type: "text",
-        time: Date.now(),
-        message: error.message
-      });
-
-      reportProgress();
-      throw error;
     });
-
-    state.cache.set(url, promise);
-    return promise;
   }
 
   function loadModel(url) {
-    if (!url || typeof url !== "string") {
-      return Promise.reject(new Error("Invalid model URL"));
-    }
+    return track(url, "model", () => {
+      if (
+        !window.THREE ||
+        !window.THREE.GLTFLoader
+      ) {
+        throw new Error("THREE.GLTFLoader is unavailable");
+      }
 
-    const cached = getCached(url);
+      return new Promise((resolve, reject) => {
+        const loader = new window.THREE.GLTFLoader();
 
-    if (cached) return cached;
+        loader.load(
+          url,
 
-    if (!window.THREE || !window.THREE.GLTFLoader) {
-      return Promise.reject(
-        new Error("THREE.GLTFLoader is not available")
-      );
-    }
+          gltf => resolve(gltf),
 
-    const promise = new Promise(function (resolve, reject) {
-      const loader = new window.THREE.GLTFLoader();
+          event => {
+            if (!event || !event.total) return;
 
-      loader.load(
-        url,
-        function (gltf) {
-          state.loaded++;
-          reportProgress();
-          resolve(gltf);
-        },
-        function (event) {
-          if (event && event.total) {
             emit("sx:model-loading", {
               url,
               progress: Math.round(
-                (event.loaded / event.total) * 100
+                event.loaded / event.total * 100
               )
             });
-          }
-        },
-        function (error) {
-          state.failed++;
+          },
 
-          state.failures.push({
-            url,
-            type: "model",
-            time: Date.now(),
-            message: error?.message || "Model load failed"
-          });
-
-          reportProgress();
-          reject(error);
-        }
-      );
+          error => reject(error || new Error("Model load failed"))
+        );
+      });
     });
-
-    state.cache.set(url, promise);
-    return promise;
   }
 
-  function loadAll(items) {
-    if (!Array.isArray(items)) {
-      return Promise.reject(
-        new Error("Assets must be an array")
-      );
+  function loadAsset(item) {
+    if (!item || !item.url) {
+      return Promise.reject(new Error("Invalid asset item"));
     }
+
+    switch (item.type) {
+      case "image":
+        return loadImage(item.url);
+
+      case "audio":
+        return loadAudio(item.url);
+
+      case "json":
+        return loadJSON(item.url);
+
+      case "text":
+        return loadText(item.url);
+
+      case "model":
+        return loadModel(item.url);
+
+      default:
+        return Promise.reject(
+          new Error("Unknown asset type: " + item.type)
+        );
+    }
+  }
+
+  async function loadAll(items, options = {}) {
+    if (!Array.isArray(items)) {
+      throw new Error("Assets must be an array");
+    }
+
+    const concurrency = Math.max(
+      1,
+      Math.min(
+        12,
+        Number(options.concurrency) || state.maxConcurrent
+      )
+    );
 
     state.total += items.length;
     reportProgress();
 
-    const results = [];
+    const results = new Array(items.length);
+    let nextIndex = 0;
 
-    return items.reduce(function (chain, item, index) {
-      return chain.then(function () {
-        let task;
+    async function worker() {
+      while (true) {
+        const index = nextIndex++;
 
-        switch (item.type) {
-          case "image":
-            task = loadImage(item.url);
-            break;
+        if (index >= items.length) return;
 
-          case "audio":
-            task = loadAudio(item.url);
-            break;
+        const item = items[index];
 
-          case "json":
-            task = loadJSON(item.url);
-            break;
+        try {
+          const result = await loadAsset(item);
 
-          case "text":
-            task = loadText(item.url);
-            break;
-
-          case "model":
-            task = loadModel(item.url);
-            break;
-
-          default:
-            task = Promise.reject(
-              new Error("Unknown asset type: " + item.type)
-            );
-        }
-
-        return task.then(function (result) {
           results[index] = {
             success: true,
             item,
             result
           };
-        }).catch(function (error) {
+        } catch (error) {
           results[index] = {
             success: false,
             item,
             error: error.message
           };
+        }
+
+        emit("sx:asset-item-complete", {
+          index,
+          item,
+          result: results[index]
         });
-      });
-    }, Promise.resolve()).then(function () {
-      emit("sx:assets-complete", {
-        results,
-        loaded: state.loaded,
-        failed: state.failed
-      });
-
-      return results;
-    });
-  }
-
-  function preloadImages(urls) {
-    if (!Array.isArray(urls)) {
-      return Promise.resolve([]);
+      }
     }
 
-    state.total += urls.length;
-    reportProgress();
+    const workers = Array.from(
+      { length: Math.min(concurrency, items.length) },
+      () => worker()
+    );
 
-    return Promise.allSettled(
-      urls.map(loadImage)
+    await Promise.all(workers);
+
+    emit("sx:assets-complete", {
+      results,
+      loaded: state.loaded,
+      failed: state.failed,
+      total: state.total
+    });
+
+    return results;
+  }
+
+  async function preloadImages(urls) {
+    if (!Array.isArray(urls)) return [];
+
+    return loadAll(
+      urls.map(url => ({
+        type: "image",
+        url
+      }))
     );
   }
 
   function clearCache(url) {
     if (url) {
       state.cache.delete(url);
-      return;
+      return true;
     }
 
     state.cache.clear();
+    return true;
   }
 
   function resetProgress() {
     state.loaded = 0;
     state.failed = 0;
     state.total = 0;
+    state.active = 0;
     state.failures = [];
 
     reportProgress();
+  }
+
+  function setConcurrency(value) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) return false;
+
+    state.maxConcurrent = Math.max(
+      1,
+      Math.min(12, Math.floor(number))
+    );
+
+    return state.maxConcurrent;
   }
 
   function getState() {
@@ -381,8 +381,14 @@
       failed: state.failed,
       total: state.total,
       active: state.active,
+      maxConcurrent: state.maxConcurrent,
       cachedAssets: state.cache.size,
-      failures: state.failures.slice()
+      progress: state.total
+        ? Math.round(
+            (state.loaded + state.failed) / state.total * 100
+          )
+        : 0,
+      failures: state.failures.map(item => ({ ...item }))
     };
   }
 
@@ -392,11 +398,13 @@
     loadJSON,
     loadText,
     loadModel,
+    loadAsset,
     loadAll,
     preloadImages,
     clearCache,
     resetProgress,
     reportProgress,
+    setConcurrency,
     getState
   };
 
@@ -404,5 +412,5 @@
 
 /* =========================================================
    SUPERX LEGEND — FILE 50 END
-   ========================================================= */
-  
+   FILE: js/asset-loader.js
+========================================================= */
