@@ -2,7 +2,7 @@
 /* =========================================================
    SUPERX LEGEND — FILE 47 START
    FILE: js/input-manager.js
-   PURPOSE: Unified keyboard, touch and gamepad input
+   PURPOSE: Unified Keyboard, Touch & Gamepad Input
 ========================================================= */
 
 (function () {
@@ -11,14 +11,19 @@
   const SX = window.SUPERX = window.SUPERX || {};
 
   const state = {
-    enabled: true,
+    enabled: false,
+    initialized: false,
     keyboard: {},
-    gamepad: {},
     touch: {},
-    gamepadConnected: false,
+    gamepad: {},
+    listeners: new Map(),
+    cleanups: [],
+    touchBindings: [],
     activeDevice: "keyboard",
+    gamepadConnected: false,
     sensitivity: 1,
-    listeners: new Map()
+    gamepadFrame: null,
+    deadzone: 0.22
   };
 
   const KEY_BINDINGS = {
@@ -26,7 +31,7 @@
     brake: ["ArrowDown", "KeyS"],
     left: ["ArrowLeft", "KeyA"],
     right: ["ArrowRight", "KeyD"],
-    handbrake: ["Space"],
+    handbrake: ["Space", "ShiftLeft", "ShiftRight"],
     reverse: ["KeyR"],
     horn: ["KeyH"],
     headlights: ["KeyL"],
@@ -36,41 +41,20 @@
     camera: ["KeyC"]
   };
 
-  function notify(action, pressed, source) {
-    const callbacks = state.listeners.get(action);
+  function listen(target, event, handler, options) {
+    if (!target) return;
 
-    if (!callbacks) return;
+    target.addEventListener(event, handler, options);
 
-    callbacks.forEach(callback => {
-      try {
-        callback({
-          action,
-          pressed,
-          source
-        });
-      } catch (error) {
-        console.error("SUPERX input callback error:", error);
-      }
+    state.cleanups.push(() => {
+      target.removeEventListener(event, handler, options);
     });
   }
 
-  function setInput(action, pressed, source) {
-    if (!state.enabled || !action) return;
-
-    const collection = source === "touch"
-      ? state.touch
-      : source === "gamepad"
-        ? state.gamepad
-        : state.keyboard;
-
-    const previous = Boolean(collection[action]);
-    collection[action] = Boolean(pressed);
-
-    state.activeDevice = source;
-
-    if (previous !== Boolean(pressed)) {
-      notify(action, Boolean(pressed), source);
-    }
+  function getCollection(source) {
+    if (source === "touch") return state.touch;
+    if (source === "gamepad") return state.gamepad;
+    return state.keyboard;
   }
 
   function isPressed(action) {
@@ -81,25 +65,72 @@
     );
   }
 
-  function handleKeyDown(event) {
-    if (!state.enabled) return;
+  function notify(action, pressed, source) {
+    const callbacks = state.listeners.get(action);
+    if (!callbacks) return;
 
-    if (
-      event.target &&
-      (
-        event.target.tagName === "INPUT" ||
-        event.target.tagName === "TEXTAREA" ||
-        event.target.isContentEditable
-      )
-    ) {
-      return;
+    callbacks.forEach(callback => {
+      try {
+        callback({
+          action,
+          pressed,
+          source,
+          active: isPressed(action)
+        });
+      } catch (error) {
+        console.error("SUPERX input callback:", error);
+      }
+    });
+  }
+
+  function setInput(action, pressed, source) {
+    if (!action) return;
+
+    const collection = getCollection(source);
+    const wasActive = isPressed(action);
+
+    collection[action] = Boolean(pressed);
+
+    const isActive = isPressed(action);
+
+    if (wasActive !== isActive) {
+      notify(action, isActive, source);
     }
 
+    if (pressed) {
+      state.activeDevice = source;
+    }
+  }
+
+  function releaseAll(source) {
+    const collection = getCollection(source);
+
+    Object.keys(collection).forEach(action => {
+      setInput(action, false, source);
+    });
+  }
+
+  function isTypingTarget(target) {
+    if (!target) return false;
+
+    const tag = target.tagName;
+
+    return (
+      tag === "INPUT" ||
+      tag === "TEXTAREA" ||
+      tag === "SELECT" ||
+      target.isContentEditable
+    );
+  }
+
+  function handleKeyDown(event) {
+    if (!state.enabled || isTypingTarget(event.target)) return;
+
     Object.entries(KEY_BINDINGS).forEach(([action, keys]) => {
-      if (keys.includes(event.code)) {
-        event.preventDefault();
-        setInput(action, true, "keyboard");
-      }
+      if (!keys.includes(event.code)) return;
+
+      event.preventDefault();
+      setInput(action, true, "keyboard");
     });
   }
 
@@ -111,41 +142,52 @@
     });
   }
 
-  function releaseAll(source) {
-    const collection = source === "touch"
-      ? state.touch
-      : source === "gamepad"
-        ? state.gamepad
-        : state.keyboard;
-
-    Object.keys(collection).forEach(action => {
-      if (collection[action]) {
-        setInput(action, false, source);
-      }
-    });
-  }
-
   function bindTouch(selector, action) {
     const element = document.querySelector(selector);
 
     if (!element) return false;
 
+    const pointers = new Set();
+
     const start = event => {
+      if (!state.enabled) return;
+
       event.preventDefault();
+
+      pointers.add(event.pointerId);
+
+      try {
+        element.setPointerCapture(event.pointerId);
+      } catch (_) {}
+
+      element.classList.add("active");
       setInput(action, true, "touch");
     };
 
     const end = event => {
-      event.preventDefault();
-      setInput(action, false, "touch");
+      if (event) event.preventDefault();
+
+      pointers.delete(event.pointerId);
+
+      if (!pointers.size) {
+        element.classList.remove("active");
+        setInput(action, false, "touch");
+      }
     };
 
-    element.addEventListener("pointerdown", start);
-    element.addEventListener("pointerup", end);
-    element.addEventListener("pointercancel", end);
-    element.addEventListener("lostpointercapture", end);
-
     element.style.touchAction = "none";
+
+    listen(element, "pointerdown", start, { passive: false });
+    listen(element, "pointerup", end, { passive: false });
+    listen(element, "pointercancel", end, { passive: false });
+    listen(element, "lostpointercapture", end);
+    listen(element, "contextmenu", event => event.preventDefault());
+
+    state.touchBindings.push({
+      element,
+      action,
+      pointers
+    });
 
     return true;
   }
@@ -169,7 +211,7 @@
     if (!state.enabled || !navigator.getGamepads) return;
 
     const pads = navigator.getGamepads();
-    const pad = Array.from(pads).find(Boolean);
+    const pad = Array.from(pads || []).find(Boolean);
 
     if (!pad) {
       if (state.gamepadConnected) {
@@ -180,46 +222,58 @@
     }
 
     state.gamepadConnected = true;
-    state.activeDevice = "gamepad";
 
-    const pressed = index => Boolean(
-      pad.buttons[index] && pad.buttons[index].pressed
+    const button = index => {
+      const item = pad.buttons[index];
+      return Boolean(item && item.pressed);
+    };
+
+    const axis = Number(pad.axes[0]) || 0;
+    const deadzone = state.deadzone;
+
+    setInput(
+      "accelerate",
+      button(7) || button(0),
+      "gamepad"
     );
 
-    setInput("accelerate", pressed(7) || pressed(0), "gamepad");
-    setInput("brake", pressed(6) || pressed(1), "gamepad");
-    setInput("handbrake", pressed(2), "gamepad");
-    setInput("horn", pressed(3), "gamepad");
+    setInput(
+      "brake",
+      button(6) || button(1),
+      "gamepad"
+    );
 
-    const axis = pad.axes[0] || 0;
-    const threshold = 0.25;
+    setInput("handbrake", button(2), "gamepad");
+    setInput("horn", button(3), "gamepad");
 
-    setInput("left", axis < -threshold, "gamepad");
-    setInput("right", axis > threshold, "gamepad");
+    setInput("left", axis < -deadzone, "gamepad");
+    setInput("right", axis > deadzone, "gamepad");
+
+    if (Math.abs(axis) > deadzone) {
+      state.activeDevice = "gamepad";
+    }
   }
 
-  let gamepadFrame = null;
-
   function gamepadLoop() {
-    if (!state.enabled) {
-      gamepadFrame = null;
-      return;
-    }
+    state.gamepadFrame = null;
+
+    if (!state.enabled) return;
 
     pollGamepad();
-    gamepadFrame = requestAnimationFrame(gamepadLoop);
+
+    state.gamepadFrame = requestAnimationFrame(gamepadLoop);
   }
 
   function startGamepadPolling() {
-    if (gamepadFrame !== null) return;
+    if (state.gamepadFrame !== null) return;
 
-    gamepadFrame = requestAnimationFrame(gamepadLoop);
+    state.gamepadFrame = requestAnimationFrame(gamepadLoop);
   }
 
   function stopGamepadPolling() {
-    if (gamepadFrame !== null) {
-      cancelAnimationFrame(gamepadFrame);
-      gamepadFrame = null;
+    if (state.gamepadFrame !== null) {
+      cancelAnimationFrame(state.gamepadFrame);
+      state.gamepadFrame = null;
     }
 
     releaseAll("gamepad");
@@ -237,20 +291,26 @@
     const callbacks = state.listeners.get(action);
     callbacks.add(callback);
 
-    return () => callbacks.delete(callback);
+    return () => {
+      callbacks.delete(callback);
+
+      if (!callbacks.size) {
+        state.listeners.delete(action);
+      }
+    };
   }
 
   function setSensitivity(value) {
-    const sensitivity = Number(value);
+    const number = Number(value);
 
-    if (!Number.isFinite(sensitivity)) return false;
+    if (!Number.isFinite(number)) return false;
 
     state.sensitivity = Math.max(
       0.2,
-      Math.min(2, sensitivity)
+      Math.min(2, number)
     );
 
-    return true;
+    return state.sensitivity;
   }
 
   function getState() {
@@ -258,6 +318,7 @@
 
     return {
       enabled: state.enabled,
+      initialized: state.initialized,
       activeDevice: state.activeDevice,
       gamepadConnected: state.gamepadConnected,
       sensitivity: state.sensitivity,
@@ -266,6 +327,7 @@
   }
 
   function enable() {
+    if (!state.initialized) return false;
     if (state.enabled) return true;
 
     state.enabled = true;
@@ -281,24 +343,70 @@
     releaseAll("touch");
     stopGamepadPolling();
 
+    state.touchBindings.forEach(binding => {
+      binding.element.classList.remove("active");
+    });
+
+    return true;
+  }
+
+  function destroy() {
+    disable();
+
+    state.cleanups.forEach(remove => remove());
+    state.cleanups = [];
+
+    state.touchBindings = [];
+
+    state.keyboard = {};
+    state.touch = {};
+    state.gamepad = {};
+
+    state.gamepadConnected = false;
+    state.initialized = false;
+
     return true;
   }
 
   function init(options = {}) {
+    if (state.initialized) {
+      destroy();
+    }
+
     if (options.sensitivity !== undefined) {
       setSensitivity(options.sensitivity);
     }
 
-    if (options.bindTouch !== false) {
-      bindDefaultTouchControls();
+    if (options.deadzone !== undefined) {
+      const value = Number(options.deadzone);
+
+      if (Number.isFinite(value)) {
+        state.deadzone = Math.max(
+          0.05,
+          Math.min(0.8, value)
+        );
+      }
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    window.addEventListener("blur", () => {
+    state.enabled = true;
+    state.initialized = true;
+
+    listen(window, "keydown", handleKeyDown);
+    listen(window, "keyup", handleKeyUp);
+
+    listen(window, "blur", () => {
       releaseAll("keyboard");
       releaseAll("touch");
     });
+
+    listen(window, "gamepaddisconnected", () => {
+      state.gamepadConnected = false;
+      releaseAll("gamepad");
+    });
+
+    if (options.bindTouch !== false) {
+      bindDefaultTouchControls();
+    }
 
     startGamepadPolling();
 
@@ -307,6 +415,7 @@
 
   SX.inputManager = {
     init,
+    destroy,
     on,
     bindTouch,
     isPressed,
@@ -314,8 +423,19 @@
     getState,
     enable,
     disable,
-    getBindings: () => ({ ...KEY_BINDINGS }),
-    isEnabled: () => state.enabled
+
+    getBindings() {
+      return Object.fromEntries(
+        Object.entries(KEY_BINDINGS).map(([key, value]) => [
+          key,
+          [...value]
+        ])
+      );
+    },
+
+    isEnabled() {
+      return state.enabled;
+    }
   };
 
 })();
@@ -324,4 +444,3 @@
    SUPERX LEGEND — FILE 47 END
    FILE: js/input-manager.js
 ========================================================= */
-      
