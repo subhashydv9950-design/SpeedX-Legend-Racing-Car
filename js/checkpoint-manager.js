@@ -2,8 +2,8 @@
 /* =========================================================
    SUPERX LEGEND — FILE 55
    FILE: js/checkpoint-manager.js
-   PURPOSE: Race checkpoints and lap tracking
-   ========================================================= */
+   START
+========================================================= */
 
 (function (window) {
   "use strict";
@@ -13,6 +13,7 @@
   const state = {
     initialized: false,
     active: false,
+    paused: false,
     checkpoints: [],
     currentCheckpoint: 0,
     completedCheckpoints: 0,
@@ -21,14 +22,15 @@
     lapTimes: [],
     lapStartedAt: 0,
     raceStartedAt: 0,
+    pausedAt: 0,
+    pausedDuration: 0,
     bestLap: null,
-    lastLap: null,
-    totalDistance: 0
+    lastLap: null
   };
 
-  function emit(name, detail) {
-    window.dispatchEvent(new CustomEvent(name, {
-      detail: detail || {}
+  function emit(name, detail = {}) {
+    window.dispatchEvent(new CustomEvent("sx:" + name, {
+      detail
     }));
   }
 
@@ -46,31 +48,43 @@
       x: Number(checkpoint.x) || 0,
       y: Number(checkpoint.y) || 0,
       z: Number(checkpoint.z) || 0,
-      radius: Math.max(
-        1,
-        Number(checkpoint.radius) || 8
-      )
+      radius: Math.max(1, Number(checkpoint.radius) || 8)
     };
   }
 
-  function setup(checkpoints, options) {
+  function setup(checkpoints, options = {}) {
     if (!Array.isArray(checkpoints) || !checkpoints.length) {
       return false;
     }
 
-    options = options || {};
+    const normalized = checkpoints.map(normalizeCheckpoint);
 
-    state.checkpoints = checkpoints.map(
-      normalizeCheckpoint
-    );
+    if (normalized.some(point =>
+      !Number.isFinite(point.x) ||
+      !Number.isFinite(point.y) ||
+      !Number.isFinite(point.z)
+    )) {
+      return false;
+    }
 
+    state.checkpoints = normalized;
     state.totalLaps = Math.max(
       1,
-      Math.floor(Number(options.totalLaps) || 1)
+      Math.min(100, Math.floor(Number(options.totalLaps) || 1))
     );
 
     state.initialized = true;
+    state.active = false;
+    state.paused = false;
+    state.currentCheckpoint = 0;
+    state.completedCheckpoints = 0;
+    state.currentLap = 1;
+    state.lapTimes = [];
+    state.bestLap = null;
+    state.lastLap = null;
+    state.pausedDuration = 0;
 
+    emit("checkpoints-ready", getState());
     return true;
   }
 
@@ -80,24 +94,28 @@
     }
 
     state.active = true;
+    state.paused = false;
     state.currentCheckpoint = 0;
     state.completedCheckpoints = 0;
     state.currentLap = 1;
     state.lapTimes = [];
     state.bestLap = null;
     state.lastLap = null;
-    state.totalDistance = 0;
+    state.pausedDuration = 0;
 
     state.raceStartedAt = Date.now();
-    state.lapStartedAt = Date.now();
+    state.lapStartedAt = state.raceStartedAt;
 
-    emit("sx:checkpoints-started", getState());
-
+    emit("checkpoints-started", getState());
     return true;
   }
 
+  function getElapsedSince(timestamp) {
+    return Math.max(0, Date.now() - timestamp);
+  }
+
   function updatePosition(position) {
-    if (!state.active || !position) return null;
+    if (!state.active || state.paused || !position) return null;
 
     const current = {
       x: Number(position.x) || 0,
@@ -105,9 +123,7 @@
       z: Number(position.z) || 0
     };
 
-    const checkpoint =
-      state.checkpoints[state.currentCheckpoint];
-
+    const checkpoint = getCurrentCheckpoint();
     if (!checkpoint) return null;
 
     const distance = distance3D(current, checkpoint);
@@ -124,14 +140,14 @@
   }
 
   function completeCurrentCheckpoint() {
-    if (!state.active) return null;
+    if (!state.active || state.paused) return null;
 
-    const checkpoint =
-      state.checkpoints[state.currentCheckpoint];
+    const checkpoint = getCurrentCheckpoint();
+    if (!checkpoint) return null;
 
     state.completedCheckpoints++;
 
-    emit("sx:checkpoint-reached", {
+    emit("checkpoint-reached", {
       checkpoint,
       index: state.currentCheckpoint + 1,
       total: state.checkpoints.length,
@@ -153,20 +169,16 @@
 
   function completeLap() {
     const now = Date.now();
-
-    const lapTime = now - state.lapStartedAt;
+    const lapTime = Math.max(0, now - state.lapStartedAt);
 
     state.lapTimes.push(lapTime);
     state.lastLap = lapTime;
 
-    if (
-      state.bestLap === null ||
-      lapTime < state.bestLap
-    ) {
+    if (state.bestLap === null || lapTime < state.bestLap) {
       state.bestLap = lapTime;
     }
 
-    emit("sx:lap-completed", {
+    emit("lap-completed", {
       lap: state.currentLap,
       lapTime,
       bestLap: state.bestLap,
@@ -175,16 +187,18 @@
 
     if (state.currentLap >= state.totalLaps) {
       state.active = false;
+      state.paused = false;
 
       const result = {
         finished: true,
-        totalTime: now - state.raceStartedAt,
+        totalTime: Math.max(0, now - state.raceStartedAt - state.pausedDuration),
         lapTimes: state.lapTimes.slice(),
-        bestLap: state.bestLap
+        bestLap: state.bestLap,
+        totalLaps: state.totalLaps,
+        completedCheckpoints: state.completedCheckpoints
       };
 
-      emit("sx:checkpoints-finished", result);
-
+      emit("checkpoints-finished", result);
       return result;
     }
 
@@ -192,7 +206,7 @@
     state.currentCheckpoint = 0;
     state.lapStartedAt = now;
 
-    emit("sx:new-lap-started", {
+    emit("new-lap-started", {
       lap: state.currentLap,
       totalLaps: state.totalLaps
     });
@@ -203,6 +217,31 @@
       currentLap: state.currentLap,
       totalLaps: state.totalLaps
     };
+  }
+
+  function pause() {
+    if (!state.active || state.paused) return false;
+
+    state.paused = true;
+    state.pausedAt = Date.now();
+
+    emit("checkpoints-paused", getState());
+    return true;
+  }
+
+  function resume() {
+    if (!state.active || !state.paused) return false;
+
+    const now = Date.now();
+    const pauseDuration = now - state.pausedAt;
+
+    state.pausedDuration += pauseDuration;
+    state.lapStartedAt += pauseDuration;
+    state.paused = false;
+    state.pausedAt = 0;
+
+    emit("checkpoints-resumed", getState());
+    return true;
   }
 
   function getCurrentCheckpoint() {
@@ -229,28 +268,38 @@
     return {
       initialized: state.initialized,
       active: state.active,
+      paused: state.paused,
       currentCheckpoint: state.currentCheckpoint,
+      nextCheckpoint: getCurrentCheckpoint(),
       totalCheckpoints: state.checkpoints.length,
       completedCheckpoints: state.completedCheckpoints,
       currentLap: state.currentLap,
       totalLaps: state.totalLaps,
       bestLap: state.bestLap,
       lastLap: state.lastLap,
+      elapsedTime: state.active
+        ? Math.max(0, Date.now() - state.raceStartedAt - state.pausedDuration -
+          (state.paused ? Date.now() - state.pausedAt : 0))
+        : 0,
       progress: getProgress()
     };
   }
 
   function reset() {
     state.active = false;
+    state.paused = false;
     state.currentCheckpoint = 0;
     state.completedCheckpoints = 0;
     state.currentLap = 1;
     state.lapTimes = [];
     state.bestLap = null;
     state.lastLap = null;
-    state.totalDistance = 0;
+    state.raceStartedAt = 0;
+    state.lapStartedAt = 0;
+    state.pausedAt = 0;
+    state.pausedDuration = 0;
 
-    emit("sx:checkpoints-reset", getState());
+    emit("checkpoints-reset", getState());
   }
 
   SX.checkpointManager = {
@@ -261,12 +310,14 @@
     getCurrentCheckpoint,
     getProgress,
     getState,
+    pause,
+    resume,
     reset
   };
 
 })(window);
 
 /* =========================================================
-   SUPERX LEGEND — FILE 55 END
-   ========================================================= */
-    
+   SUPERX LEGEND — FILE 55
+   END
+========================================================= */
