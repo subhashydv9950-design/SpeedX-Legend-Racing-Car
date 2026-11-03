@@ -1,8 +1,8 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 105
    FILE: js/vehicle-race-session-stats.js
-   MODULE: Race Session Statistics
+   MODULE: RACE SESSION STATISTICS
+   START: RACE SESSION STATISTICS
    ========================================================= */
 
 (function (window) {
@@ -10,18 +10,27 @@
 
   const SX = window.SUPERX = window.SUPERX || {};
 
-  const STORAGE_KEY = "superx_race_session_stats_v1";
+  const STORAGE_KEY = "superx_race_session_stats_v2";
   const MAX_SESSIONS = 100;
 
   function number(value, fallback = 0) {
-    const result = Number(value);
-    return Number.isFinite(result) ? result : fallback;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
   }
 
   function createId() {
-    return "session_" +
-      Date.now().toString(36) + "_" +
-      Math.random().toString(36).slice(2, 8);
+    return "session_" + Date.now().toString(36) +
+      "_" + Math.random().toString(36).slice(2, 9);
+  }
+
+  function emit(name, detail) {
+    window.dispatchEvent(new CustomEvent("sx:" + name, {
+      detail: detail || {}
+    }));
   }
 
   function createEmptySession() {
@@ -40,22 +49,48 @@
       bestLapSeconds: null,
       totalPenalties: 0,
       raceModes: {},
+      raceIds: [],
       completed: false
+    };
+  }
+
+  function normalizeSession(item) {
+    if (!item || typeof item !== "object") return null;
+
+    return {
+      id: String(item.id || createId()).slice(0, 100),
+      startedAt: item.startedAt || new Date().toISOString(),
+      endedAt: item.endedAt || null,
+      durationSeconds: Math.max(0, number(item.durationSeconds)),
+      racesPlayed: Math.max(0, Math.floor(number(item.racesPlayed))),
+      racesWon: Math.max(0, Math.floor(number(item.racesWon))),
+      racesLost: Math.max(0, Math.floor(number(item.racesLost))),
+      totalDistanceKm: Math.max(0, number(item.totalDistanceKm)),
+      totalCoins: Math.max(0, number(item.totalCoins)),
+      totalXP: Math.max(0, number(item.totalXP)),
+      bestPosition: item.bestPosition == null
+        ? null
+        : Math.max(1, Math.floor(number(item.bestPosition, 1))),
+      bestLapSeconds: item.bestLapSeconds == null
+        ? null
+        : Math.max(0, number(item.bestLapSeconds)),
+      totalPenalties: Math.max(0, number(item.totalPenalties)),
+      raceModes: item.raceModes && typeof item.raceModes === "object"
+        ? item.raceModes
+        : {},
+      raceIds: Array.isArray(item.raceIds)
+        ? item.raceIds.map(String).slice(-200)
+        : [],
+      completed: item.completed === true
     };
   }
 
   function loadHistory() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-
-      const parsed = JSON.parse(raw);
-
-      if (!Array.isArray(parsed)) return [];
-
-      return parsed.slice(0, MAX_SESSIONS)
-        .filter(item => item && typeof item === "object");
-
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      return Array.isArray(parsed)
+        ? parsed.map(normalizeSession).filter(Boolean).slice(0, MAX_SESSIONS)
+        : [];
     } catch (error) {
       console.warn("[SUPERX SessionStats] Load failed:", error);
       return [];
@@ -69,10 +104,7 @@
 
   function save() {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(history.slice(0, MAX_SESSIONS))
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, MAX_SESSIONS)));
       return true;
     } catch (error) {
       console.warn("[SUPERX SessionStats] Save failed:", error);
@@ -89,20 +121,18 @@
     timerStartedAt = Date.now();
     accumulatedSeconds = 0;
 
+    emit("race-session-started", getCurrentSession());
     return getCurrentSession();
   }
 
   function getElapsedSeconds() {
     if (!currentSession) return 0;
 
-    const activeSeconds = timerStartedAt
+    const active = timerStartedAt
       ? (Date.now() - timerStartedAt) / 1000
       : 0;
 
-    return Math.max(
-      0,
-      Math.floor(accumulatedSeconds + activeSeconds)
-    );
+    return Math.max(0, Math.floor(accumulatedSeconds + active));
   }
 
   function pauseSession() {
@@ -111,6 +141,7 @@
     accumulatedSeconds += (Date.now() - timerStartedAt) / 1000;
     timerStartedAt = 0;
 
+    emit("race-session-paused", getCurrentSession());
     return true;
   }
 
@@ -119,6 +150,7 @@
     if (timerStartedAt) return true;
 
     timerStartedAt = Date.now();
+    emit("race-session-resumed", getCurrentSession());
     return true;
   }
 
@@ -126,38 +158,29 @@
     if (!currentSession) startSession();
 
     const session = currentSession;
+    const raceId = String(data.raceId || "").slice(0, 100);
+
+    if (raceId && session.raceIds.includes(raceId)) {
+      return {
+        success: false,
+        message: "Race already recorded in this session.",
+        session: getCurrentSession()
+      };
+    }
+
+    if (raceId) session.raceIds.push(raceId);
 
     session.racesPlayed += 1;
 
-    const position = Math.max(
-      0,
-      Math.floor(number(data.position, 0))
-    );
-
+    const position = Math.max(0, Math.floor(number(data.position)));
     const won = data.won === true || position === 1;
 
-    if (won) {
-      session.racesWon += 1;
-    } else {
-      session.racesLost += 1;
-    }
+    if (won) session.racesWon += 1;
+    else session.racesLost += 1;
 
-    const distance = Math.max(
-      0,
-      number(data.distanceKm, 0)
-    );
-
-    session.totalDistanceKm += distance;
-
-    session.totalCoins += Math.max(
-      0,
-      number(data.coins, 0)
-    );
-
-    session.totalXP += Math.max(
-      0,
-      number(data.xp, 0)
-    );
+    session.totalDistanceKm += Math.max(0, number(data.distanceKm));
+    session.totalCoins += Math.max(0, number(data.coins));
+    session.totalXP += Math.max(0, number(data.xp));
 
     if (position > 0) {
       session.bestPosition = session.bestPosition === null
@@ -165,60 +188,65 @@
         : Math.min(session.bestPosition, position);
     }
 
-    const lap = number(data.bestLapSeconds, 0);
-
+    const lap = number(data.bestLapSeconds);
     if (lap > 0) {
-      session.bestLapSeconds =
-        session.bestLapSeconds === null
-          ? lap
-          : Math.min(session.bestLapSeconds, lap);
+      session.bestLapSeconds = session.bestLapSeconds === null
+        ? lap
+        : Math.min(session.bestLapSeconds, lap);
     }
 
-    session.totalPenalties += Math.max(
-      0,
-      number(data.penalties, 0)
-    );
+    session.totalPenalties += Math.max(0, number(data.penalties));
 
     const mode = String(data.mode || "unknown").slice(0, 40);
+    session.raceModes[mode] = (number(session.raceModes[mode]) || 0) + 1;
 
-    session.raceModes[mode] =
-      (session.raceModes[mode] || 0) + 1;
+    const snapshot = getCurrentSession();
+    emit("race-session-race-recorded", {
+      raceId,
+      session: snapshot
+    });
 
-    return getCurrentSession();
+    return {
+      success: true,
+      session: snapshot
+    };
   }
 
   function finishSession() {
     if (!currentSession) return null;
 
     if (timerStartedAt) {
-      accumulatedSeconds +=
-        (Date.now() - timerStartedAt) / 1000;
+      accumulatedSeconds += (Date.now() - timerStartedAt) / 1000;
     }
 
     timerStartedAt = 0;
-
-    currentSession.durationSeconds =
-      Math.floor(accumulatedSeconds);
-
+    currentSession.durationSeconds = Math.floor(accumulatedSeconds);
     currentSession.endedAt = new Date().toISOString();
     currentSession.completed = true;
 
-    history.unshift(currentSession);
-    history = history.slice(0, MAX_SESSIONS);
+    const finished = clone(currentSession);
 
-    const finished = JSON.parse(
-      JSON.stringify(currentSession)
-    );
+    history.unshift(normalizeSession(finished));
+    history = history.slice(0, MAX_SESSIONS);
 
     currentSession = null;
     accumulatedSeconds = 0;
 
-    save();
+    const saved = save();
 
-    window.dispatchEvent(new CustomEvent(
-      "sx:race-session-finished",
-      { detail: finished }
-    ));
+    if (SX.vehicleRaceSessionAchievements &&
+        typeof SX.vehicleRaceSessionAchievements.recordSession === "function") {
+      try {
+        SX.vehicleRaceSessionAchievements.recordSession(finished);
+      } catch (error) {
+        console.warn("[SUPERX SessionStats] Achievement update failed:", error);
+      }
+    }
+
+    emit("race-session-finished", {
+      session: finished,
+      saved
+    });
 
     return finished;
   }
@@ -226,91 +254,86 @@
   function getCurrentSession() {
     if (!currentSession) return null;
 
-    const copy = JSON.parse(
-      JSON.stringify(currentSession)
-    );
-
+    const copy = clone(currentSession);
     copy.durationSeconds = getElapsedSeconds();
-
     return copy;
   }
 
   function getHistory() {
-    return history.map(item =>
-      JSON.parse(JSON.stringify(item))
-    );
+    return clone(history);
   }
 
   function getSummary() {
-    const total = history.reduce((summary, item) => {
-      summary.sessions += 1;
-      summary.races += number(item.racesPlayed);
-      summary.wins += number(item.racesWon);
-      summary.distanceKm += number(item.totalDistanceKm);
-      summary.coins += number(item.totalCoins);
-      summary.xp += number(item.totalXP);
-      summary.durationSeconds += number(item.durationSeconds);
-      return summary;
+    const summary = history.reduce((total, item) => {
+      total.sessions += 1;
+      total.races += number(item.racesPlayed);
+      total.wins += number(item.racesWon);
+      total.distanceKm += number(item.totalDistanceKm);
+      total.coins += number(item.totalCoins);
+      total.xp += number(item.totalXP);
+      total.durationSeconds += number(item.durationSeconds);
+      total.penalties += number(item.totalPenalties);
+      return total;
     }, {
       sessions: 0,
       races: 0,
       wins: 0,
+      losses: 0,
       distanceKm: 0,
       coins: 0,
       xp: 0,
-      durationSeconds: 0
+      durationSeconds: 0,
+      penalties: 0
     });
 
-    total.losses = Math.max(0, total.races - total.wins);
-
-    total.winRate = total.races
-      ? Number((total.wins / total.races * 100).toFixed(1))
+    summary.losses = Math.max(0, summary.races - summary.wins);
+    summary.winRate = summary.races
+      ? Number((summary.wins / summary.races * 100).toFixed(1))
       : 0;
 
-    total.distanceKm = Number(
-      total.distanceKm.toFixed(2)
-    );
+    summary.distanceKm = Number(summary.distanceKm.toFixed(2));
+    summary.coins = Math.floor(summary.coins);
+    summary.xp = Math.floor(summary.xp);
 
-    return total;
+    return summary;
   }
 
   function getBestSession() {
     if (!history.length) return null;
 
-    const best = history.reduce((currentBest, item) => {
-      if (!currentBest) return item;
-
-      return number(item.racesWon) >
-        number(currentBest.racesWon)
-        ? item
-        : currentBest;
+    const best = history.reduce((a, b) => {
+      if (!a) return b;
+      if (number(b.racesWon) !== number(a.racesWon)) {
+        return number(b.racesWon) > number(a.racesWon) ? b : a;
+      }
+      return number(b.totalDistanceKm) > number(a.totalDistanceKm) ? b : a;
     }, null);
 
-    return best
-      ? JSON.parse(JSON.stringify(best))
-      : null;
+    return best ? clone(best) : null;
   }
 
   function deleteSession(id) {
-    const initialLength = history.length;
+    const before = history.length;
+    history = history.filter(item => item.id !== String(id));
 
-    history = history.filter(item => item.id !== id);
-
-    if (history.length === initialLength) return false;
+    if (history.length === before) return false;
 
     save();
+    emit("race-session-deleted", { id: String(id) });
     return true;
   }
 
   function clearHistory() {
     history = [];
-    save();
-    return true;
+    const saved = save();
+    emit("race-session-history-cleared", { saved });
+    return saved;
   }
 
   function getState() {
     return {
       active: Boolean(currentSession),
+      paused: Boolean(currentSession && !timerStartedAt),
       current: getCurrentSession(),
       summary: getSummary(),
       historyCount: history.length
@@ -323,17 +346,25 @@
     resumeSession,
     recordRace,
     finishSession,
+    getElapsedSeconds,
     getCurrentSession,
     getHistory,
     getSummary,
     getBestSession,
     deleteSession,
     clearHistory,
-    getState
+    getState,
+    reload: () => {
+      history = loadHistory();
+      return getHistory();
+    }
   };
 
   console.info("[SUPERX] Race Session Statistics loaded.");
 
 })(window);
 
-/* ======================= END FILE 105 ======================= */
+/* =========================================================
+   END: RACE SESSION STATISTICS — FILE 105
+   ========================================================= */
+
