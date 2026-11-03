@@ -2,7 +2,7 @@
 /* =========================================================
    SUPERX LEGEND — FILE 108
    FILE: js/vehicle-race-session-insights.js
-   MODULE: Race Session Insights
+   MODULE: Advanced Race Session Insights
    ========================================================= */
 
 (function (window) {
@@ -11,6 +11,27 @@
   const SX = window.SUPERX = window.SUPERX || {};
 
   const HISTORY_LIMIT = 20;
+  const MAX_LIMIT = 100;
+
+  function number(value) {
+    const result = Number(value);
+    return Number.isFinite(result) ? result : 0;
+  }
+
+  function round(value, decimals = 2) {
+    const factor = Math.pow(10, decimals);
+    return Math.round(number(value) * factor) / factor;
+  }
+
+  function average(values) {
+    return values.length
+      ? values.reduce((sum, value) => sum + number(value), 0) / values.length
+      : 0;
+  }
+
+  function safeArray(value) {
+    return Array.isArray(value) ? value : [];
+  }
 
   function getHistory() {
     const manager = SX.vehicleRaceSessionHistory;
@@ -20,77 +41,74 @@
     }
 
     try {
-      const records = manager.getAll();
-      return Array.isArray(records) ? records : [];
+      return safeArray(manager.getAll()).filter(
+        item => item && typeof item === "object"
+      );
     } catch (error) {
       console.warn("[SUPERX Insights] History unavailable:", error);
       return [];
     }
   }
 
-  function num(value) {
-    const result = Number(value);
-    return Number.isFinite(result) ? result : 0;
-  }
-
-  function average(values) {
-    if (!values.length) return 0;
-
-    return values.reduce((sum, value) => sum + value, 0) /
-      values.length;
-  }
-
-  function round(value, decimals = 2) {
-    return Number(value.toFixed(decimals));
-  }
-
   function getRecentSessions(limit = HISTORY_LIMIT) {
     const safeLimit = Math.max(
       1,
-      Math.min(100, Math.floor(num(limit) || HISTORY_LIMIT))
+      Math.min(MAX_LIMIT, Math.floor(number(limit) || HISTORY_LIMIT))
     );
 
     return getHistory().slice(0, safeLimit);
   }
 
+  function getTotals(sessions) {
+    return sessions.reduce((totals, item) => {
+      totals.racesPlayed += Math.max(0, number(item.racesPlayed));
+      totals.racesWon += Math.max(0, number(item.racesWon));
+      totals.racesLost += Math.max(0, number(item.racesLost));
+      totals.distanceKm += Math.max(0, number(item.totalDistanceKm));
+      totals.durationSeconds += Math.max(0, number(item.durationSeconds));
+      totals.coins += Math.max(0, number(item.totalCoins));
+      totals.xp += Math.max(0, number(item.totalXP));
+      totals.penalties += Math.max(0, number(item.totalPenalties));
+      return totals;
+    }, {
+      racesPlayed: 0,
+      racesWon: 0,
+      racesLost: 0,
+      distanceKm: 0,
+      durationSeconds: 0,
+      coins: 0,
+      xp: 0,
+      penalties: 0
+    });
+  }
+
   function getPerformanceTrend() {
-    const sessions = getRecentSessions(HISTORY_LIMIT)
-      .slice()
-      .reverse();
+    const sessions = getRecentSessions(HISTORY_LIMIT).slice().reverse();
 
     if (sessions.length < 2) {
       return {
         direction: "insufficient-data",
         change: 0,
+        earlierWinRate: 0,
+        recentWinRate: 0,
         message: "More completed sessions are needed."
       };
     }
 
     const midpoint = Math.floor(sessions.length / 2);
-
     const earlier = sessions.slice(0, midpoint);
     const recent = sessions.slice(midpoint);
 
-    const earlierRates = earlier.map(item => {
-      const played = num(item.racesPlayed);
-
-      return played
-        ? num(item.racesWon) / played * 100
+    function rate(group) {
+      const totals = getTotals(group);
+      return totals.racesPlayed
+        ? totals.racesWon / totals.racesPlayed * 100
         : 0;
-    });
+    }
 
-    const recentRates = recent.map(item => {
-      const played = num(item.racesPlayed);
-
-      return played
-        ? num(item.racesWon) / played * 100
-        : 0;
-    });
-
-    const oldAverage = average(earlierRates);
-    const newAverage = average(recentRates);
-
-    const change = round(newAverage - oldAverage);
+    const earlierRate = rate(earlier);
+    const recentRate = rate(recent);
+    const change = round(recentRate - earlierRate);
 
     return {
       direction: change > 1
@@ -98,8 +116,8 @@
         : change < -1
           ? "declining"
           : "stable",
-      earlierWinRate: round(oldAverage),
-      recentWinRate: round(newAverage),
+      earlierWinRate: round(earlierRate),
+      recentWinRate: round(recentRate),
       change,
       message: change > 1
         ? "Your recent win rate is improving."
@@ -110,126 +128,97 @@
   }
 
   function getModeStatistics() {
-    const sessions = getHistory();
     const modes = {};
 
-    sessions.forEach(session => {
-      const raceModes = session.raceModes || {};
+    getHistory().forEach(session => {
+      const raceModes = session.raceModes;
 
-      if (
-        typeof raceModes !== "object" ||
-        Array.isArray(raceModes)
-      ) {
+      if (!raceModes || typeof raceModes !== "object" ||
+          Array.isArray(raceModes)) {
         return;
       }
 
-      Object.keys(raceModes).forEach(mode => {
-        const count = Math.max(0, num(raceModes[mode]));
-
-        modes[mode] = (modes[mode] || 0) + count;
+      Object.entries(raceModes).forEach(([mode, count]) => {
+        const safeCount = Math.max(0, number(count));
+        modes[mode] = (modes[mode] || 0) + safeCount;
       });
     });
 
-    return Object.keys(modes)
-      .map(mode => ({
-        mode,
-        races: modes[mode]
-      }))
+    return Object.entries(modes)
+      .map(([mode, races]) => ({ mode, races }))
       .sort((a, b) => b.races - a.races);
   }
 
   function getPersonalRecords() {
     const sessions = getHistory();
 
-    if (!sessions.length) {
-      return {
-        bestWins: 0,
-        longestDistanceKm: 0,
-        longestDurationSeconds: 0,
-        mostCoins: 0,
-        mostXP: 0,
-        bestLapSeconds: null
-      };
-    }
-
-    return sessions.reduce((best, item) => {
-      best.bestWins = Math.max(
-        best.bestWins,
-        num(item.racesWon)
-      );
-
-      best.longestDistanceKm = Math.max(
-        best.longestDistanceKm,
-        num(item.totalDistanceKm)
-      );
-
-      best.longestDurationSeconds = Math.max(
-        best.longestDurationSeconds,
-        num(item.durationSeconds)
-      );
-
-      best.mostCoins = Math.max(
-        best.mostCoins,
-        num(item.totalCoins)
-      );
-
-      best.mostXP = Math.max(
-        best.mostXP,
-        num(item.totalXP)
-      );
-
-      const lap = num(item.bestLapSeconds);
-
-      if (lap > 0) {
-        best.bestLapSeconds =
-          best.bestLapSeconds === null
-            ? lap
-            : Math.min(best.bestLapSeconds, lap);
-      }
-
-      return best;
-    }, {
+    const records = {
       bestWins: 0,
       longestDistanceKm: 0,
       longestDurationSeconds: 0,
       mostCoins: 0,
       mostXP: 0,
-      bestLapSeconds: null
+      bestLapSeconds: null,
+      mostRaces: 0
+    };
+
+    sessions.forEach(item => {
+      records.bestWins = Math.max(
+        records.bestWins,
+        number(item.racesWon)
+      );
+
+      records.longestDistanceKm = Math.max(
+        records.longestDistanceKm,
+        number(item.totalDistanceKm)
+      );
+
+      records.longestDurationSeconds = Math.max(
+        records.longestDurationSeconds,
+        number(item.durationSeconds)
+      );
+
+      records.mostCoins = Math.max(
+        records.mostCoins,
+        number(item.totalCoins)
+      );
+
+      records.mostXP = Math.max(
+        records.mostXP,
+        number(item.totalXP)
+      );
+
+      records.mostRaces = Math.max(
+        records.mostRaces,
+        number(item.racesPlayed)
+      );
+
+      const lap = number(item.bestLapSeconds);
+
+      if (lap > 0) {
+        records.bestLapSeconds = records.bestLapSeconds === null
+          ? lap
+          : Math.min(records.bestLapSeconds, lap);
+      }
     });
+
+    return records;
   }
 
   function getImprovementTips() {
     const sessions = getRecentSessions(10);
+    const totals = getTotals(sessions);
 
     if (!sessions.length) {
-      return [
-        "Complete your first race session to unlock insights."
-      ];
+      return ["Complete your first race session to unlock insights."];
     }
 
-    const races = sessions.reduce(
-      (sum, item) => sum + num(item.racesPlayed),
-      0
-    );
-
-    const wins = sessions.reduce(
-      (sum, item) => sum + num(item.racesWon),
-      0
-    );
-
-    const penalties = sessions.reduce(
-      (sum, item) => sum + num(item.totalPenalties),
-      0
-    );
+    if (!totals.racesPlayed) {
+      return ["Complete a race to begin tracking performance."];
+    }
 
     const tips = [];
-
-    if (!races) {
-      tips.push("Complete a race to begin tracking performance.");
-      return tips;
-    }
-
-    const winRate = wins / races * 100;
+    const winRate = totals.racesWon / totals.racesPlayed * 100;
 
     if (winRate < 30) {
       tips.push("Practice cornering and braking to improve race results.");
@@ -239,55 +228,74 @@
       tips.push("Great progress. Try more challenging race modes.");
     }
 
-    if (penalties > 0) {
+    if (totals.penalties > 0) {
       tips.push("Focus on clean driving to reduce race penalties.");
     }
 
-    const distance = sessions.reduce(
-      (sum, item) => sum + num(item.totalDistanceKm),
-      0
-    );
-
-    if (distance < 10) {
+    if (totals.distanceKm < 10) {
       tips.push("Explore longer routes to build driving experience.");
+    }
+
+    if (totals.racesPlayed >= 5 && totals.racesWon === 0) {
+      tips.push("Try a lower difficulty while learning each track.");
     }
 
     return tips;
   }
 
+  function getSessionComparison(first, second) {
+    if (!first || !second) return null;
+
+    const fields = [
+      "racesPlayed",
+      "racesWon",
+      "totalDistanceKm",
+      "durationSeconds",
+      "totalCoins",
+      "totalXP",
+      "totalPenalties"
+    ];
+
+    const comparison = {};
+
+    fields.forEach(field => {
+      const a = number(first[field]);
+      const b = number(second[field]);
+
+      comparison[field] = {
+        first: a,
+        second: b,
+        difference: round(b - a)
+      };
+    });
+
+    return comparison;
+  }
+
   function getInsights() {
     const sessions = getHistory();
-
-    const totalRaces = sessions.reduce(
-      (sum, item) => sum + num(item.racesPlayed),
-      0
-    );
-
-    const totalWins = sessions.reduce(
-      (sum, item) => sum + num(item.racesWon),
-      0
-    );
-
-    const totalDistance = sessions.reduce(
-      (sum, item) => sum + num(item.totalDistanceKm),
-      0
-    );
-
-    const totalTime = sessions.reduce(
-      (sum, item) => sum + num(item.durationSeconds),
-      0
-    );
+    const totals = getTotals(sessions);
 
     return {
       generatedAt: new Date().toISOString(),
       sessionsAnalyzed: sessions.length,
-      races: totalRaces,
-      wins: totalWins,
-      winRate: totalRaces
-        ? round(totalWins / totalRaces * 100)
+      races: totals.racesPlayed,
+      wins: totals.racesWon,
+      losses: totals.racesLost,
+      winRate: totals.racesPlayed
+        ? round(totals.racesWon / totals.racesPlayed * 100)
         : 0,
-      distanceKm: round(totalDistance),
-      drivingHours: round(totalTime / 3600),
+      distanceKm: round(totals.distanceKm),
+      drivingHours: round(totals.durationSeconds / 3600),
+      coinsEarned: totals.coins,
+      xpEarned: totals.xp,
+      penalties: totals.penalties,
+      averageRaceDistanceKm: totals.racesPlayed
+        ? round(totals.distanceKm / totals.racesPlayed)
+        : 0,
+      averageSessionMinutes: sessions.length
+        ? round(totals.durationSeconds / sessions.length / 60)
+        : 0,
       trend: getPerformanceTrend(),
       favoriteModes: getModeStatistics(),
       personalRecords: getPersonalRecords(),
@@ -301,12 +309,13 @@
     getModeStatistics,
     getPersonalRecords,
     getImprovementTips,
-    getInsights
+    getSessionComparison,
+    getInsights,
+    getTotals
   };
 
-  console.info("[SUPERX] Race Session Insights loaded.");
+  console.info("[SUPERX] Advanced Race Session Insights loaded.");
 
 })(window);
 
 /* ======================= END FILE 108 ======================= */
-  
