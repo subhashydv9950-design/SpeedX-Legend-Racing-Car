@@ -1,9 +1,7 @@
-
 /* =========================================================
-   SUPERX LEGEND — FILE 62
+   SUPERX LEGEND — FILE 62 START
    FILE: js/vehicle-spawner.js
-   PURPOSE: Spawn, load and manage 3D vehicles
-   START
+   PURPOSE: 3D Vehicle Spawn, Model Loading & Management
 ========================================================= */
 
 (function (window) {
@@ -19,9 +17,14 @@
     initialized: false,
 
     init(options = {}) {
-      this.scene = options.scene || null;
+      if (options.scene) this.scene = options.scene;
+      if (options.loader) this.loader = options.loader;
 
-      if (window.THREE && window.THREE.GLTFLoader) {
+      if (
+        !this.loader &&
+        window.THREE &&
+        window.THREE.GLTFLoader
+      ) {
         this.loader = new window.THREE.GLTFLoader();
       }
 
@@ -35,94 +38,274 @@
     },
 
     setScene(scene) {
-      if (!scene) return false;
+      if (!scene || typeof scene.add !== "function") {
+        return false;
+      }
 
       this.scene = scene;
       return true;
     },
 
-    createFallbackVehicle(options = {}) {
-      if (!window.THREE) {
-        return null;
+    setLoader(loader) {
+      if (!loader || typeof loader.load !== "function") {
+        return false;
       }
+
+      this.loader = loader;
+      return true;
+    },
+
+    createMaterial(color, metalness, roughness) {
+      return new window.THREE.MeshStandardMaterial({
+        color,
+        metalness,
+        roughness
+      });
+    },
+
+    createFallbackVehicle(options = {}) {
+      if (!window.THREE) return null;
 
       const THREE = window.THREE;
       const group = new THREE.Group();
 
       const color = options.color || 0x8b5cf6;
+      const accent = options.accent || 0x171717;
 
-      const bodyMaterial = new THREE.MeshStandardMaterial({
+      const bodyMaterial = this.createMaterial(
         color,
-        metalness: 0.75,
-        roughness: 0.3
-      });
+        0.78,
+        0.27
+      );
 
-      const glassMaterial = new THREE.MeshStandardMaterial({
-        color: 0x182638,
-        metalness: 0.5,
-        roughness: 0.2
-      });
+      const glassMaterial = this.createMaterial(
+        0x152536,
+        0.65,
+        0.18
+      );
 
-      const wheelMaterial = new THREE.MeshStandardMaterial({
-        color: 0x171717,
-        roughness: 0.85
-      });
+      const wheelMaterial = this.createMaterial(
+        0x111111,
+        0.12,
+        0.86
+      );
+
+      const rimMaterial = this.createMaterial(
+        accent,
+        0.85,
+        0.22
+      );
 
       const body = new THREE.Mesh(
-        new THREE.BoxGeometry(2, 0.55, 4.2),
+        new THREE.BoxGeometry(2.05, 0.52, 4.25),
         bodyMaterial
       );
 
-      body.position.y = 0.75;
+      body.position.y = 0.76;
       body.castShadow = true;
       body.receiveShadow = true;
-
+      body.userData.vehiclePart = "body";
       group.add(body);
 
+      const hood = new THREE.Mesh(
+        new THREE.BoxGeometry(1.92, 0.12, 1.25),
+        bodyMaterial
+      );
+
+      hood.position.set(0, 1.02, 1.15);
+      hood.castShadow = true;
+      group.add(hood);
+
       const cabin = new THREE.Mesh(
-        new THREE.BoxGeometry(1.55, 0.65, 1.9),
+        new THREE.BoxGeometry(1.52, 0.68, 1.85),
         glassMaterial
       );
 
-      cabin.position.set(0, 1.3, -0.25);
+      cabin.position.set(0, 1.32, -0.32);
       cabin.castShadow = true;
-
       group.add(cabin);
 
+      const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(1.48, 0.09, 1.72),
+        bodyMaterial
+      );
+
+      roof.position.set(0, 1.69, -0.32);
+      group.add(roof);
+
+      const bumperFront = new THREE.Mesh(
+        new THREE.BoxGeometry(2.08, 0.18, 0.2),
+        rimMaterial
+      );
+
+      bumperFront.position.set(0, 0.55, 2.12);
+      group.add(bumperFront);
+
+      const bumperRear = new THREE.Mesh(
+        new THREE.BoxGeometry(2.08, 0.18, 0.2),
+        rimMaterial
+      );
+
+      bumperRear.position.set(0, 0.55, -2.12);
+      group.add(bumperRear);
+
       const wheelPositions = [
-        [-1.05, 0.42, 1.3],
-        [1.05, 0.42, 1.3],
-        [-1.05, 0.42, -1.3],
-        [1.05, 0.42, -1.3]
+        [-1.05, 0.43, 1.32],
+        [1.05, 0.43, 1.32],
+        [-1.05, 0.43, -1.32],
+        [1.05, 0.43, -1.32]
       ];
 
-      wheelPositions.forEach(position => {
-        const wheel = new THREE.Mesh(
+      const wheels = [];
+
+      wheelPositions.forEach((position, index) => {
+        const wheelGroup = new THREE.Group();
+
+        const tire = new THREE.Mesh(
           new THREE.CylinderGeometry(
             0.43,
             0.43,
-            0.28,
-            20
+            0.3,
+            28
           ),
           wheelMaterial
         );
 
-        wheel.rotation.z = Math.PI / 2;
+        tire.rotation.z = Math.PI / 2;
+        tire.castShadow = true;
+        wheelGroup.add(tire);
 
-        wheel.position.set(
+        const rim = new THREE.Mesh(
+          new THREE.CylinderGeometry(
+            0.23,
+            0.23,
+            0.315,
+            20
+          ),
+          rimMaterial
+        );
+
+        rim.rotation.z = Math.PI / 2;
+        wheelGroup.add(rim);
+
+        wheelGroup.position.set(
           position[0],
           position[1],
           position[2]
         );
 
-        wheel.castShadow = true;
+        wheelGroup.userData.vehiclePart = "wheel";
+        wheelGroup.userData.front = index < 2;
+        wheelGroup.userData.side = index % 2 === 0
+          ? "left"
+          : "right";
 
-        group.add(wheel);
+        group.add(wheelGroup);
+        wheels.push(wheelGroup);
+      });
+
+      const headlightMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xddeeff,
+        emissiveIntensity: 0.8
+      });
+
+      [-0.68, 0.68].forEach(x => {
+        const light = new THREE.Mesh(
+          new THREE.BoxGeometry(0.42, 0.12, 0.06),
+          headlightMaterial
+        );
+
+        light.position.set(x, 0.88, 2.14);
+        group.add(light);
       });
 
       group.userData.superxFallback = true;
+      group.userData.wheels = wheels;
+      group.userData.body = body;
 
       return group;
+    },
+
+    applyTransform(model, options = {}) {
+      const position = options.position || {};
+      const rotation = options.rotation || {};
+
+      model.position.set(
+        Number(position.x) || 0,
+        Number(position.y) || 0,
+        Number(position.z) || 0
+      );
+
+      model.rotation.set(
+        Number(rotation.x) || 0,
+        Number(rotation.y) || 0,
+        Number(rotation.z) || 0
+      );
+
+      const scale = Number(options.scale) || 1;
+      model.scale.setScalar(
+        Math.max(0.01, Math.min(20, scale))
+      );
+
+      return model;
+    },
+
+    register(id, model, type, options = {}, animations = []) {
+      if (!model || !this.scene) {
+        return {
+          success: false,
+          message: "Vehicle model or scene is missing."
+        };
+      }
+
+      model.traverse(object => {
+        if (!object.isMesh) return;
+
+        object.castShadow = true;
+        object.receiveShadow = true;
+      });
+
+      this.scene.add(model);
+
+      let mixer = null;
+
+      if (
+        animations.length &&
+        window.THREE &&
+        window.THREE.AnimationMixer
+      ) {
+        mixer = new window.THREE.AnimationMixer(model);
+      }
+
+      const record = {
+        id,
+        model,
+        type,
+        animations,
+        mixer,
+        createdAt: Date.now(),
+        options: { ...options }
+      };
+
+      this.vehicles.set(id, record);
+
+      if (options.active !== false) {
+        this.setActive(id);
+      }
+
+      this.emit("sx:vehicle-spawned", {
+        id,
+        type,
+        model
+      });
+
+      return {
+        success: true,
+        id,
+        model,
+        type
+      };
     },
 
     spawn(options = {}) {
@@ -152,7 +335,7 @@
       );
     },
 
-    spawnFallback(id, options) {
+    spawnFallback(id, options = {}) {
       const model = this.createFallbackVehicle(options);
 
       if (!model) {
@@ -163,104 +346,64 @@
       }
 
       this.applyTransform(model, options);
-      this.scene.add(model);
 
-      const record = {
+      return this.register(
         id,
         model,
-        type: "fallback",
-        createdAt: Date.now(),
-        options: { ...options }
-      };
-
-      this.vehicles.set(id, record);
-
-      if (options.active !== false) {
-        this.setActive(id);
-      }
-
-      this.emit("sx:vehicle-spawned", {
-        id,
-        type: "fallback"
-      });
-
-      return {
-        success: true,
-        id,
-        model,
-        type: "fallback"
-      };
+        "fallback",
+        options
+      );
     },
 
-    loadModel(id, url, options) {
+    loadModel(id, url, options = {}) {
+      if (!this.loader) {
+        return Promise.resolve(
+          this.spawnFallback(id, options)
+        );
+      }
+
       return new Promise(resolve => {
         this.loader.load(
           url,
 
           gltf => {
-            const model = gltf.scene;
-
-            if (!model) {
+            if (!gltf || !gltf.scene) {
               resolve(
                 this.spawnFallback(id, options)
               );
               return;
             }
 
+            const model = gltf.scene;
+
             this.applyTransform(model, options);
 
-            model.traverse(object => {
-              if (object.isMesh) {
-                object.castShadow = true;
-                object.receiveShadow = true;
-              }
-            });
-
-            this.scene.add(model);
-
-            const record = {
-              id,
-              model,
-              type: "gltf",
-              animations: gltf.animations || [],
-              mixer: null,
-              createdAt: Date.now(),
-              options: { ...options }
-            };
-
-            if (
-              record.animations.length &&
-              window.THREE.AnimationMixer
-            ) {
-              record.mixer = new window.THREE.AnimationMixer(
-                model
-              );
-            }
-
-            this.vehicles.set(id, record);
-
-            if (options.active !== false) {
-              this.setActive(id);
-            }
-
-            this.emit("sx:vehicle-spawned", {
-              id,
-              type: "gltf"
-            });
-
-            resolve({
-              success: true,
-              id,
-              model,
-              type: "gltf"
-            });
+            resolve(
+              this.register(
+                id,
+                model,
+                "gltf",
+                options,
+                gltf.animations || []
+              )
+            );
           },
 
-          undefined,
+          event => {
+            if (event && event.total) {
+              this.emit("sx:vehicle-loading", {
+                id,
+                url,
+                progress: Math.round(
+                  event.loaded / event.total * 100
+                )
+              });
+            }
+          },
 
           error => {
             console.warn(
-              "[SUPERX VehicleSpawner] Model load failed:",
+              "[SUPERX] Vehicle model load failed:",
               error
             );
 
@@ -272,37 +415,16 @@
       });
     },
 
-    applyTransform(model, options = {}) {
-      const position = options.position || {};
-
-      model.position.set(
-        Number(position.x) || 0,
-        Number(position.y) || 0,
-        Number(position.z) || 0
-      );
-
-      const rotation = options.rotation || {};
-
-      model.rotation.set(
-        Number(rotation.x) || 0,
-        Number(rotation.y) || 0,
-        Number(rotation.z) || 0
-      );
-
-      const scale = Number(options.scale) || 1;
-
-      model.scale.setScalar(scale);
-    },
-
     setActive(id) {
-      const record = this.vehicles.get(String(id));
+      const key = String(id);
+      const record = this.vehicles.get(key);
 
       if (!record) return false;
 
-      this.activeVehicleId = String(id);
+      this.activeVehicleId = key;
 
       this.emit("sx:active-vehicle-changed", {
-        id: this.activeVehicleId,
+        id: key,
         model: record.model
       });
 
@@ -312,9 +434,7 @@
     getActive() {
       if (!this.activeVehicleId) return null;
 
-      return this.vehicles.get(
-        this.activeVehicleId
-      ) || null;
+      return this.get(this.activeVehicleId);
     },
 
     get(id) {
@@ -354,12 +474,13 @@
 
       if (!record || !record.model) return false;
 
-      const value = Math.max(
-        0.1,
-        Math.min(10, Number(scale) || 1)
-      );
+      const value = Number(scale);
 
-      record.model.scale.setScalar(value);
+      if (!Number.isFinite(value)) return false;
+
+      record.model.scale.setScalar(
+        Math.max(0.01, Math.min(20, value))
+      );
 
       return true;
     },
@@ -377,6 +498,42 @@
       });
     },
 
+    disposeModel(model) {
+      if (!model || !model.traverse) return;
+
+      const geometries = new Set();
+      const materials = new Set();
+      const textures = new Set();
+
+      model.traverse(object => {
+        if (!object.isMesh) return;
+
+        if (object.geometry) {
+          geometries.add(object.geometry);
+        }
+
+        const list = Array.isArray(object.material)
+          ? object.material
+          : [object.material];
+
+        list.forEach(material => {
+          if (!material) return;
+
+          materials.add(material);
+
+          Object.values(material).forEach(value => {
+            if (value && value.isTexture) {
+              textures.add(value);
+            }
+          });
+        });
+      });
+
+      geometries.forEach(item => item.dispose());
+      materials.forEach(item => item.dispose());
+      textures.forEach(item => item.dispose());
+    },
+
     remove(id) {
       const key = String(id);
       const record = this.vehicles.get(key);
@@ -389,30 +546,10 @@
 
       if (record.mixer) {
         record.mixer.stopAllAction();
+        record.mixer.uncacheRoot(record.model);
       }
 
-      if (record.model && record.model.traverse) {
-        record.model.traverse(object => {
-          if (!object.isMesh) return;
-
-          if (object.geometry) {
-            object.geometry.dispose();
-          }
-
-          if (Array.isArray(object.material)) {
-            object.material.forEach(material => {
-              if (material && material.dispose) {
-                material.dispose();
-              }
-            });
-          } else if (
-            object.material &&
-            object.material.dispose
-          ) {
-            object.material.dispose();
-          }
-        });
-      }
+      this.disposeModel(record.model);
 
       this.vehicles.delete(key);
 
@@ -420,17 +557,13 @@
         this.activeVehicleId = null;
       }
 
-      this.emit("sx:vehicle-removed", {
-        id: key
-      });
+      this.emit("sx:vehicle-removed", { id: key });
 
       return true;
     },
 
     getAll() {
-      return Array.from(
-        this.vehicles.values()
-      ).map(record => ({
+      return Array.from(this.vehicles.values()).map(record => ({
         id: record.id,
         type: record.type,
         createdAt: record.createdAt
@@ -445,9 +578,21 @@
       this.activeVehicleId = null;
     },
 
+    dispose() {
+      this.clear();
+
+      this.scene = null;
+      this.loader = null;
+      this.initialized = false;
+
+      return true;
+    },
+
     emit(name, detail) {
       window.dispatchEvent(
-        new CustomEvent(name, { detail })
+        new CustomEvent(name, {
+          detail: detail || {}
+        })
       );
     }
   };
@@ -461,8 +606,7 @@
 })(window);
 
 /* =========================================================
-   SUPERX LEGEND — FILE 62
+   SUPERX LEGEND — FILE 62 END
    FILE: js/vehicle-spawner.js
-   END
 ========================================================= */
-        
+
