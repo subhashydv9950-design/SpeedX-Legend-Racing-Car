@@ -1,771 +1,353 @@
 
-<!-- START FILE 143: garage.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#090711">
+  <meta name="theme-color" content="#09080e">
 
-  <title>SUPERX LEGEND | Garage</title>
+  <title>SUPERX LEGEND | Luxury Garage</title>
 
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/pages.css">
-  <link rel="stylesheet" href="css/game.css">
-  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <style>
-    :root {
-      --garage-bg: #090711;
-      --garage-panel: #151221;
-      --garage-panel-light: #1e1930;
-      --garage-purple: #9b5cff;
-      --garage-purple-light: #c19aff;
-      --garage-text: #f5f1ff;
-      --garage-muted: #a9a0bb;
-      --garage-border: rgba(180, 135, 255, .18);
-    }
+  <!-- Garage CSS will be connected at final integration -->
 
-    * {
-      box-sizing: border-box;
-    }
-
-    body.garage-page {
-      margin: 0;
-      min-height: 100vh;
-      background:
-        radial-gradient(ellipse at 50% 0%, #26143e 0%, transparent 48%),
-        var(--garage-bg);
-      color: var(--garage-text);
-      font-family: Arial, sans-serif;
-    }
-
-    .garage-shell {
-      width: min(1500px, 100%);
-      margin: auto;
-      padding: 18px;
-    }
-
-    .garage-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    .garage-brand {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .garage-brand strong {
-      font-size: 20px;
-      letter-spacing: 2px;
-    }
-
-    .garage-brand span {
-      color: var(--garage-muted);
-      font-size: 11px;
-      letter-spacing: 3px;
-    }
-
-    .garage-header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .garage-coin-box,
-    .garage-back-button {
-      min-height: 40px;
-      padding: 0 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      border: 1px solid var(--garage-border);
-      border-radius: 12px;
-      background: var(--garage-panel);
-      color: var(--garage-text);
-      text-decoration: none;
-      font-size: 13px;
-    }
-
-    .garage-coin-box {
-      color: #ffd66b;
-    }
-
-    .garage-main-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1.55fr) minmax(280px, .85fr);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .garage-panel {
-      min-width: 0;
-      overflow: hidden;
-      border: 1px solid var(--garage-border);
-      border-radius: 18px;
-      background: linear-gradient(
-        145deg,
-        rgba(30, 25, 48, .96),
-        rgba(14, 12, 23, .98)
-      );
-    }
-
-    .garage-preview-panel {
-      padding: 16px;
-    }
-
-    .garage-section-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
-    .garage-section-heading h2 {
-      margin: 0;
-      font-size: 16px;
-      letter-spacing: .5px;
-    }
-
-    .garage-section-heading small {
-      color: var(--garage-muted);
-      font-size: 11px;
-    }
-
-    .garage-preview-stage {
-      position: relative;
-      min-height: 300px;
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      border: 1px solid rgba(173, 126, 255, .16);
-      border-radius: 15px;
-      background:
-        radial-gradient(ellipse at 50% 72%, rgba(132, 66, 255, .24), transparent 48%),
-        linear-gradient(180deg, #171326, #0c0a13);
-    }
-
-    .garage-preview-stage::after {
-      content: "";
-      position: absolute;
-      width: 75%;
-      height: 1px;
-      bottom: 24%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(183, 143, 255, .5),
-        transparent
-      );
-      pointer-events: none;
-    }
-
-    .garage-car-placeholder {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      padding: 25px 12px;
-      text-align: center;
-    }
-
-    .garage-car-placeholder .car-symbol {
-      display: block;
-      font-size: clamp(75px, 15vw, 145px);
-      filter: drop-shadow(0 16px 20px rgba(0, 0, 0, .6));
-    }
-
-    .garage-car-placeholder p {
-      margin: 12px 0 0;
-      color: var(--garage-muted);
-      font-size: 12px;
-    }
-
-    .garage-preview-controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .garage-round-button {
-      width: 42px;
-      height: 42px;
-      border: 1px solid var(--garage-border);
-      border-radius: 50%;
-      background: var(--garage-panel-light);
-      color: white;
-      font-size: 19px;
-      cursor: pointer;
-    }
-
-    .garage-round-button:focus-visible,
-    .garage-action-button:focus-visible,
-    .garage-tab:focus-visible {
-      outline: 2px solid var(--garage-purple-light);
-      outline-offset: 3px;
-    }
-
-    .garage-car-position {
-      min-width: 100px;
-      text-align: center;
-      color: var(--garage-muted);
-      font-size: 12px;
-    }
-
-    .garage-car-summary {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 9px;
-      margin-top: 16px;
-    }
-
-    .garage-stat {
-      min-width: 0;
-      padding: 12px 8px;
-      border: 1px solid var(--garage-border);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, .025);
-      text-align: center;
-    }
-
-    .garage-stat span {
-      display: block;
-      color: var(--garage-muted);
-      font-size: 10px;
-      margin-bottom: 6px;
-    }
-
-    .garage-stat strong {
-      font-size: 15px;
-      overflow-wrap: anywhere;
-    }
-
-    .garage-details-panel {
-      padding: 16px;
-    }
-
-    .garage-car-title {
-      margin: 0;
-      font-size: 22px;
-    }
-
-    .garage-car-class {
-      display: inline-block;
-      margin-top: 7px;
-      padding: 5px 10px;
-      border-radius: 20px;
-      background: rgba(155, 92, 255, .15);
-      color: var(--garage-purple-light);
-      font-size: 11px;
-    }
-
-    .garage-price {
-      margin: 18px 0;
-      color: #ffd66b;
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    .garage-action-button {
-      width: 100%;
-      min-height: 46px;
-      padding: 11px 14px;
-      border: 0;
-      border-radius: 12px;
-      background: linear-gradient(100deg, #7739d8, #a45cff);
-      color: white;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .garage-action-button.secondary {
-      margin-top: 9px;
-      border: 1px solid var(--garage-border);
-      background: var(--garage-panel-light);
-    }
-
-    .garage-action-button:disabled {
-      opacity: .5;
-      cursor: not-allowed;
-    }
-
-    .garage-feature-section {
-      margin-top: 18px;
-    }
-
-    .garage-feature-panel {
-      padding: 16px;
-    }
-
-    .garage-tabs {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 3px 2px 12px;
-      scrollbar-width: thin;
-    }
-
-    .garage-tab {
-      flex: 0 0 auto;
-      min-height: 38px;
-      padding: 0 14px;
-      border: 1px solid var(--garage-border);
-      border-radius: 10px;
-      background: #171326;
-      color: var(--garage-muted);
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .garage-tab[aria-selected="true"] {
-      background: rgba(155, 92, 255, .2);
-      border-color: var(--garage-purple);
-      color: white;
-    }
-
-    .garage-feature-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .garage-feature-card {
-      min-width: 0;
-      min-height: 105px;
-      padding: 13px 10px;
-      border: 1px solid var(--garage-border);
-      border-radius: 13px;
-      background: rgba(255, 255, 255, .025);
-    }
-
-    .garage-feature-card .feature-icon {
-      display: block;
-      margin-bottom: 9px;
-      font-size: 22px;
-    }
-
-    .garage-feature-card strong {
-      display: block;
-      font-size: 12px;
-    }
-
-    .garage-feature-card small {
-      display: block;
-      margin-top: 5px;
-      color: var(--garage-muted);
-      font-size: 10px;
-      line-height: 1.4;
-    }
-
-    .garage-bottom-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 18px;
-      margin-top: 18px;
-    }
-
-    .garage-bottom-panel {
-      min-width: 0;
-      padding: 16px;
-    }
-
-    .garage-preset-placeholder {
-      padding: 16px;
-      border: 1px dashed var(--garage-border);
-      border-radius: 12px;
-      color: var(--garage-muted);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .garage-footer {
-      padding: 24px 8px 10px;
-      color: var(--garage-muted);
-      text-align: center;
-      font-size: 10px;
-      letter-spacing: 1px;
-    }
-
-    @media (max-width: 760px) {
-      .garage-shell {
-        padding: 12px;
-      }
-
-      .garage-main-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .garage-preview-stage {
-        min-height: 245px;
-      }
-
-      .garage-feature-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .garage-bottom-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .garage-brand strong {
-        font-size: 16px;
-      }
-
-      .garage-car-summary {
-        gap: 6px;
-      }
-
-      .garage-stat strong {
-        font-size: 12px;
-      }
-    }
-  </style>
 </head>
 
-<body class="garage-page" data-page="garage">
+<body class="garage-page">
 
-  <main id="garagePage" class="garage-shell">
+  <div class="garage-app">
 
+    <!-- BACKGROUND -->
+    <div class="garage-background">
+      <div class="garage-glow garage-glow-one"></div>
+      <div class="garage-glow garage-glow-two"></div>
+      <div class="garage-grid"></div>
+    </div>
+
+    <!-- HEADER -->
     <header class="garage-header">
-      <div class="garage-brand">
-        <strong>SUPERX LEGEND</strong>
-        <span>PERFORMANCE GARAGE</span>
-      </div>
 
-      <div class="garage-header-actions">
-        <div class="garage-coin-box">
-          <span>◆</span>
-          <strong id="garageCoinCount">2500</strong>
-          <span>COINS</span>
+      <div class="garage-header-left">
+
+        <a href="index.html" class="garage-back" aria-label="Back to home">
+          <span>←</span>
+        </a>
+
+        <div class="garage-brand">
+          <div class="garage-brand-logo">S<span>X</span></div>
+
+          <div>
+            <div class="garage-brand-name">SUPERX <span>LEGEND</span></div>
+            <div class="garage-brand-subtitle">AUTOMOTIVE COLLECTION</div>
+          </div>
         </div>
 
-        <a class="garage-back-button" href="index.html">
-          ← Home
-        </a>
       </div>
+
+      <div class="garage-header-right">
+
+        <div class="garage-wallet">
+          <span class="wallet-icon">◈</span>
+          <div>
+            <small>YOUR BALANCE</small>
+            <strong id="garageCoins">2,500</strong>
+          </div>
+        </div>
+
+        <a href="profile.html" class="garage-profile" aria-label="Profile">
+          <span>👤</span>
+        </a>
+
+      </div>
+
     </header>
 
-    <section class="garage-main-grid">
+    <!-- MAIN CONTENT -->
+    <main class="garage-main">
 
-      <div class="garage-panel garage-preview-panel">
+      <!-- PAGE TITLE -->
+      <section class="garage-title-section">
 
-        <div class="garage-section-heading">
-          <h2>3D SHOWROOM</h2>
-          <small>VEHICLE PREVIEW</small>
-        </div>
-
-        <div
-          class="garage-preview-stage"
-          id="garagePreviewStage"
-          aria-label="Vehicle preview area"
-        >
-          <div class="garage-car-placeholder" id="garageCarPlaceholder">
-            <span class="car-symbol">🏎️</span>
-            <p>Vehicle preview will appear here</p>
+        <div>
+          <div class="garage-eyebrow">
+            <span class="eyebrow-line"></span>
+            THE ULTIMATE COLLECTION
           </div>
 
-          <div
-            id="garage3DContainer"
-            aria-label="3D vehicle rendering area"
-          ></div>
+          <h1>YOUR <span>GARAGE</span></h1>
+
+          <p>
+            Discover, collect and customize your dream machines.
+          </p>
         </div>
 
-        <div class="garage-preview-controls">
-          <button
-            type="button"
-            class="garage-round-button"
-            id="garagePreviousCar"
-            aria-label="Previous car"
-          >‹</button>
-
-          <span class="garage-car-position" id="garageCarPosition">
-            CAR 01 / 35
-          </span>
-
-          <button
-            type="button"
-            class="garage-round-button"
-            id="garageNextCar"
-            aria-label="Next car"
-          >›</button>
+        <div class="garage-collection-count">
+          <strong id="garageOwnedCount">02</strong>
+          <span>/ 35 CARS OWNED</span>
         </div>
 
-        <div class="garage-car-summary">
-          <div class="garage-stat">
-            <span>TOP SPEED</span>
-            <strong id="garageTopSpeed">240 km/h</strong>
+      </section>
+
+      <!-- GARAGE CONTENT -->
+      <section class="garage-layout">
+
+        <!-- LEFT: CAR SHOWROOM -->
+        <div class="garage-showroom-panel">
+
+          <div class="showroom-topbar">
+
+            <div class="showroom-live">
+              <span class="live-dot"></span>
+              SHOWROOM
+            </div>
+
+            <div class="showroom-car-id" id="garageCarId">
+              SX-001
+            </div>
+
           </div>
 
-          <div class="garage-stat">
-            <span>POWER</span>
-            <strong id="garagePower">-- HP</strong>
+          <!-- 3D CAR DISPLAY -->
+          <div class="garage-car-stage" id="garageCarStage">
+
+            <div class="garage-stage-light"></div>
+
+            <div class="garage-stage-ring"></div>
+
+            <div class="garage-stage-platform"></div>
+
+            <canvas
+              id="garageCanvas"
+              class="garage-canvas"
+              aria-label="3D car showroom">
+            </canvas>
+
+            <!-- Fallback visual -->
+            <div class="garage-car-fallback" id="garageCarFallback">
+              <div class="fallback-car-icon">🏎️</div>
+              <span>3D SHOWROOM</span>
+            </div>
+
+            <div class="garage-car-condition">
+              <span class="condition-dot"></span>
+              <span id="garageCondition">FACTORY CONDITION</span>
+            </div>
+
+            <div class="garage-camera-controls">
+
+              <button type="button" id="garageRotateBtn"
+                aria-label="Rotate car">
+                ↻
+              </button>
+
+              <button type="button" id="garageCameraBtn"
+                aria-label="Change camera">
+                ◉
+              </button>
+
+            </div>
+
           </div>
 
-          <div class="garage-stat">
-            <span>HANDLING</span>
-            <strong id="garageHandling">--</strong>
+          <!-- CAR INFORMATION -->
+          <div class="garage-car-information">
+
+            <div class="garage-car-heading">
+
+              <div>
+                <span class="garage-car-category" id="garageCarClass">
+                  SPORTS
+                </span>
+
+                <h2 id="garageCarName">PHANTOM GT</h2>
+
+                <p id="garageCarDescription">
+                  Precision engineered for pure performance.
+                </p>
+              </div>
+
+              <div class="garage-car-number">
+                <span>COLLECTION</span>
+                <strong id="garageCarNumber">01 / 35</strong>
+              </div>
+
+            </div>
+
+            <!-- PERFORMANCE STATS -->
+            <div class="garage-stats">
+
+              <div class="garage-stat">
+                <span>TOP SPEED</span>
+                <strong>
+                  <span id="garageSpeed">240</span>
+                  <small>KM/H</small>
+                </strong>
+                <div class="stat-track">
+                  <div id="garageSpeedBar" style="width:46%"></div>
+                </div>
+              </div>
+
+              <div class="garage-stat">
+                <span>ENGINE POWER</span>
+                <strong>
+                  <span id="garagePower">320</span>
+                  <small>HP</small>
+                </strong>
+                <div class="stat-track">
+                  <div id="garagePowerBar" style="width:40%"></div>
+                </div>
+              </div>
+
+              <div class="garage-stat">
+                <span>HANDLING</span>
+                <strong>
+                  <span id="garageHandling">78</span>
+                  <small>%</small>
+                </strong>
+                <div class="stat-track">
+                  <div id="garageHandlingBar" style="width:78%"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ACTIONS -->
+            <div class="garage-car-actions">
+
+              <button
+                type="button"
+                class="garage-primary-btn"
+                id="garageSelectBtn">
+                <span>✓</span>
+                SELECT THIS CAR
+              </button>
+
+              <button
+                type="button"
+                class="garage-buy-btn"
+                id="garageBuyBtn"
+                hidden>
+                BUY CAR
+              </button>
+
+              <div class="garage-selected-label"
+                id="garageSelectedLabel" hidden>
+                <span>✓</span> CURRENTLY SELECTED
+              </div>
+
+            </div>
+
           </div>
+
         </div>
 
-      </div>
+        <!-- RIGHT: COLLECTION -->
+        <aside class="garage-collection-panel">
 
-      <aside class="garage-panel garage-details-panel">
+          <div class="collection-heading">
 
-        <div class="garage-section-heading">
-          <h2>VEHICLE DETAILS</h2>
-          <small id="garageVehicleStatus">SELECTED</small>
-        </div>
+            <div>
+              <span class="garage-eyebrow">YOUR MACHINES</span>
+              <h3>COLLECTION</h3>
+            </div>
 
-        <h1 class="garage-car-title" id="garageCarName">
-          SUPERX GT
-        </h1>
+            <span class="collection-total">35 VEHICLES</span>
 
-        <span class="garage-car-class" id="garageCarClass">
-          SPORTS CLASS
-        </span>
+          </div>
 
-        <div class="garage-price" id="garageCarPrice">
-          ◆ 0 COINS
-        </div>
+          <!-- FILTERS -->
+          <div class="garage-filters">
 
-        <button
-          type="button"
-          class="garage-action-button"
-          id="garageSelectCar"
-        >
-          SELECT VEHICLE
-        </button>
+            <button type="button"
+              class="garage-filter active"
+              data-garage-filter="all">
+              ALL <span id="filterAllCount">35</span>
+            </button>
 
-        <button
-          type="button"
-          class="garage-action-button secondary"
-          id="garageBuyCar"
-        >
-          UNLOCK VEHICLE
-        </button>
+            <button type="button"
+              class="garage-filter"
+              data-garage-filter="owned">
+              OWNED
+            </button>
 
-      </aside>
+            <button type="button"
+              class="garage-filter"
+              data-garage-filter="locked">
+              LOCKED
+            </button>
 
-    </section>
+          </div>
 
-    <section class="garage-feature-section garage-panel garage-feature-panel">
+          <!-- SEARCH -->
+          <div class="garage-search">
 
-      <div class="garage-section-heading">
-        <h2>UPGRADE & CUSTOMIZATION</h2>
-        <small>VEHICLE WORKSHOP</small>
-      </div>
+            <span>⌕</span>
 
-      <div class="garage-tabs" role="tablist" aria-label="Garage categories">
-        <button class="garage-tab" type="button" role="tab"
-          aria-selected="true" data-garage-tab="performance">
-          Performance
-        </button>
+            <input
+              type="search"
+              id="garageSearch"
+              placeholder="Search your dream car..."
+              autocomplete="off">
 
-        <button class="garage-tab" type="button" role="tab"
-          aria-selected="false" data-garage-tab="body">
-          Body Parts
-        </button>
+          </div>
 
-        <button class="garage-tab" type="button" role="tab"
-          aria-selected="false" data-garage-tab="appearance">
-          Appearance
-        </button>
+          <!-- CAR LIST -->
+          <div class="garage-car-list" id="garageCarList">
 
-        <button class="garage-tab" type="button" role="tab"
-          aria-selected="false" data-garage-tab="setup">
-          Setup Presets
-        </button>
-      </div>
+            <!-- JavaScript will generate all 35 car cards -->
 
-      <div class="garage-feature-grid" id="garageFeatureGrid">
+            <div class="garage-loading">
+              <div class="garage-loading-spinner"></div>
+              <span>LOADING COLLECTION...</span>
+            </div>
 
-        <article class="garage-feature-card" data-category="performance">
-          <span class="feature-icon">⚙️</span>
-          <strong>Engine</strong>
-          <small>Power and acceleration upgrades</small>
-        </article>
+          </div>
 
-        <article class="garage-feature-card" data-category="performance">
-          <span class="feature-icon">🔩</span>
-          <strong>Gearbox</strong>
-          <small>Transmission performance</small>
-        </article>
+          <div class="garage-collection-footer">
+            <span class="collection-footer-dot"></span>
+            35 MACHINES IN THE COLLECTION
+          </div>
 
-        <article class="garage-feature-card" data-category="performance">
-          <span class="feature-icon">🛑</span>
-          <strong>Brakes</strong>
-          <small>Braking performance</small>
-        </article>
+        </aside>
 
-        <article class="garage-feature-card" data-category="performance">
-          <span class="feature-icon">🏁</span>
-          <strong>Tyres</strong>
-          <small>Grip and traction</small>
-        </article>
+      </section>
 
-        <article class="garage-feature-card" data-category="performance">
-          <span class="feature-icon">🔧</span>
-          <strong>Suspension</strong>
-          <small>Stability and comfort</small>
-        </article>
+      <!-- BOTTOM NAVIGATION -->
+      <nav class="garage-bottom-nav">
 
-        <article class="garage-feature-card" data-category="performance">
-          <span class="feature-icon">🎯</span>
-          <strong>Steering</strong>
-          <small>Steering response</small>
-        </article>
+        <a href="index.html" class="garage-nav-item">
+          <span>⌂</span>
+          <small>HOME</small>
+        </a>
 
-        <article class="garage-feature-card" data-category="performance">
-          <span class="feature-icon">💨</span>
-          <strong>Turbo</strong>
-          <small>Boost performance</small>
-        </article>
+        <a href="garage.html" class="garage-nav-item active">
+          <span>🏎</span>
+          <small>GARAGE</small>
+        </a>
 
-        <article class="garage-feature-card" data-category="body">
-          <span class="feature-icon">🚘</span>
-          <strong>Body Kit</strong>
-          <small>Vehicle body styling</small>
-        </article>
+        <a href="career.html" class="garage-nav-item">
+          <span>♛</span>
+          <small>CAREER</small>
+        </a>
 
-        <article class="garage-feature-card" data-category="body">
-          <span class="feature-icon">🛠️</span>
-          <strong>Front Bumper</strong>
-          <small>Front body customization</small>
-        </article>
+        <a href="profile.html" class="garage-nav-item">
+          <span>◉</span>
+          <small>PROFILE</small>
+        </a>
 
-        <article class="garage-feature-card" data-category="body">
-          <span class="feature-icon">🔩</span>
-          <strong>Rear Bumper</strong>
-          <small>Rear body customization</small>
-        </article>
+      </nav>
 
-        <article class="garage-feature-card" data-category="body">
-          <span class="feature-icon">🪽</span>
-          <strong>Spoiler</strong>
-          <small>Rear wing options</small>
-        </article>
+    </main>
 
-        <article class="garage-feature-card" data-category="body">
-          <span class="feature-icon">🏎️</span>
-          <strong>Bonnet</strong>
-          <small>Bonnet styles</small>
-        </article>
+    <!-- NOTIFICATION -->
+    <div class="garage-toast" id="garageToast" role="status"></div>
 
-        <article class="garage-feature-card" data-category="appearance">
-          <span class="feature-icon">🎨</span>
-          <strong>Paint</strong>
-          <small>Vehicle color options</small>
-        </article>
+  </div>
 
-        <article class="garage-feature-card" data-category="appearance">
-          <span class="feature-icon">⭕</span>
-          <strong>Rims</strong>
-          <small>Wheel designs</small>
-        </article>
+  <!-- Garage JavaScript will be connected at final integration -->
 
-        <article class="garage-feature-card" data-category="appearance">
-          <span class="feature-icon">💡</span>
-          <strong>Headlights</strong>
-          <small>Lighting styles</small>
-        </article>
-
-        <article class="garage-feature-card" data-category="setup">
-          <span class="feature-icon">📋</span>
-          <strong>Setup Presets</strong>
-          <small>Save and apply vehicle setups</small>
-        </article>
-
-      </div>
-    </section>
-
-    <section class="garage-bottom-grid">
-
-      <div class="garage-panel garage-bottom-panel">
-        <div class="garage-section-heading">
-          <h2>VEHICLE CONDITION</h2>
-          <small>INSPECTION</small>
-        </div>
-
-        <div class="garage-preset-placeholder">
-          Vehicle condition, diagnostics and maintenance information
-          will be connected to the relevant vehicle systems.
-        </div>
-      </div>
-
-      <div class="garage-panel garage-bottom-panel">
-        <div class="garage-section-heading">
-          <h2>MY SETUP PRESETS</h2>
-          <small>PERSONAL COLLECTION</small>
-        </div>
-
-        <div
-          class="garage-preset-placeholder"
-          id="garageSetupPresetsContainer"
-        >
-          Setup presets will appear here when the preset interface
-          is connected.
-        </div>
-      </div>
-
-    </section>
-
-    <footer class="garage-footer">
-      SUPERX LEGEND RACING · GARAGE
-    </footer>
-
-  </main>
-
-    <!-- SUPERX LEGEND: CORE APPLICATION -->
-  <script src="js/config.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/cars-data.js"></script>
-
-  <!-- GARAGE CORE SYSTEMS -->
-  <script src="js/garage.js"></script>
-  <script src="js/vehicle-upgrades.js"></script>
-  <script src="js/vehicle-customization.js"></script>
-  <script src="js/vehicle-setup.js"></script>
-  <script src="js/garage-manager.js"></script>
-  <script src="js/garage-ui.js"></script>
-  <script src="js/garage-controller.js"></script>
-
-  <!-- VEHICLE DAMAGE SYSTEM -->
-  <script src="js/vehicle-damage.js"></script>
-
-  <!-- SETUP PRESETS -->
-  <script src="js/vehicle-setup-presets.js"></script>
-  <script src="js/vehicle-setup-presets-ui.js"></script>
-  <script src="js/garage-page-presets.js"></script>
-
-  <!-- GARAGE PAGE FOUNDATION -->
-  <script src="js/garage-page-wallet.js"></script>
-  <script src="js/garage-page-tabs.js"></script>
-  <script src="js/garage-page-actions.js"></script>
-
-  <!-- GARAGE VEHICLE SYSTEMS -->
-  <script src="js/garage-page-condition.js"></script>
-  <script src="js/garage-page-vehicle-sync.js"></script>
-  <script src="js/garage-page-collection.js"></script>
-  <script src="js/garage-page-car-selector.js"></script>
-  <script src="js/garage-page-preview.js"></script>
-
-  <!-- GARAGE UPGRADE & CUSTOMIZATION -->
-  <script src="js/garage-page-upgrade-progress.js"></script>
-  <script src="js/garage-page-customization-summary.js"></script>
-  <script src="js/garage-page-customization-studio.js"></script>
-
-  <!-- END SUPERX LEGEND GARAGE SCRIPTS -->
 </body>
 </html>
