@@ -1,15 +1,14 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 106
    FILE: js/vehicle-race-session-history.js
-   MODULE: Race Session History Manager
+   MODULE: RACE SESSION HISTORY MANAGER
+   START: RACE SESSION HISTORY MANAGER
    ========================================================= */
 
 (function (window) {
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
   const stats = () => SX.vehicleRaceSessionStats || null;
 
   const state = {
@@ -20,26 +19,32 @@
     filter: "all"
   };
 
+  const FILTERS = ["all", "wins", "no-wins", "long", "short"];
+  const SORTS = ["newest", "oldest", "most-wins", "longest", "distance"];
+
   function safeNumber(value, fallback = 0) {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : fallback;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
   }
 
-  function safeString(value) {
-    return String(value == null ? "" : value)
-      .slice(0, 120);
+  function safeString(value, limit = 120) {
+    return String(value == null ? "" : value).trim().slice(0, limit);
+  }
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
   }
 
   function getAll() {
     const manager = stats();
 
-    if (!manager || typeof manager.getHistory !== "function") {
-      return [];
-    }
+    if (!manager || typeof manager.getHistory !== "function") return [];
 
     try {
       const records = manager.getHistory();
-      return Array.isArray(records) ? records : [];
+      return Array.isArray(records)
+        ? records.filter(item => item && typeof item === "object")
+        : [];
     } catch (error) {
       console.warn("[SUPERX SessionHistory] Read failed:", error);
       return [];
@@ -47,11 +52,8 @@
   }
 
   function getTimestamp(item) {
-    const timestamp = Date.parse(
-      item.endedAt || item.startedAt || ""
-    );
-
-    return Number.isFinite(timestamp) ? timestamp : 0;
+    const value = Date.parse(item.endedAt || item.startedAt || "");
+    return Number.isFinite(value) ? value : 0;
   }
 
   function matchesSearch(item, query) {
@@ -63,104 +65,82 @@
       item.endedAt,
       item.racesPlayed,
       item.racesWon,
-      item.totalDistanceKm
-    ].map(safeString).join(" ").toLowerCase();
+      item.racesLost,
+      item.totalDistanceKm,
+      item.totalCoins,
+      item.totalXP,
+      ...Object.keys(item.raceModes || {})
+    ].map(value => safeString(value, 200)).join(" ").toLowerCase();
 
     return searchable.includes(query.toLowerCase());
   }
 
   function matchesFilter(item, filter) {
-    if (filter === "all") return true;
+    const wins = safeNumber(item.racesWon);
+    const duration = safeNumber(item.durationSeconds);
 
-    if (filter === "wins") {
-      return safeNumber(item.racesWon) > 0;
+    switch (filter) {
+      case "wins": return wins > 0;
+      case "no-wins": return wins === 0;
+      case "long": return duration >= 1800;
+      case "short": return duration < 1800;
+      default: return true;
     }
-
-    if (filter === "no-wins") {
-      return safeNumber(item.racesWon) === 0;
-    }
-
-    if (filter === "long") {
-      return safeNumber(item.durationSeconds) >= 1800;
-    }
-
-    if (filter === "short") {
-      return safeNumber(item.durationSeconds) < 1800;
-    }
-
-    return true;
   }
 
   function sortRecords(records, sort) {
     const result = records.slice();
 
-    if (sort === "oldest") {
-      result.sort((a, b) => getTimestamp(a) - getTimestamp(b));
-    } else if (sort === "most-wins") {
-      result.sort((a, b) =>
-        safeNumber(b.racesWon) - safeNumber(a.racesWon)
-      );
-    } else if (sort === "longest") {
-      result.sort((a, b) =>
-        safeNumber(b.durationSeconds) -
-        safeNumber(a.durationSeconds)
-      );
-    } else if (sort === "distance") {
-      result.sort((a, b) =>
-        safeNumber(b.totalDistanceKm) -
-        safeNumber(a.totalDistanceKm)
-      );
-    } else {
-      result.sort((a, b) => getTimestamp(b) - getTimestamp(a));
-    }
+    const comparators = {
+      oldest: (a, b) => getTimestamp(a) - getTimestamp(b),
+      "most-wins": (a, b) => safeNumber(b.racesWon) - safeNumber(a.racesWon),
+      longest: (a, b) => safeNumber(b.durationSeconds) - safeNumber(a.durationSeconds),
+      distance: (a, b) => safeNumber(b.totalDistanceKm) - safeNumber(a.totalDistanceKm)
+    };
+
+    result.sort(comparators[sort] || ((a, b) =>
+      getTimestamp(b) - getTimestamp(a)
+    ));
 
     return result;
   }
 
   function getFilteredRecords(options = {}) {
     const search = options.search !== undefined
-      ? safeString(options.search).trim()
+      ? safeString(options.search)
       : state.search;
 
-    const filter = options.filter || state.filter;
-    const sort = options.sort || state.sort;
+    const filter = FILTERS.includes(options.filter)
+      ? options.filter
+      : state.filter;
 
-    const filtered = getAll().filter(item =>
-      matchesSearch(item, search) &&
-      matchesFilter(item, filter)
+    const sort = SORTS.includes(options.sort)
+      ? options.sort
+      : state.sort;
+
+    return sortRecords(
+      getAll().filter(item =>
+        matchesSearch(item, search) &&
+        matchesFilter(item, filter)
+      ),
+      sort
     );
-
-    return sortRecords(filtered, sort);
   }
 
   function getPage(options = {}) {
     const records = getFilteredRecords(options);
 
-    const pageSize = Math.max(
-      1,
-      Math.min(100, Math.floor(
-        safeNumber(options.pageSize, state.pageSize)
-      ))
-    );
+    const pageSize = Math.max(1, Math.min(100,
+      Math.floor(safeNumber(options.pageSize, state.pageSize))
+    ));
 
-    const pageCount = Math.max(
-      1,
-      Math.ceil(records.length / pageSize)
-    );
-
-    const requestedPage = Math.floor(
-      safeNumber(options.page, state.page)
-    );
-
-    const page = Math.max(
-      1,
-      Math.min(pageCount, requestedPage)
-    );
-
+    const pageCount = Math.max(1, Math.ceil(records.length / pageSize));
+    const requested = Math.floor(safeNumber(options.page, state.page));
+    const page = Math.max(1, Math.min(pageCount, requested));
     const start = (page - 1) * pageSize;
 
     return {
-      records: records.slice(start, start + pageSize),
+      records: clone(records.slice(start, start + pageSize)),
       totalRecords: records.length,
       page,
       pageSize,
@@ -177,63 +157,37 @@
   }
 
   function setFilter(value) {
-    const allowed = [
-      "all",
-      "wins",
-      "no-wins",
-      "long",
-      "short"
-    ];
-
-    if (!allowed.includes(value)) return getPage();
+    if (!FILTERS.includes(value)) return getPage();
 
     state.filter = value;
     state.page = 1;
-
     return getPage();
   }
 
   function setSort(value) {
-    const allowed = [
-      "newest",
-      "oldest",
-      "most-wins",
-      "longest",
-      "distance"
-    ];
-
-    if (!allowed.includes(value)) return getPage();
+    if (!SORTS.includes(value)) return getPage();
 
     state.sort = value;
     state.page = 1;
-
     return getPage();
   }
 
   function setPage(page) {
-    state.page = Math.max(1, Math.floor(
-      safeNumber(page, 1)
-    ));
-
+    state.page = Math.max(1, Math.floor(safeNumber(page, 1)));
     return getPage();
   }
 
   function setPageSize(size) {
-    state.pageSize = Math.max(
-      1,
-      Math.min(100, Math.floor(safeNumber(size, 10)))
-    );
-
+    state.pageSize = Math.max(1, Math.min(100,
+      Math.floor(safeNumber(size, 10))
+    ));
     state.page = 1;
     return getPage();
   }
 
   function getSession(id) {
-    const record = getAll().find(item => item.id === id);
-
-    return record
-      ? JSON.parse(JSON.stringify(record))
-      : null;
+    const record = getAll().find(item => item.id === String(id));
+    return record ? clone(record) : null;
   }
 
   function deleteSession(id) {
@@ -247,6 +201,9 @@
 
     if (deleted) {
       state.page = 1;
+      window.dispatchEvent(new CustomEvent("sx:session-history-updated", {
+        detail: { action: "delete", id: String(id) }
+      }));
     }
 
     return deleted;
@@ -258,17 +215,28 @@
     state.page = 1;
     state.pageSize = 10;
     state.filter = "all";
-
     return getPage();
   }
 
   function getViewState() {
+    return clone(state);
+  }
+
+  function getSummary() {
+    const records = getAll();
+
     return {
-      search: state.search,
-      sort: state.sort,
-      page: state.page,
-      pageSize: state.pageSize,
-      filter: state.filter
+      sessions: records.length,
+      races: records.reduce((sum, item) =>
+        sum + safeNumber(item.racesPlayed), 0),
+      wins: records.reduce((sum, item) =>
+        sum + safeNumber(item.racesWon), 0),
+      distanceKm: records.reduce((sum, item) =>
+        sum + safeNumber(item.totalDistanceKm), 0),
+      coins: records.reduce((sum, item) =>
+        sum + safeNumber(item.totalCoins), 0),
+      xp: records.reduce((sum, item) =>
+        sum + safeNumber(item.totalXP), 0)
     };
   }
 
@@ -284,11 +252,17 @@
     setPageSize,
     deleteSession,
     resetView,
-    getViewState
+    getViewState,
+    getSummary,
+    getFilters: () => FILTERS.slice(),
+    getSortOptions: () => SORTS.slice()
   };
 
   console.info("[SUPERX] Race Session History loaded.");
 
 })(window);
 
-/* ======================= END FILE 106 ======================= */
+/* =========================================================
+   END: RACE SESSION HISTORY MANAGER — FILE 106
+   ========================================================= */
+
