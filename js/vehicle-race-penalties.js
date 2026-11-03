@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 97
    FILE: js/vehicle-race-penalties.js
@@ -9,8 +8,7 @@
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const STORAGE_KEY = "superx_race_penalties_v1";
+  const STORAGE_KEY = "superx_race_penalties_v2";
 
   const CONFIG = {
     wrongWay: 3,
@@ -20,6 +18,7 @@
     falseStart: 5,
     maximumPenalty: 120,
     historyLimit: 100,
+    warningLimit: 30,
     warningCooldown: 3000
   };
 
@@ -27,11 +26,26 @@
   let totalPenalty = 0;
   let penalties = [];
   let warnings = [];
-  let lastWarning = {};
+  let lastWarning = Object.create(null);
+  let sessionId = null;
 
-  function num(value, fallback) {
+  function num(value, fallback = 0) {
     const result = Number(value);
     return Number.isFinite(result) ? result : fallback;
+  }
+
+  function emit(name, detail = {}) {
+    window.dispatchEvent(
+      new CustomEvent(name, { detail })
+    );
+  }
+
+  function clone(value) {
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (_) {
+      return {};
+    }
   }
 
   function load() {
@@ -40,17 +54,19 @@
         localStorage.getItem(STORAGE_KEY) || "{}"
       );
 
+      penalties = Array.isArray(saved.penalties)
+        ? saved.penalties
+            .filter(item => item && typeof item === "object")
+            .slice(0, CONFIG.historyLimit)
+        : [];
+
       totalPenalty = Math.max(
         0,
-        num(saved.totalPenalty, 0)
+        num(saved.totalPenalty)
       );
-
-      penalties = Array.isArray(saved.penalties)
-        ? saved.penalties.slice(0, CONFIG.historyLimit)
-        : [];
-    } catch (error) {
-      totalPenalty = 0;
+    } catch (_) {
       penalties = [];
+      totalPenalty = 0;
     }
   }
 
@@ -60,27 +76,37 @@
         STORAGE_KEY,
         JSON.stringify({
           totalPenalty,
-          penalties
+          penalties: penalties.slice(0, CONFIG.historyLimit),
+          savedAt: Date.now()
         })
       );
-    } catch (error) {
-      console.warn("[SUPERX Penalties] Save failed:", error);
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
-  function start() {
+  function start(options = {}) {
     active = true;
     totalPenalty = 0;
     warnings = [];
-    lastWarning = {};
+    lastWarning = Object.create(null);
+    sessionId = String(
+      options.sessionId || ("race_" + Date.now())
+    );
+
+    emit("sx:race-penalties-started", {
+      sessionId
+    });
 
     return {
       success: true,
+      sessionId,
       totalPenalty
     };
   }
 
-  function add(type, seconds, detail) {
+  function add(type, seconds, detail = {}) {
     if (!active) {
       return {
         success: false,
@@ -90,21 +116,22 @@
 
     const duration = Math.min(
       CONFIG.maximumPenalty,
-      Math.max(0, num(seconds, 0))
+      Math.max(0, num(seconds))
     );
 
     if (duration <= 0) return false;
 
-    totalPenalty += duration;
-
     const record = {
-      id: "penalty_" + Date.now() + "_" + penalties.length,
-      type: String(type),
+      id: "penalty_" + Date.now() + "_" +
+        Math.random().toString(36).slice(2, 8),
+      sessionId,
+      type: String(type || "general"),
       seconds: duration,
-      detail: detail || {},
+      detail: clone(detail),
       timestamp: Date.now()
     };
 
+    totalPenalty += duration;
     penalties.unshift(record);
 
     if (penalties.length > CONFIG.historyLimit) {
@@ -113,25 +140,23 @@
 
     save();
 
-    window.dispatchEvent(
-      new CustomEvent("sx:race-penalty", {
-        detail: {
-          ...record,
-          totalPenalty
-        }
-      })
-    );
+    emit("sx:race-penalty", {
+      ...record,
+      totalPenalty
+    });
 
     return {
       success: true,
-      penalty: record,
+      penalty: { ...record },
       totalPenalty
     };
   }
 
   function warn(type, message) {
+    if (!active) return false;
+
     const now = Date.now();
-    const key = String(type);
+    const key = String(type || "general");
 
     if (
       lastWarning[key] &&
@@ -150,23 +175,17 @@
 
     warnings.unshift(warning);
 
-    if (warnings.length > 30) {
-      warnings.length = 30;
+    if (warnings.length > CONFIG.warningLimit) {
+      warnings.length = CONFIG.warningLimit;
     }
 
-    window.dispatchEvent(
-      new CustomEvent("sx:race-warning", {
-        detail: warning
-      })
-    );
+    emit("sx:race-warning", warning);
 
-    return warning;
+    return { ...warning };
   }
 
   function wrongWay(isWrongWay) {
-    if (!active) return false;
-
-    if (!isWrongWay) return false;
+    if (!active || !isWrongWay) return false;
 
     return warn(
       "wrong_way",
@@ -187,17 +206,17 @@
     return add(
       "missed_checkpoint",
       CONFIG.missedCheckpoint,
-      { checkpointId: String(checkpointId) }
+      { checkpointId: String(checkpointId ?? "unknown") }
     );
   }
 
-  function collision(severity) {
+  function collision(severity = 1) {
     const level = Math.max(
       0,
       Math.min(3, Math.floor(num(severity, 1)))
     );
 
-    if (level === 0) return false;
+    if (!active || level === 0) return false;
 
     return add(
       "collision",
@@ -235,12 +254,8 @@
   }
 
   function getAdjustedTime(raceMilliseconds) {
-    const base = Math.max(
-      0,
-      num(raceMilliseconds, 0)
-    );
-
-    return base + totalPenalty * 1000;
+    return Math.max(0, num(raceMilliseconds)) +
+      totalPenalty * 1000;
   }
 
   function getWarnings() {
@@ -252,17 +267,21 @@
       ? limit
       : penalties.length;
 
-    return penalties.slice(0, count).map(
-      item => ({ ...item })
-    );
+    return penalties.slice(0, count).map(item => ({
+      ...item,
+      detail: clone(item.detail)
+    }));
   }
 
   function getState() {
     return {
       active,
+      sessionId,
       totalPenalty,
       adjustedTimeExample: totalPenalty * 1000,
-      penaltyCount: penalties.length,
+      penaltyCount: penalties.filter(
+        item => item.sessionId === sessionId
+      ).length,
       warningCount: warnings.length
     };
   }
@@ -273,18 +292,22 @@
     active = false;
     save();
 
+    const sessionPenalties = penalties.filter(
+      item => item.sessionId === sessionId
+    );
+
     const result = {
+      sessionId,
       totalPenalty,
-      penaltyCount: penalties.length,
-      penalties: getPenalties(),
+      penaltyCount: sessionPenalties.length,
+      penalties: sessionPenalties.map(item => ({
+        ...item,
+        detail: clone(item.detail)
+      })),
       finishedAt: Date.now()
     };
 
-    window.dispatchEvent(
-      new CustomEvent("sx:race-penalties-finished", {
-        detail: result
-      })
-    );
+    emit("sx:race-penalties-finished", result);
 
     return result;
   }
@@ -293,8 +316,11 @@
     active = false;
     totalPenalty = 0;
     warnings = [];
-    lastWarning = {};
+    lastWarning = Object.create(null);
+    sessionId = null;
     save();
+
+    emit("sx:race-penalties-reset");
 
     return true;
   }
@@ -303,6 +329,8 @@
     penalties = [];
     totalPenalty = 0;
     save();
+
+    emit("sx:race-penalties-history-cleared");
 
     return true;
   }
@@ -337,11 +365,9 @@
   SX.vehicleRacePenalties = api;
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      init,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", init, {
+      once: true
+    });
   } else {
     init();
   }
@@ -351,3 +377,4 @@
 /* =========================================================
    END: VEHICLE RACE PENALTY SYSTEM — FILE 97
    ========================================================= */
+
