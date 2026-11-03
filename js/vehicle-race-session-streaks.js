@@ -2,7 +2,7 @@
 /* =========================================================
    SUPERX LEGEND — FILE 113
    FILE: js/vehicle-race-session-streaks.js
-   MODULE: Race Session Streak Tracker
+   MODULE: Advanced Race Streak Tracker
    ========================================================= */
 
 (function (window) {
@@ -10,21 +10,18 @@
 
   const SX = window.SUPERX = window.SUPERX || {};
 
-  const STORAGE_KEY = "superx_race_session_streaks_v1";
+  const STORAGE_KEY = "superx_race_session_streaks_v2";
+  const LEGACY_KEY = "superx_race_session_streaks_v1";
 
   const state = {
     raceWins: 0,
     bestRaceWins: 0,
-
     cleanRaces: 0,
     bestCleanRaces: 0,
-
     completedSessions: 0,
     bestSessions: 0,
-
     lastRaceId: null,
     lastSessionId: null,
-
     processedRaceIds: [],
     processedSessionIds: []
   };
@@ -37,35 +34,67 @@
       : 0;
   }
 
+  function safeId(value) {
+    return value == null
+      ? null
+      : String(value).trim().slice(0, 100) || null;
+  }
+
+  function uniqueIds(value, maximum) {
+    if (!Array.isArray(value)) return [];
+
+    return [...new Set(
+      value.map(safeId).filter(Boolean)
+    )].slice(-maximum);
+  }
+
+  function applyData(data) {
+    if (!data || typeof data !== "object") return;
+
+    state.raceWins = positiveNumber(data.raceWins);
+    state.bestRaceWins = Math.max(
+      state.raceWins,
+      positiveNumber(data.bestRaceWins)
+    );
+
+    state.cleanRaces = positiveNumber(data.cleanRaces);
+    state.bestCleanRaces = Math.max(
+      state.cleanRaces,
+      positiveNumber(data.bestCleanRaces)
+    );
+
+    state.completedSessions = positiveNumber(data.completedSessions);
+    state.bestSessions = Math.max(
+      state.completedSessions,
+      positiveNumber(data.bestSessions)
+    );
+
+    state.lastRaceId = safeId(data.lastRaceId);
+    state.lastSessionId = safeId(data.lastSessionId);
+
+    state.processedRaceIds = uniqueIds(
+      data.processedRaceIds,
+      500
+    );
+
+    state.processedSessionIds = uniqueIds(
+      data.processedSessionIds,
+      200
+    );
+  }
+
   function load() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const current = localStorage.getItem(STORAGE_KEY);
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      const raw = current || legacy;
 
       if (!raw) return;
 
       const data = JSON.parse(raw);
+      applyData(data);
 
-      if (!data || typeof data !== "object") return;
-
-      state.raceWins = positiveNumber(data.raceWins);
-      state.bestRaceWins = positiveNumber(data.bestRaceWins);
-
-      state.cleanRaces = positiveNumber(data.cleanRaces);
-      state.bestCleanRaces = positiveNumber(data.bestCleanRaces);
-
-      state.completedSessions = positiveNumber(data.completedSessions);
-      state.bestSessions = positiveNumber(data.bestSessions);
-
-      state.lastRaceId = data.lastRaceId || null;
-      state.lastSessionId = data.lastSessionId || null;
-
-      state.processedRaceIds = Array.isArray(data.processedRaceIds)
-        ? data.processedRaceIds.slice(-500)
-        : [];
-
-      state.processedSessionIds = Array.isArray(data.processedSessionIds)
-        ? data.processedSessionIds.slice(-200)
-        : [];
+      if (!current && legacy) save();
 
     } catch (error) {
       console.warn("[SUPERX Streaks] Load failed:", error);
@@ -80,19 +109,26 @@
       );
 
       return true;
-
     } catch (error) {
       console.warn("[SUPERX Streaks] Save failed:", error);
       return false;
     }
   }
 
+  function snapshot() {
+    return JSON.parse(JSON.stringify(state));
+  }
+
+  function restore(previous) {
+    Object.keys(state).forEach(key => {
+      state[key] = previous[key];
+    });
+  }
+
   function rememberId(list, id, maximum) {
-    if (!id) return false;
+    const value = safeId(id);
 
-    const value = String(id).slice(0, 100);
-
-    if (list.includes(value)) return false;
+    if (!value || list.includes(value)) return false;
 
     list.push(value);
 
@@ -103,21 +139,37 @@
     return true;
   }
 
-  function recordRace(data = {}) {
-    const raceId = data.raceId
-      ? String(data.raceId)
-      : null;
+  function emit(name, detail) {
+    window.dispatchEvent(new CustomEvent("sx:" + name, {
+      detail
+    }));
+  }
 
-    if (
-      raceId &&
-      state.processedRaceIds.includes(raceId)
-    ) {
+  function getState() {
+    return {
+      raceWins: state.raceWins,
+      bestRaceWins: state.bestRaceWins,
+      cleanRaces: state.cleanRaces,
+      bestCleanRaces: state.bestCleanRaces,
+      completedSessions: state.completedSessions,
+      bestSessions: state.bestSessions,
+      lastRaceId: state.lastRaceId,
+      lastSessionId: state.lastSessionId
+    };
+  }
+
+  function recordRace(data = {}) {
+    const raceId = safeId(data.raceId);
+
+    if (raceId && state.processedRaceIds.includes(raceId)) {
       return {
         success: false,
         error: "Race already recorded.",
         streaks: getState()
       };
     }
+
+    const previous = snapshot();
 
     if (raceId) {
       rememberId(state.processedRaceIds, raceId, 500);
@@ -127,29 +179,29 @@
     const won = data.won === true ||
       Number(data.position) === 1;
 
-    const clean = positiveNumber(data.penalties) === 0;
+    const penalties = Math.max(0, Number(data.penalties) || 0);
+    const clean = penalties === 0;
 
-    if (won) {
-      state.raceWins += 1;
-      state.bestRaceWins = Math.max(
-        state.bestRaceWins,
-        state.raceWins
-      );
-    } else {
-      state.raceWins = 0;
+    state.raceWins = won ? state.raceWins + 1 : 0;
+    state.bestRaceWins = Math.max(
+      state.bestRaceWins,
+      state.raceWins
+    );
+
+    state.cleanRaces = clean ? state.cleanRaces + 1 : 0;
+    state.bestCleanRaces = Math.max(
+      state.bestCleanRaces,
+      state.cleanRaces
+    );
+
+    if (!save()) {
+      restore(previous);
+
+      return {
+        success: false,
+        error: "Could not save race streak."
+      };
     }
-
-    if (clean) {
-      state.cleanRaces += 1;
-      state.bestCleanRaces = Math.max(
-        state.bestCleanRaces,
-        state.cleanRaces
-      );
-    } else {
-      state.cleanRaces = 0;
-    }
-
-    save();
 
     const result = {
       success: true,
@@ -158,10 +210,21 @@
       streaks: getState()
     };
 
-    window.dispatchEvent(new CustomEvent(
-      "sx:race-streak-updated",
-      { detail: result }
-    ));
+    emit("race-streak-updated", result);
+
+    if (state.raceWins > 0) {
+      emit("race-winning-streak", {
+        current: state.raceWins,
+        best: state.bestRaceWins
+      });
+    }
+
+    if (state.cleanRaces > 0) {
+      emit("race-clean-streak", {
+        current: state.cleanRaces,
+        best: state.bestCleanRaces
+      });
+    }
 
     return result;
   }
@@ -174,14 +237,17 @@
       };
     }
 
-    const id = String(session.id).slice(0, 100);
+    const id = safeId(session.id);
 
     if (state.processedSessionIds.includes(id)) {
       return {
         success: false,
-        error: "Session already recorded."
+        error: "Session already recorded.",
+        streaks: getState()
       };
     }
+
+    const previous = snapshot();
 
     rememberId(state.processedSessionIds, id, 200);
 
@@ -193,34 +259,22 @@
       state.completedSessions
     );
 
-    save();
+    if (!save()) {
+      restore(previous);
+
+      return {
+        success: false,
+        error: "Could not save session streak."
+      };
+    }
 
     const result = getState();
 
-    window.dispatchEvent(new CustomEvent(
-      "sx:session-streak-updated",
-      { detail: result }
-    ));
+    emit("session-streak-updated", result);
 
     return {
       success: true,
       streaks: result
-    };
-  }
-
-  function getState() {
-    return {
-      raceWins: state.raceWins,
-      bestRaceWins: state.bestRaceWins,
-
-      cleanRaces: state.cleanRaces,
-      bestCleanRaces: state.bestCleanRaces,
-
-      completedSessions: state.completedSessions,
-      bestSessions: state.bestSessions,
-
-      lastRaceId: state.lastRaceId,
-      lastSessionId: state.lastSessionId
     };
   }
 
@@ -240,32 +294,50 @@
       },
       {
         id: "sessions",
-        title: "Session Streak",
+        title: "Completed Sessions",
         current: state.completedSessions,
         best: state.bestSessions
       }
     ];
   }
 
+  function getSummary() {
+    return {
+      ...getState(),
+      highlights: getHighlights(),
+      totalTrackedRaces: state.processedRaceIds.length,
+      totalTrackedSessions: state.processedSessionIds.length
+    };
+  }
+
   function reset() {
+    const previous = snapshot();
+
     state.raceWins = 0;
     state.bestRaceWins = 0;
-
     state.cleanRaces = 0;
     state.bestCleanRaces = 0;
-
     state.completedSessions = 0;
     state.bestSessions = 0;
-
     state.lastRaceId = null;
     state.lastSessionId = null;
-
     state.processedRaceIds = [];
     state.processedSessionIds = [];
 
-    save();
+    if (!save()) {
+      restore(previous);
+      return {
+        success: false,
+        error: "Could not reset streak data."
+      };
+    }
 
-    return getState();
+    emit("race-streaks-reset", getState());
+
+    return {
+      success: true,
+      streaks: getState()
+    };
   }
 
   load();
@@ -275,10 +347,11 @@
     recordSession,
     getState,
     getHighlights,
+    getSummary,
     reset
   };
 
-  console.info("[SUPERX] Race Session Streaks loaded.");
+  console.info("[SUPERX] Advanced Race Streak Tracker loaded.");
 
 })(window);
 
