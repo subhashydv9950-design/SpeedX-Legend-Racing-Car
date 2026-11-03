@@ -2,19 +2,16 @@
 /* =========================================================
    SUPERX LEGEND — FILE 115
    FILE: js/vehicle-race-session-tags.js
-
-   PURPOSE:
-   - Add custom tags to race sessions.
-   - Rename and remove tags.
-   - Search sessions by tag.
-   - Keep tags separate from race history and timeline.
-========================================================= */
+   MODULE: Advanced Race Session Tags
+   ========================================================= */
 
 (function (window) {
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-  const STORAGE_KEY = "superx_race_session_tags_v1";
+
+  const STORAGE_KEY = "superx_race_session_tags_v2";
+  const LEGACY_KEY = "superx_race_session_tags_v1";
 
   const MAX_SESSIONS = 300;
   const MAX_TAGS_PER_SESSION = 12;
@@ -29,13 +26,14 @@
     "Fun Race"
   ];
 
-  function cleanText(value, maxLength) {
-    if (typeof value !== "string") return "";
+  function cleanText(value, maxLength = MAX_TAG_LENGTH) {
+    if (typeof value !== "string" &&
+        typeof value !== "number") return "";
 
-    return value
+    return String(value)
       .replace(/[<>]/g, "")
       .trim()
-      .slice(0, maxLength || MAX_TAG_LENGTH);
+      .slice(0, maxLength);
   }
 
   function normalizeTag(tag) {
@@ -46,22 +44,58 @@
     return cleanText(id, 100);
   }
 
-  function clone(value) {
-    return JSON.parse(JSON.stringify(value));
+  function normalizeRecord(record) {
+    if (!record || typeof record !== "object") {
+      return {
+        tags: [],
+        note: "",
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+    }
+
+    const tags = Array.isArray(record.tags)
+      ? record.tags.map(normalizeTag).filter(Boolean)
+      : [];
+
+    const uniqueTags = [];
+
+    tags.forEach(tag => {
+      if (!uniqueTags.some(item =>
+        item.toLowerCase() === tag.toLowerCase()
+      )) {
+        uniqueTags.push(tag);
+      }
+    });
+
+    return {
+      tags: uniqueTags.slice(0, MAX_TAGS_PER_SESSION),
+      note: cleanText(record.note, 500),
+      createdAt: Number(record.createdAt) || Date.now(),
+      updatedAt: Number(record.updatedAt) || Date.now()
+    };
   }
 
   function load() {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY) ||
+        localStorage.getItem(LEGACY_KEY);
 
       if (!raw) return {};
 
       const parsed = JSON.parse(raw);
 
-      return parsed && typeof parsed === "object" &&
-        !Array.isArray(parsed)
-        ? parsed
-        : {};
+      if (!parsed || typeof parsed !== "object" ||
+          Array.isArray(parsed)) return {};
+
+      const result = {};
+
+      Object.keys(parsed).slice(0, MAX_SESSIONS).forEach(id => {
+        const safeId = normalizeSessionId(id);
+        if (safeId) result[safeId] = normalizeRecord(parsed[id]);
+      });
+
+      return result;
     } catch (error) {
       console.warn("[SUPERX Tags] Load failed:", error);
       return {};
@@ -75,21 +109,15 @@
       const keys = Object.keys(records);
 
       if (keys.length > MAX_SESSIONS) {
-        keys
-          .sort(function (a, b) {
-            return records[a].updatedAt - records[b].updatedAt;
-          })
-          .slice(0, keys.length - MAX_SESSIONS)
-          .forEach(function (key) {
-            delete records[key];
-          });
+        keys.sort((a, b) =>
+          records[a].updatedAt - records[b].updatedAt
+        );
+
+        keys.slice(0, keys.length - MAX_SESSIONS)
+          .forEach(key => delete records[key]);
       }
 
-      window.localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(records)
-      );
-
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
       return true;
     } catch (error) {
       console.warn("[SUPERX Tags] Save failed:", error);
@@ -97,12 +125,19 @@
     }
   }
 
-  function getRecord(sessionId) {
-    const id = normalizeSessionId(sessionId);
+  function snapshot() {
+    return JSON.parse(JSON.stringify(records));
+  }
 
+  function restore(previous) {
+    records = previous;
+  }
+
+  function getRecord(sessionId, create = false) {
+    const id = normalizeSessionId(sessionId);
     if (!id) return null;
 
-    if (!records[id]) {
+    if (!records[id] && create) {
       records[id] = {
         tags: [],
         note: "",
@@ -111,7 +146,7 @@
       };
     }
 
-    return records[id];
+    return records[id] || null;
   }
 
   function emitUpdate(sessionId, action) {
@@ -119,9 +154,10 @@
       "sx:race-session-tags-updated",
       {
         detail: {
-          sessionId: sessionId,
-          action: action,
-          tags: getTags(sessionId)
+          sessionId,
+          action,
+          tags: getTags(sessionId),
+          note: getNote(sessionId)
         }
       }
     ));
@@ -132,36 +168,30 @@
     const value = normalizeTag(tag);
 
     if (!id || !value) {
-      return {
-        success: false,
-        reason: "invalid-input"
-      };
+      return { success: false, reason: "invalid-input" };
     }
 
-    const record = getRecord(id);
+    const previous = snapshot();
+    const record = getRecord(id, true);
 
-    const exists = record.tags.some(function (item) {
-      return item.toLowerCase() === value.toLowerCase();
-    });
-
-    if (exists) {
-      return {
-        success: false,
-        reason: "already-exists"
-      };
+    if (record.tags.some(item =>
+      item.toLowerCase() === value.toLowerCase()
+    )) {
+      return { success: false, reason: "already-exists" };
     }
 
     if (record.tags.length >= MAX_TAGS_PER_SESSION) {
-      return {
-        success: false,
-        reason: "tag-limit-reached"
-      };
+      return { success: false, reason: "tag-limit-reached" };
     }
 
     record.tags.push(value);
     record.updatedAt = Date.now();
 
-    save();
+    if (!save()) {
+      restore(previous);
+      return { success: false, reason: "save-failed" };
+    }
+
     emitUpdate(id, "add");
 
     return {
@@ -177,19 +207,23 @@
 
     if (!record || !value) return false;
 
+    const previous = snapshot();
     const before = record.tags.length;
 
-    record.tags = record.tags.filter(function (item) {
-      return item.toLowerCase() !== value.toLowerCase();
-    });
+    record.tags = record.tags.filter(item =>
+      item.toLowerCase() !== value.toLowerCase()
+    );
 
     if (before === record.tags.length) return false;
 
     record.updatedAt = Date.now();
 
-    save();
-    emitUpdate(id, "remove");
+    if (!save()) {
+      restore(previous);
+      return false;
+    }
 
+    emitUpdate(id, "remove");
     return true;
   }
 
@@ -201,89 +235,76 @@
 
     if (!record || !oldValue || !newValue) return false;
 
-    const oldIndex = record.tags.findIndex(function (item) {
-      return item.toLowerCase() === oldValue.toLowerCase();
-    });
+    const previous = snapshot();
 
-    if (oldIndex === -1) return false;
+    const index = record.tags.findIndex(item =>
+      item.toLowerCase() === oldValue.toLowerCase()
+    );
 
-    const duplicate = record.tags.some(function (item) {
-      return item.toLowerCase() === newValue.toLowerCase();
-    });
+    if (index < 0) return false;
 
-    if (duplicate) return false;
+    if (record.tags.some(item =>
+      item.toLowerCase() === newValue.toLowerCase()
+    )) return false;
 
-    record.tags[oldIndex] = newValue;
+    record.tags[index] = newValue;
     record.updatedAt = Date.now();
 
-    save();
-    emitUpdate(id, "rename");
+    if (!save()) {
+      restore(previous);
+      return false;
+    }
 
+    emitUpdate(id, "rename");
     return true;
   }
 
   function getTags(sessionId) {
-    const id = normalizeSessionId(sessionId);
-    const record = id ? records[id] : null;
-
-    return record
-      ? record.tags.slice()
-      : [];
+    const record = getRecord(sessionId);
+    return record ? record.tags.slice() : [];
   }
 
   function setNote(sessionId, note) {
     const id = normalizeSessionId(sessionId);
-
     if (!id) return false;
 
-    const record = getRecord(id);
+    const previous = snapshot();
+    const record = getRecord(id, true);
 
     record.note = cleanText(note, 500);
     record.updatedAt = Date.now();
 
-    save();
-    emitUpdate(id, "note");
+    if (!save()) {
+      restore(previous);
+      return false;
+    }
 
+    emitUpdate(id, "note");
     return true;
   }
 
   function getNote(sessionId) {
-    const id = normalizeSessionId(sessionId);
-    const record = id ? records[id] : null;
-
+    const record = getRecord(sessionId);
     return record ? record.note : "";
   }
 
   function getAllRecords() {
-    return Object.keys(records).map(function (id) {
-      return {
-        sessionId: id,
-        tags: records[id].tags.slice(),
-        note: records[id].note,
-        createdAt: records[id].createdAt,
-        updatedAt: records[id].updatedAt
-      };
-    });
+    return Object.keys(records).map(id => ({
+      sessionId: id,
+      tags: records[id].tags.slice(),
+      note: records[id].note,
+      createdAt: records[id].createdAt,
+      updatedAt: records[id].updatedAt
+    }));
   }
 
   function findByTag(tag) {
     const query = normalizeTag(tag).toLowerCase();
-
     if (!query) return [];
 
-    return Object.keys(records)
-      .filter(function (id) {
-        return records[id].tags.some(function (item) {
-          return item.toLowerCase() === query;
-        });
-      })
-      .map(function (id) {
-        return {
-          sessionId: id,
-          tags: records[id].tags.slice(),
-          note: records[id].note
-        };
-      });
+    return getAllRecords().filter(record =>
+      record.tags.some(item => item.toLowerCase() === query)
+    );
   }
 
   function search(query) {
@@ -291,59 +312,52 @@
 
     if (!value) return getAllRecords();
 
-    return getAllRecords().filter(function (record) {
-      return (
-        record.sessionId.toLowerCase().includes(value) ||
-        record.tags.some(function (tag) {
-          return tag.toLowerCase().includes(value);
-        }) ||
-        record.note.toLowerCase().includes(value)
-      );
-    });
+    return getAllRecords().filter(record =>
+      record.sessionId.toLowerCase().includes(value) ||
+      record.tags.some(tag => tag.toLowerCase().includes(value)) ||
+      record.note.toLowerCase().includes(value)
+    );
   }
 
   function getPopularTags() {
     const counts = {};
 
-    Object.keys(records).forEach(function (id) {
-      records[id].tags.forEach(function (tag) {
+    Object.values(records).forEach(record => {
+      record.tags.forEach(tag => {
         const key = tag.toLowerCase();
 
         if (!counts[key]) {
-          counts[key] = {
-            name: tag,
-            count: 0
-          };
+          counts[key] = { name: tag, count: 0 };
         }
 
         counts[key].count += 1;
       });
     });
 
-    return Object.keys(counts)
-      .map(function (key) {
-        return counts[key];
-      })
-      .sort(function (a, b) {
-        return b.count - a.count;
-      });
+    return Object.values(counts)
+      .sort((a, b) => b.count - a.count);
   }
 
   function deleteSessionTags(sessionId) {
     const id = normalizeSessionId(sessionId);
-
     if (!id || !records[id]) return false;
 
+    const previous = snapshot();
     delete records[id];
 
-    save();
+    if (!save()) {
+      restore(previous);
+      return false;
+    }
 
     window.dispatchEvent(new CustomEvent(
       "sx:race-session-tags-updated",
       {
         detail: {
           sessionId: id,
-          action: "delete-session"
+          action: "delete-session",
+          tags: [],
+          note: ""
         }
       }
     ));
@@ -352,8 +366,13 @@
   }
 
   function clearAll() {
+    const previous = snapshot();
     records = {};
-    save();
+
+    if (!save()) {
+      restore(previous);
+      return false;
+    }
 
     window.dispatchEvent(new CustomEvent(
       "sx:race-session-tags-cleared"
@@ -367,24 +386,23 @@
   }
 
   SX.vehicleRaceSessionTags = {
-    addTag: addTag,
-    removeTag: removeTag,
-    renameTag: renameTag,
-    getTags: getTags,
-    setNote: setNote,
-    getNote: getNote,
-    getAllRecords: getAllRecords,
-    findByTag: findByTag,
-    search: search,
-    getPopularTags: getPopularTags,
-    deleteSessionTags: deleteSessionTags,
-    clearAll: clearAll,
-    getDefaultTags: getDefaultTags
+    addTag,
+    removeTag,
+    renameTag,
+    getTags,
+    setNote,
+    getNote,
+    getAllRecords,
+    findByTag,
+    search,
+    getPopularTags,
+    deleteSessionTags,
+    clearAll,
+    getDefaultTags
   };
 
-  console.log("[SUPERX] Race Session Tags ready.");
+  console.info("[SUPERX] Advanced Race Session Tags loaded.");
 
 })(window);
 
 /* ======================= FILE 115 END ======================= */
-  
