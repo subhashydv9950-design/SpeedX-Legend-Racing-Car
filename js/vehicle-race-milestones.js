@@ -9,8 +9,7 @@
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const STORAGE_KEY = "superx_race_milestones_v1";
+  const STORAGE_KEY = "superx_race_milestones_v2";
 
   const DEFINITIONS = [
     { id: "race_10", category: "races", target: 10, title: "Rookie Racer" },
@@ -38,21 +37,23 @@
     return Number.isFinite(result) ? result : 0;
   }
 
+  function emit(name, detail = {}) {
+    window.dispatchEvent(
+      new CustomEvent(name, { detail })
+    );
+  }
+
   function load() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-
-      if (!raw) return {};
-
-      const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "{}"
+      );
 
       return parsed && typeof parsed === "object" &&
         !Array.isArray(parsed)
         ? parsed
         : {};
-
-    } catch (error) {
-      console.warn("[SUPERX Milestones] Load failed:", error);
+    } catch (_) {
       return {};
     }
   }
@@ -66,8 +67,7 @@
         JSON.stringify(progress)
       );
       return true;
-    } catch (error) {
-      console.warn("[SUPERX Milestones] Save failed:", error);
+    } catch (_) {
       return false;
     }
   }
@@ -112,28 +112,24 @@
           current.unlocked = true;
           current.unlockedAt = new Date().toISOString();
 
-          unlockedNow.push({
+          const unlocked = {
             ...definition,
             ...current
-          });
+          };
 
-          window.dispatchEvent(new CustomEvent(
-            "sx:milestone-unlocked",
-            {
-              detail: {
-                id: definition.id,
-                title: definition.title,
-                category,
-                target: definition.target
-              }
-            }
-          ));
+          unlockedNow.push(unlocked);
+
+          emit("sx:milestone-unlocked", {
+            id: definition.id,
+            title: definition.title,
+            category,
+            target: definition.target,
+            unlockedAt: current.unlockedAt
+          });
         }
 
         progress[definition.id] = current;
       });
-
-    save();
 
     return unlockedNow;
   }
@@ -162,6 +158,15 @@
       Math.max(0, number(data.xp))
     ));
 
+    save();
+
+    if (unlocked.length) {
+      emit("sx:milestones-updated", {
+        unlocked: unlocked.map(item => item.id),
+        summary: getSummary()
+      });
+    }
+
     return unlocked;
   }
 
@@ -174,9 +179,7 @@
         ...current,
         percentage: Math.min(
           100,
-          Math.round(
-            current.value / definition.target * 100
-          )
+          Math.round(current.value / definition.target * 100)
         ),
         remaining: Math.max(
           0,
@@ -209,23 +212,60 @@
   }
 
   function getNextMilestones(limit = 3) {
+    const count = Math.max(
+      1,
+      Math.min(20, Math.floor(number(limit) || 3))
+    );
+
     return getLocked()
-      .sort((a, b) =>
-        a.remaining - b.remaining
-      )
-      .slice(0, Math.max(1, Math.min(20, number(limit) || 3)));
+      .sort((a, b) => {
+        const progressA = a.value / a.target;
+        const progressB = b.value / b.target;
+
+        return progressB - progressA;
+      })
+      .slice(0, count);
+  }
+
+  function getById(id) {
+    const definition = DEFINITIONS.find(
+      item => item.id === String(id)
+    );
+
+    if (!definition) return null;
+
+    const current = getProgress(definition.id);
+
+    return {
+      ...definition,
+      ...current,
+      percentage: Math.min(
+        100,
+        Math.round(current.value / definition.target * 100)
+      ),
+      remaining: Math.max(0, definition.target - current.value)
+    };
+  }
+
+  function resetProgress() {
+    progress = {};
+    save();
+
+    emit("sx:milestones-reset");
+
+    return getSummary();
   }
 
   SX.vehicleRaceMilestones = {
     recordRace,
     getAll,
+    getById,
     getUnlocked,
     getLocked,
     getSummary,
-    getNextMilestones
+    getNextMilestones,
+    resetProgress
   };
-
-  console.info("[SUPERX] Race Session Milestones loaded.");
 
 })(window);
 
