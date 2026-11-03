@@ -408,9 +408,18 @@
 <script src="js/cars-data.js"></script>
 <script src="js/main.js"></script>
 
+<!-- FIX: LOADING SCREEN -->
+<script>
+window.addEventListener("load", function () {
+  setTimeout(function () {
+    const loader = document.getElementById("loadingScreen");
+    if (loader) loader.classList.add("hide");
+  }, 700);
+});
+</script>
+
 </body>
 </html>
-
 <!-- ==================================================
  SUPERX LEGEND — FILE 01 END
 ================================================== -->
