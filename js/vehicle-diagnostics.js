@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 89
    FILE: js/vehicle-diagnostics.js
@@ -9,91 +8,72 @@
   "use strict";
 
   const SX = window.SUPERX = window.SUPERX || {};
-
-  const STORAGE_KEY = "superx_vehicle_diagnostics_v1";
+  const STORAGE_KEY = "superx_vehicle_diagnostics_v2";
 
   const SYSTEMS = {
     engine: {
       name: "Engine System",
-      checks: [
-        "Engine temperature",
-        "Engine RPM",
-        "Engine load",
-        "Oil pressure"
-      ]
+      checks: ["Engine temperature", "Engine RPM", "Engine load", "Oil pressure"]
     },
     battery: {
       name: "Battery System",
-      checks: [
-        "Battery voltage",
-        "Electrical stability"
-      ]
+      checks: ["Battery voltage", "Electrical stability"]
     },
     brakes: {
       name: "Brake System",
-      checks: [
-        "Brake input",
-        "ABS availability"
-      ]
+      checks: ["Brake input", "ABS availability"]
     },
     transmission: {
       name: "Transmission System",
-      checks: [
-        "Gear selection",
-        "Transmission status"
-      ]
+      checks: ["Gear selection", "Transmission status"]
     },
     fuel: {
       name: "Fuel System",
-      checks: [
-        "Fuel level",
-        "Fuel system availability"
-      ]
+      checks: ["Fuel level", "Fuel system availability"]
     },
     cooling: {
       name: "Cooling System",
-      checks: [
-        "Engine temperature",
-        "Cooling condition"
-      ]
+      checks: ["Engine temperature", "Cooling condition"]
     },
     electronics: {
       name: "Electronic Systems",
-      checks: [
-        "Telemetry availability",
-        "Sensor availability"
-      ]
+      checks: ["Telemetry availability", "Sensor availability"]
     }
   };
 
   let reports = [];
   let activeFaults = {};
   let lastReport = null;
+  let initialized = false;
+
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
 
   function load() {
     try {
-      const saved = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "null"
-      );
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
 
-      if (saved && typeof saved === "object") {
-        reports = Array.isArray(saved.reports)
-          ? saved.reports
-          : [];
+      reports = saved && Array.isArray(saved.reports)
+        ? saved.reports.slice(0, 50)
+        : [];
 
-        activeFaults =
-          saved.activeFaults &&
-          typeof saved.activeFaults === "object"
-            ? saved.activeFaults
-            : {};
+      activeFaults = saved && saved.activeFaults &&
+        typeof saved.activeFaults === "object"
+        ? saved.activeFaults
+        : {};
 
-        lastReport = saved.lastReport || null;
-      }
+      lastReport = saved && saved.lastReport
+        ? saved.lastReport
+        : null;
     } catch (error) {
       reports = [];
       activeFaults = {};
       lastReport = null;
+      console.warn("[SUPERX Diagnostics] Load failed:", error);
     }
+
+    return true;
   }
 
   function save() {
@@ -106,138 +86,198 @@
           lastReport
         })
       );
+      return true;
     } catch (error) {
-      console.warn(
-        "[SUPERX Diagnostics] Save failed:",
-        error
-      );
+      console.warn("[SUPERX Diagnostics] Save failed:", error);
+      return false;
     }
   }
 
+  function getSelectedCarId() {
+    if (typeof SX.getSelectedCar !== "function") return "default";
+
+    const car = SX.getSelectedCar();
+
+    return String(
+      car && (car.id || car.name)
+        ? car.id || car.name
+        : "default"
+    );
+  }
+
   function getTelemetry() {
-    return SX.vehicleTelemetry &&
-      typeof SX.vehicleTelemetry.getData === "function"
-      ? SX.vehicleTelemetry.getData()
-      : null;
+    const module = SX.vehicleTelemetry;
+
+    if (!module || typeof module.getData !== "function") {
+      return null;
+    }
+
+    const data = module.getData();
+
+    return data && typeof data === "object" ? data : null;
+  }
+
+  function getNumber(data, key, fallback) {
+    const value = Number(data && data[key]);
+
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  function issue(code, message, severity, system) {
+    return { code, message, severity, system };
   }
 
   function checkEngine(data) {
     const issues = [];
+    const temperature = getNumber(data, "engineTemperature", 0);
+    const rpm = getNumber(data, "rpm", 0);
+    const oilPressure = getNumber(data, "oilPressure", 0);
 
-    if (data.engineTemperature >= 115) {
-      issues.push({
-        code: "P0217",
-        message: "Engine overheating detected.",
-        severity: "critical"
-      });
+    if (temperature >= 115) {
+      issues.push(issue(
+        "P0217",
+        "Engine overheating detected.",
+        "critical",
+        "engine"
+      ));
     }
 
-    if (data.rpm >= 7500) {
-      issues.push({
-        code: "P0219",
-        message: "Engine RPM exceeded safe game limit.",
-        severity: "warning"
-      });
+    if (rpm >= 7500) {
+      issues.push(issue(
+        "P0219",
+        "Engine RPM exceeded the configured game limit.",
+        "warning",
+        "engine"
+      ));
     }
 
-    if (
-      data.oilPressure > 0 &&
-      data.oilPressure < 1
-    ) {
-      issues.push({
-        code: "P0524",
-        message: "Engine oil pressure too low.",
-        severity: "critical"
-      });
+    if (oilPressure > 0 && oilPressure < 1) {
+      issues.push(issue(
+        "P0524",
+        "Engine oil pressure too low.",
+        "critical",
+        "engine"
+      ));
     }
 
     return issues;
   }
 
   function checkBattery(data) {
-    if (data.batteryVoltage < 11.5) {
-      return [{
-        code: "P0562",
-        message: "System voltage is low.",
-        severity: "warning"
-      }];
+    const voltage = getNumber(data, "batteryVoltage", 12.6);
+
+    if (voltage < 11.5) {
+      return [issue(
+        "P0562",
+        "System voltage is low.",
+        "warning",
+        "battery"
+      )];
     }
 
     return [];
   }
 
   function checkBrakes() {
-    const issues = [];
+    const assist = SX.vehicleDrivingAssist;
 
     if (
-      SX.vehicleDrivingAssist &&
-      typeof SX.vehicleDrivingAssist.getState === "function"
+      assist &&
+      typeof assist.getState === "function"
     ) {
-      const assist = SX.vehicleDrivingAssist.getState();
+      const state = assist.getState();
 
-      if (!assist.settings.abs) {
-        issues.push({
-          code: "C0101",
-          message: "ABS assistance is disabled.",
-          severity: "info"
-        });
+      if (state && state.settings && state.settings.abs === false) {
+        return [issue(
+          "C0101",
+          "ABS assistance is disabled.",
+          "info",
+          "brakes"
+        )];
       }
     }
 
-    return issues;
+    return [];
   }
 
   function checkTransmission() {
     if (!SX.vehicleTransmission) {
-      return [{
-        code: "U0100",
-        message: "Transmission module unavailable.",
-        severity: "info"
-      }];
+      return [issue(
+        "U0100",
+        "Transmission module unavailable.",
+        "info",
+        "transmission"
+      )];
     }
 
     return [];
   }
 
   function checkFuel(data) {
-    if (data.fuel <= 3) {
-      return [{
-        code: "P0463",
-        message: "Fuel level critically low.",
-        severity: "critical"
-      }];
+    const fuel = getNumber(data, "fuel", 100);
+
+    if (fuel <= 3) {
+      return [issue(
+        "P0463",
+        "Fuel level critically low.",
+        "critical",
+        "fuel"
+      )];
     }
 
     return [];
   }
 
   function checkCooling(data) {
-    if (data.engineTemperature >= 105) {
-      return [{
-        code: "P0128",
-        message: "Cooling system temperature elevated.",
-        severity: "warning"
-      }];
+    const temperature = getNumber(data, "engineTemperature", 0);
+
+    if (temperature >= 105 && temperature < 115) {
+      return [issue(
+        "P0128",
+        "Cooling system temperature elevated.",
+        "warning",
+        "cooling"
+      )];
     }
 
     return [];
   }
 
   function checkElectronics() {
-    const issues = [];
-
     if (!SX.vehicleTelemetry) {
-      issues.push({
-        code: "U0001",
-        message: "Telemetry module unavailable.",
-        severity: "info"
-      });
+      return [issue(
+        "U0001",
+        "Telemetry module unavailable.",
+        "info",
+        "electronics"
+      )];
     }
 
-    return issues;
+    return [];
+  }
+
+  function getStatus(issues) {
+    if (issues.some(item => item.severity === "critical")) {
+      return "critical";
+    }
+
+    if (issues.some(item => item.severity === "warning")) {
+      return "warning";
+    }
+
+    if (issues.length) return "notice";
+
+    return "healthy";
   }
 
   function runSystemCheck(systemKey, data) {
+    if (!SYSTEMS[systemKey]) {
+      return {
+        success: false,
+        message: "Unknown diagnostic system."
+      };
+    }
+
     const checks = {
       engine: () => checkEngine(data),
       battery: () => checkBattery(data),
@@ -248,13 +288,6 @@
       electronics: () => checkElectronics()
     };
 
-    if (!checks[systemKey]) {
-      return {
-        success: false,
-        message: "Unknown diagnostic system."
-      };
-    }
-
     const issues = checks[systemKey]();
 
     return {
@@ -264,22 +297,6 @@
       status: getStatus(issues),
       issues
     };
-  }
-
-  function getStatus(issues) {
-    if (issues.some(x => x.severity === "critical")) {
-      return "critical";
-    }
-
-    if (issues.some(x => x.severity === "warning")) {
-      return "warning";
-    }
-
-    if (issues.length) {
-      return "notice";
-    }
-
-    return "healthy";
   }
 
   function runFullScan() {
@@ -297,37 +314,29 @@
     );
 
     const issues = systems.flatMap(
-      system => system.issues.map(issue => ({
-        ...issue,
-        system: system.system
-      }))
+      item => item.issues
     );
 
     const report = {
       id: "diagnostic_" + Date.now(),
       date: new Date().toISOString(),
-      carId: SX.getSelectedCar
-        ? (
-            SX.getSelectedCar()?.id ||
-            SX.getSelectedCar()?.name ||
-            "default"
-          )
-        : "default",
+      carId: getSelectedCarId(),
       status: getStatus(issues),
       systems,
       issues,
       issueCount: issues.length,
       healthySystems: systems.filter(
         item => item.status === "healthy"
-      ).length
+      ).length,
+      totalSystems: systems.length
     };
 
     lastReport = report;
 
     activeFaults = {};
 
-    issues.forEach(issue => {
-      activeFaults[issue.code] = issue;
+    issues.forEach(item => {
+      activeFaults[item.code] = item;
     });
 
     reports.unshift(report);
@@ -342,6 +351,7 @@
       new CustomEvent("sx:diagnostics-completed", {
         detail: {
           reportId: report.id,
+          carId: report.carId,
           status: report.status,
           issueCount: report.issueCount
         }
@@ -350,14 +360,12 @@
 
     return {
       success: true,
-      report
+      report: clone(report)
     };
   }
 
   function getLastReport() {
-    return lastReport
-      ? JSON.parse(JSON.stringify(lastReport))
-      : null;
+    return lastReport ? clone(lastReport) : null;
   }
 
   function getReports(limit) {
@@ -365,15 +373,11 @@
       ? limit
       : reports.length;
 
-    return reports.slice(0, count).map(
-      report => JSON.parse(JSON.stringify(report))
-    );
+    return reports.slice(0, count).map(clone);
   }
 
   function getActiveFaults() {
-    return Object.values(activeFaults).map(
-      issue => ({ ...issue })
-    );
+    return Object.values(activeFaults).map(item => ({ ...item }));
   }
 
   function clearResolvedFaults() {
@@ -389,13 +393,11 @@
   }
 
   function getSystems() {
-    return Object.entries(SYSTEMS).map(
-      ([id, system]) => ({
-        id,
-        name: system.name,
-        checks: [...system.checks]
-      })
-    );
+    return Object.entries(SYSTEMS).map(([id, system]) => ({
+      id,
+      name: system.name,
+      checks: [...system.checks]
+    }));
   }
 
   function resetHistory() {
@@ -404,6 +406,10 @@
     lastReport = null;
 
     save();
+
+    window.dispatchEvent(
+      new CustomEvent("sx:diagnostics-reset")
+    );
 
     return true;
   }
@@ -426,7 +432,11 @@
   }
 
   function init() {
+    if (initialized) return api;
+
     load();
+    initialized = true;
+
     return api;
   }
 
@@ -448,11 +458,7 @@
   SX.vehicleDiagnostics = api;
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      init,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }
@@ -462,4 +468,3 @@
 /* =========================================================
    END: VEHICLE DIAGNOSTICS SYSTEM — FILE 89
    ========================================================= */
-      
