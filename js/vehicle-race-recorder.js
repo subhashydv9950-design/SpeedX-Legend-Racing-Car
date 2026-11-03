@@ -1,4 +1,3 @@
-
 /* =========================================================
    SUPERX LEGEND — FILE 92
    FILE: js/vehicle-race-recorder.js
@@ -10,14 +9,33 @@
 
   const SX = window.SUPERX = window.SUPERX || {};
 
-  const STORAGE_KEY = "superx_race_recorder_v1";
-
+  const STORAGE_KEY = "superx_race_recorder_v2";
   const MAX_RECORDS = 100;
   const MAX_SAMPLES = 3600;
+  const SAMPLE_INTERVAL = 250;
 
   let activeRace = null;
   let records = [];
-  let sampleTimer = 0;
+  let sampleTimer = null;
+
+  function number(value, fallback = 0) {
+    const result = Number(value);
+    return Number.isFinite(result) ? result : fallback;
+  }
+
+  function emit(name, detail = {}) {
+    window.dispatchEvent(
+      new CustomEvent(name, { detail })
+    );
+  }
+
+  function clone(value) {
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (_) {
+      return null;
+    }
+  }
 
   function getCarId() {
     const car = SX.getSelectedCar
@@ -29,42 +47,6 @@
         ? car.id || car.name
         : "default"
     );
-  }
-
-  function number(value, fallback) {
-    const result = Number(value);
-
-    return Number.isFinite(result)
-      ? result
-      : fallback;
-  }
-
-  function save() {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(records)
-      );
-    } catch (error) {
-      console.warn(
-        "[SUPERX Race Recorder] Save failed:",
-        error
-      );
-    }
-  }
-
-  function load() {
-    try {
-      const saved = JSON.parse(
-        localStorage.getItem(STORAGE_KEY) || "[]"
-      );
-
-      records = Array.isArray(saved)
-        ? saved
-        : [];
-    } catch (error) {
-      records = [];
-    }
   }
 
   function getVehicleSnapshot() {
@@ -79,16 +61,61 @@
       : {};
 
     return {
-      speed: number(telemetry.speed, 0),
-      rpm: number(telemetry.rpm, 0),
+      speed: number(telemetry.speed),
+      rpm: number(telemetry.rpm),
       gear: number(transmission.gear, 1),
-      throttle: number(telemetry.throttle, 0),
-      brake: number(telemetry.brake, 0),
-      steering: number(telemetry.steering, 0)
+      throttle: number(telemetry.throttle),
+      brake: number(telemetry.brake),
+      steering: number(telemetry.steering)
     };
   }
 
-  function start(options) {
+  function save() {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(records.slice(0, MAX_RECORDS))
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function load() {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]"
+      );
+
+      records = Array.isArray(saved)
+        ? saved
+            .filter(item => item && typeof item === "object")
+            .slice(0, MAX_RECORDS)
+        : [];
+    } catch (_) {
+      records = [];
+    }
+  }
+
+  function stopSampling() {
+    if (sampleTimer !== null) {
+      clearInterval(sampleTimer);
+      sampleTimer = null;
+    }
+  }
+
+  function startSampling() {
+    stopSampling();
+
+    sampleTimer = setInterval(function () {
+      if (activeRace && activeRace.status === "recording") {
+        sample(false);
+      }
+    }, SAMPLE_INTERVAL);
+  }
+
+  function start(options = {}) {
     if (activeRace) {
       return {
         success: false,
@@ -96,17 +123,11 @@
       };
     }
 
-    const settings = options || {};
-
     activeRace = {
       id: "race_record_" + Date.now(),
       carId: getCarId(),
-      raceName: String(
-        settings.raceName || "Free Race"
-      ).slice(0, 80),
-      mapName: String(
-        settings.mapName || "Unknown Map"
-      ).slice(0, 80),
+      raceName: String(options.raceName || "Free Race").slice(0, 80),
+      mapName: String(options.mapName || "Unknown Map").slice(0, 80),
       startedAt: Date.now(),
       elapsed: 0,
       distance: 0,
@@ -116,7 +137,9 @@
       events: [],
       laps: [],
       status: "recording",
-      lastSampleAt: 0
+      lastSampleAt: 0,
+      pausedDuration: 0,
+      pausedAt: 0
     };
 
     addEvent("race_started", {
@@ -124,14 +147,14 @@
       mapName: activeRace.mapName
     });
 
-    window.dispatchEvent(
-      new CustomEvent("sx:race-recording-started", {
-        detail: {
-          id: activeRace.id,
-          carId: activeRace.carId
-        }
-      })
-    );
+    startSampling();
+
+    emit("sx:race-recording-started", {
+      id: activeRace.id,
+      carId: activeRace.carId
+    });
+
+    sample(true);
 
     return {
       success: true,
@@ -139,12 +162,12 @@
     };
   }
 
-  function addEvent(type, detail) {
+  function addEvent(type, detail = {}) {
     if (!activeRace) return false;
 
     activeRace.events.push({
-      type: String(type),
-      detail: detail || {},
+      type: String(type || "event"),
+      detail: clone(detail) || {},
       time: Date.now(),
       elapsed: activeRace.elapsed
     });
@@ -156,7 +179,7 @@
     return true;
   }
 
-  function sample(force) {
+  function sample(force = false) {
     if (!activeRace || activeRace.status !== "recording") {
       return false;
     }
@@ -165,23 +188,26 @@
 
     if (
       !force &&
-      now - activeRace.lastSampleAt < 250
+      now - activeRace.lastSampleAt < SAMPLE_INTERVAL
     ) {
       return false;
     }
 
     const vehicle = getVehicleSnapshot();
+    const elapsed = Math.max(
+      0,
+      (now - activeRace.startedAt - activeRace.pausedDuration) / 1000
+    );
 
     const sampleData = {
       time: now,
-      elapsed: (now - activeRace.startedAt) / 1000,
+      elapsed,
       ...vehicle
     };
 
     activeRace.samples.push(sampleData);
     activeRace.lastSampleAt = now;
-
-    activeRace.elapsed = sampleData.elapsed;
+    activeRace.elapsed = elapsed;
 
     activeRace.bestSpeed = Math.max(
       activeRace.bestSpeed,
@@ -201,9 +227,11 @@
   }
 
   function recordDistance(kilometres) {
-    if (!activeRace) return false;
+    if (!activeRace || activeRace.status !== "recording") {
+      return false;
+    }
 
-    const amount = number(kilometres, 0);
+    const amount = number(kilometres);
 
     if (amount <= 0) return false;
 
@@ -216,31 +244,25 @@
     return activeRace.distance;
   }
 
-  function recordLap(lapData) {
+  function recordLap(lapData = {}) {
     if (!activeRace) return false;
-
-    const data = lapData || {};
 
     const lap = {
       number: activeRace.laps.length + 1,
-      time: Math.max(
-        0,
-        number(data.milliseconds, 0)
-      ),
-      position: number(data.position, 0),
+      time: Math.max(0, number(lapData.milliseconds)),
+      position: number(lapData.position),
       timestamp: Date.now()
     };
 
     activeRace.laps.push(lap);
-
     addEvent("lap_completed", lap);
 
-    return lap;
+    return { ...lap };
   }
 
   function recordCheckpoint(checkpointId) {
     return addEvent("checkpoint_completed", {
-      checkpointId: String(checkpointId)
+      checkpointId: String(checkpointId ?? "checkpoint")
     });
   }
 
@@ -249,10 +271,15 @@
       return false;
     }
 
+    sample(true);
     activeRace.status = "paused";
     activeRace.pausedAt = Date.now();
 
     addEvent("race_paused");
+
+    emit("sx:race-recording-paused", {
+      id: activeRace.id
+    });
 
     return true;
   }
@@ -262,15 +289,22 @@
       return false;
     }
 
-    const pauseDuration =
-      Date.now() - activeRace.pausedAt;
+    const now = Date.now();
 
-    activeRace.startedAt += pauseDuration;
+    activeRace.pausedDuration += Math.max(
+      0,
+      now - activeRace.pausedAt
+    );
+
+    activeRace.pausedAt = 0;
     activeRace.status = "recording";
 
-    delete activeRace.pausedAt;
-
     addEvent("race_resumed");
+    startSampling();
+
+    emit("sx:race-recording-resumed", {
+      id: activeRace.id
+    });
 
     return true;
   }
@@ -279,7 +313,7 @@
     const samples = race.samples || [];
 
     const totalSpeed = samples.reduce(
-      (sum, item) => sum + item.speed,
+      (sum, item) => sum + number(item.speed),
       0
     );
 
@@ -305,7 +339,7 @@
     };
   }
 
-  function finish(options) {
+  function finish(options = {}) {
     if (!activeRace) {
       return {
         success: false,
@@ -315,30 +349,37 @@
 
     if (activeRace.status === "recording") {
       sample(true);
+    } else if (activeRace.status === "paused") {
+      activeRace.pausedDuration += Math.max(
+        0,
+        Date.now() - activeRace.pausedAt
+      );
+      activeRace.pausedAt = 0;
     }
 
-    const settings = options || {};
+    stopSampling();
 
-    const finalStatus = settings.status === "abandoned"
+    const finalStatus = options.status === "abandoned"
       ? "abandoned"
       : "completed";
 
     activeRace.status = finalStatus;
+    activeRace.elapsed = Math.max(
+      0,
+      (Date.now() - activeRace.startedAt - activeRace.pausedDuration) / 1000
+    );
 
     addEvent("race_finished", {
       status: finalStatus
     });
 
-    const summary = createSummary(
-      activeRace,
-      finalStatus
-    );
+    const summary = createSummary(activeRace, finalStatus);
 
     const result = {
       ...summary,
-      samples: activeRace.samples,
-      events: activeRace.events,
-      laps: activeRace.laps
+      samples: clone(activeRace.samples) || [],
+      events: clone(activeRace.events) || [],
+      laps: clone(activeRace.laps) || []
     };
 
     records.unshift(result);
@@ -348,14 +389,9 @@
     }
 
     activeRace = null;
-
     save();
 
-    window.dispatchEvent(
-      new CustomEvent("sx:race-recording-finished", {
-        detail: summary
-      })
-    );
+    emit("sx:race-recording-finished", summary);
 
     return {
       success: true,
@@ -364,11 +400,7 @@
   }
 
   function getActiveRace() {
-    if (!activeRace) return null;
-
-    return JSON.parse(
-      JSON.stringify(activeRace)
-    );
+    return activeRace ? clone(activeRace) : null;
   }
 
   function getRecords(limit) {
@@ -376,19 +408,12 @@
       ? limit
       : records.length;
 
-    return records.slice(0, count).map(
-      item => ({ ...item })
-    );
+    return clone(records.slice(0, count)) || [];
   }
 
   function getRecord(id) {
-    const record = records.find(
-      item => item.id === id
-    );
-
-    return record
-      ? JSON.parse(JSON.stringify(record))
-      : null;
+    const record = records.find(item => item.id === id);
+    return record ? clone(record) : null;
   }
 
   function getBestRecords() {
@@ -401,34 +426,34 @@
     }
 
     const fastestSpeed = Math.max(
-      ...records.map(item => item.bestSpeed || 0)
+      ...records.map(item => number(item.bestSpeed))
     );
 
     const longestDistance = Math.max(
-      ...records.map(item => item.distance || 0)
+      ...records.map(item => number(item.distance))
     );
 
     const fastestRace = records
       .filter(item => item.status === "completed")
-      .sort((a, b) => a.duration - b.duration)[0] || null;
+      .slice()
+      .sort((a, b) => number(a.duration) - number(b.duration))[0] || null;
 
     return {
       fastestSpeed,
       longestDistance,
-      fastestRace
+      fastestRace: clone(fastestRace)
     };
   }
 
   function deleteRecord(id) {
-    const index = records.findIndex(
-      item => item.id === id
-    );
+    const index = records.findIndex(item => item.id === id);
 
-    if (index === -1) return false;
+    if (index < 0) return false;
 
     records.splice(index, 1);
-
     save();
+
+    emit("sx:race-record-deleted", { id });
 
     return true;
   }
@@ -436,6 +461,8 @@
   function clearRecords() {
     records = [];
     save();
+
+    emit("sx:race-records-cleared");
 
     return true;
   }
@@ -461,7 +488,6 @@
 
   function init() {
     load();
-
     return api;
   }
 
@@ -488,28 +514,25 @@
   SX.vehicleRaceRecorder = api;
 
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      init,
-      { once: true }
-    );
+    document.addEventListener("DOMContentLoaded", init, {
+      once: true
+    });
   } else {
     init();
   }
 
-  // Listen to existing game events when available.
   window.addEventListener("sx:lap-completed", event => {
-    if (!activeRace || !event.detail) return;
-
-    recordLap(event.detail);
+    if (activeRace && event.detail) {
+      recordLap(event.detail);
+    }
   });
 
   window.addEventListener("sx:checkpoint-completed", event => {
-    if (!activeRace || !event.detail) return;
-
-    recordCheckpoint(
-      event.detail.checkpointId || "checkpoint"
-    );
+    if (activeRace && event.detail) {
+      recordCheckpoint(
+        event.detail.checkpointId || "checkpoint"
+      );
+    }
   });
 
 })();
@@ -517,4 +540,4 @@
 /* =========================================================
    END: VEHICLE RACE RECORDER — FILE 92
    ========================================================= */
-  
+         
